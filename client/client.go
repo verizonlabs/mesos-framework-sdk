@@ -9,7 +9,52 @@ import (
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
+	"time"
 )
+
+// HTTP client.
+type Client struct {
+	streamID string
+	master   string
+	client   *http.Client
+}
+
+// Return a new HTTP client.
+func NewClient(master string) *Client {
+	return &Client{
+		master: master,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
+}
+
+// Makes a new request with data and sends it to the server.
+func (c *Client) Request(data []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/x-protobuf")
+	req.Header.Set("Accept", "application/x-protobuf")
+	req.Header.Set("User-Agent", "mesos-framework-sdk")
+	if c.streamID != "" {
+		req.Header.Set("Mesos-Stream-Id", c.streamID)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	streamID := resp.Header.Get("Mesos-Stream-Id")
+	if streamID != "" {
+		c.streamID = streamID
+	}
+
+	return resp, nil
+}
 
 func Subscribe_Call(call *sched.Call) {
 	client := &http.Client{}
