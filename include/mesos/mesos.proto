@@ -50,11 +50,11 @@ message OfferID {
 
 
 /**
- * A unique ID assigned to a slave. Currently, a slave gets a new ID
+ * A unique ID assigned to an agent. Currently, an agent gets a new ID
  * whenever it (re)registers with Mesos. Framework writers shouldn't
- * assume any binding between a slave ID and and a hostname.
+ * assume any binding between an agent ID and and a hostname.
  */
-message SlaveID {
+message AgentID {
   required string value = 1;
 }
 
@@ -73,7 +73,7 @@ message TaskID {
 
 /**
  * A framework-generated ID to distinguish an executor. Only one
- * executor with the same ID can be active on the same slave at a
+ * executor with the same ID can be active on the same agent at a
  * time. However, reusing executor IDs is discouraged.
  */
 message ExecutorID {
@@ -155,10 +155,10 @@ message Unavailability {
 
 
 /**
- * Represents a single machine, which may hold one or more slaves.
+ * Represents a single machine, which may hold one or more agents.
  *
- * NOTE: In order to match a slave to a machine, both the `hostname` and
- * `ip` must match the values advertised by the slave to the master.
+ * NOTE: In order to match an agent to a machine, both the `hostname` and
+ * `ip` must match the values advertised by the agent to the master.
  * Hostname is not case-sensitive.
  */
 message MachineID {
@@ -173,13 +173,13 @@ message MachineID {
  */
 message MachineInfo {
   // Describes the several states that a machine can be in.  A `Mode`
-  // applies to a machine and to all associated slaves on the machine.
+  // applies to a machine and to all associated agents on the machine.
   enum Mode {
     // In this mode, a machine is behaving normally;
     // offering resources, executing tasks, etc.
     UP = 1;
 
-    // In this mode, all slaves on the machine are expected to cooperate with
+    // In this mode, all agents on the machine are expected to cooperate with
     // frameworks to drain resources.  In general, draining is done ahead of
     // a pending `unavailability`.  The resources should be drained so as to
     // maximize utilization prior to the maintenance but without knowingly
@@ -187,7 +187,7 @@ message MachineInfo {
     DRAINING = 2;
 
     // In this mode, a machine is not running any tasks and will not offer
-    // any of its resources.  Slaves on the machine will not be allowed to
+    // any of its resources.  Agents on the machine will not be allowed to
     // register with the master.
     DOWN = 3;
   }
@@ -580,7 +580,7 @@ message ExecutorInfo {
   // possible for different executor ids to be related semantically.
   //
   // NOTE: 'source' is exposed alongside the resource usage of the
-  // executor via JSON on the slave. This allows users to import usage
+  // executor via JSON on the agent. This allows users to import usage
   // information into a time series database for monitoring.
   //
   // This field is deprecated since 1.0. Please use labels for
@@ -605,9 +605,9 @@ message ExecutorInfo {
   optional DurationInfo shutdown_grace_period = 13;
 
   // Labels are free-form key value pairs which are exposed through
-  // master and slave endpoints. Labels will not be interpreted or
+  // master and agent endpoints. Labels will not be interpreted or
   // acted upon by Mesos itself. As opposed to the data field, labels
-  // will be kept in memory on master and slave processes. Therefore,
+  // will be kept in memory on master and agent processes. Therefore,
   // labels should be used to tag executors with lightweight metadata.
   // Labels should not contain duplicate key-value pairs.
   optional Labels labels = 14;
@@ -654,22 +654,16 @@ message MasterInfo {
 
 
 /**
- * Describes a slave. Note that the 'id' field is only available after
- * a slave is registered with the master, and is made available here
- * to facilitate re-registration.
+ * Describes an agent. Note that the 'id' field is only available
+ * after an agent is registered with the master, and is made available
+ * here to facilitate re-registration.
  */
-message SlaveInfo {
+message AgentInfo {
   required string hostname = 1;
   optional int32 port = 8 [default = 5051];
   repeated Resource resources = 3;
   repeated Attribute attributes = 5;
-  optional SlaveID id = 6;
-
-  // Slave checkpointing is always enabled in recent Mesos versions;
-  // the value of this field is ignored.
-  // TODO(joerg84): Remove checkpoint field after deprecation cycle starting
-  // with 0.27 (MESOS-2317).
-  optional bool checkpoint = 7 [default = false];
+  optional AgentID id = 6;
 }
 
 
@@ -782,7 +776,7 @@ message Resource {
     // associate arbitrary metadata with a reserved resource.  For
     // example, frameworks can use labels to identify the intended
     // purpose for a portion of the resources the framework has
-    // reserved at a given slave. Labels should not contain duplicate
+    // reserved at a given agent. Labels should not contain duplicate
     // key-value pairs.
     optional Labels labels = 2;
   }
@@ -796,15 +790,15 @@ message Resource {
     // Describes a persistent disk volume.
     //
     // A persistent disk volume will not be automatically garbage
-    // collected if the task/executor/slave terminates, but will be
+    // collected if the task/executor/agent terminates, but will be
     // re-offered to the framework(s) belonging to the 'role'.
     //
     // NOTE: Currently, we do not allow persistent disk volumes
     // without a reservation (i.e., 'role' cannot be '*').
     message Persistence {
       // A unique ID for the persistent disk volume. This ID must be
-      // unique per role on each slave. Although it is possible to use
-      // the same ID on different slaves in the cluster and to reuse
+      // unique per role on each agent. Although it is possible to use
+      // the same ID on different agents in the cluster and to reuse
       // IDs after a volume with that ID has been destroyed, both
       // practices are discouraged.
       required string id = 1;
@@ -813,6 +807,11 @@ message Resource {
       // framework that created this volume. It is used in conjunction
       // with the "destroy" ACL to determine whether an entity
       // attempting to destroy the volume is permitted to do so.
+      //
+      // NOTE: This field is optional, while the `principal` found in
+      // `ReservationInfo` is required. This field is optional to
+      // allow for the possibility of volume creation without a
+      // principal, though currently it must be provided.
       //
       // NOTE: This field should match the FrameworkInfo.principal of
       // the framework that created the volume.
@@ -1080,7 +1079,7 @@ message ResourceStatistics {
 
   // Number of occurrences of different levels of memory pressure
   // events reported by memory cgroup. Pressure listening (re)starts
-  // with these values set to 0 when slave (re)starts. See
+  // with these values set to 0 when agent (re)starts. See
   // https://www.kernel.org/doc/Documentation/cgroups/memory.txt for
   // more details.
   optional uint64 mem_low_pressure_counter = 32;
@@ -1155,7 +1154,7 @@ message ResourceUsage {
 
   repeated Executor executors = 1;
 
-  // Slave's total resources including checkpointed dynamic
+  // Agent's total resources including checkpointed dynamic
   // reservations and persistent volumes.
   repeated Resource total = 2;
 }
@@ -1238,27 +1237,27 @@ message PerfStatistics {
 
 /**
  * Describes a request for resources that can be used by a framework
- * to proactively influence the allocator.  If 'slave_id' is provided
+ * to proactively influence the allocator.  If 'agent_id' is provided
  * then this request is assumed to only apply to resources on that
- * slave.
+ * agent.
  */
 message Request {
-  optional SlaveID slave_id = 1;
+  optional AgentID agent_id = 1;
   repeated Resource resources = 2;
 }
 
 
 /**
- * Describes some resources available on a slave. An offer only
- * contains resources from a single slave.
+ * Describes some resources available on an agent. An offer only
+ * contains resources from a single agent.
  */
 message Offer {
   required OfferID id = 1;
   required FrameworkID framework_id = 2;
-  required SlaveID slave_id = 3;
+  required AgentID agent_id = 3;
   required string hostname = 4;
 
-  // URL for reaching the slave running on the host.
+  // URL for reaching the agent running on the host.
   optional URL url = 8;
 
   repeated Resource resources = 5;
@@ -1342,23 +1341,23 @@ message InverseOffer {
   // re-use of some of the OfferID-only messages.
   required OfferID id = 1;
 
-  // URL for reaching the slave running on the host.  This enables some
+  // URL for reaching the agent running on the host.  This enables some
   // optimizations as described in MESOS-3012, such as allowing the
-  // scheduler driver to bypass the master and talk directly with a slave.
+  // scheduler driver to bypass the master and talk directly with an agent.
   optional URL url = 2;
 
   // The framework that should release its resources.
-  // If no specifics are provided (i.e. which slave), all the framework's
+  // If no specifics are provided (i.e. which agent), all the framework's
   // resources are requested back.
   required FrameworkID framework_id = 3;
 
-  // Specified if the resources need to be released from a particular slave.
-  // All the framework's resources on this slave are requested back,
+  // Specified if the resources need to be released from a particular agent.
+  // All the framework's resources on this agent are requested back,
   // unless further qualified by the `resources` field.
-  optional SlaveID slave_id = 4;
+  optional AgentID agent_id = 4;
 
   // This InverseOffer represents a planned unavailability event in the
-  // specified interval.  Any tasks running on the given framework or slave
+  // specified interval.  Any tasks running on the given framework or agent
   // may be killed when the interval arrives.  Therefore, frameworks should
   // aim to gracefully terminate tasks prior to the arrival of the interval.
   //
@@ -1374,7 +1373,7 @@ message InverseOffer {
   required Unavailability unavailability = 5;
 
   // A list of resources being requested back from the framework,
-  // on the slave identified by `slave_id`.  If no resources are specified
+  // on the agent identified by `agent_id`.  If no resources are specified
   // then all resources are being requested back.  For the purpose of
   // maintenance, this field is always empty (maintenance always requests
   // all resources back).
@@ -1395,7 +1394,7 @@ message InverseOffer {
 message TaskInfo {
   required string name = 1;
   required TaskID task_id = 2;
-  required SlaveID slave_id = 3;
+  required AgentID agent_id = 3;
   repeated Resource resources = 4;
   optional ExecutorInfo executor = 5;
   optional CommandInfo command = 7;
@@ -1418,9 +1417,9 @@ message TaskInfo {
   optional bytes data = 6;
 
   // Labels are free-form key value pairs which are exposed through
-  // master and slave endpoints. Labels will not be interpreted or
+  // master and agent endpoints. Labels will not be interpreted or
   // acted upon by Mesos itself. As opposed to the data field, labels
-  // will be kept in memory on master and slave processes. Therefore,
+  // will be kept in memory on master and agent processes. Therefore,
   // labels should be used to tag tasks with light-weight meta-data.
   // Labels should not contain duplicate key-value pairs.
   optional Labels labels = 10;
@@ -1450,7 +1449,7 @@ message TaskGroupInfo {
 
 // TODO(bmahler): Add executor_uuid here, and send it to the master. This will
 // allow us to expose executor work directories for tasks in the webui when
-// looking from the master level. Currently only the slave knows which run the
+// looking from the master level. Currently only the agent knows which run the
 // task belongs to.
 /**
  * Describes a task, similar to `TaskInfo`.
@@ -1470,7 +1469,7 @@ message Task {
   required TaskID task_id = 2;
   required FrameworkID framework_id = 3;
   optional ExecutorID executor_id = 4;
-  required SlaveID slave_id = 5;
+  required AgentID agent_id = 5;
   required TaskState state = 6; // Latest state of the task.
   repeated Resource resources = 7;
   repeated TaskStatus statuses = 8;
@@ -1566,13 +1565,13 @@ message TaskStatus {
   // Describes the source of the task status update.
   enum Source {
     SOURCE_MASTER = 0;
-    SOURCE_SLAVE = 1;
+    SOURCE_AGENT = 1;
     SOURCE_EXECUTOR = 2;
   }
 
   // Detailed reason for the task status update.
   //
-  // TODO(bmahler): Differentiate between slave removal reasons
+  // TODO(bmahler): Differentiate between agent removal reasons
   // (e.g. unhealthy vs. unregistered for maintenance).
   enum Reason {
     // TODO(jieyu): The default value when a caller doesn't check for
@@ -1597,10 +1596,10 @@ message TaskStatus {
     REASON_MASTER_DISCONNECTED = 7;
     REASON_RECONCILIATION = 9;
     REASON_RESOURCES_UNKNOWN = 18;
-    REASON_SLAVE_DISCONNECTED = 10;
-    REASON_SLAVE_REMOVED = 11;
-    REASON_SLAVE_RESTARTED = 12;
-    REASON_SLAVE_UNKNOWN = 13;
+    REASON_AGENT_DISCONNECTED = 10;
+    REASON_AGENT_REMOVED = 11;
+    REASON_AGENT_RESTARTED = 12;
+    REASON_AGENT_UNKNOWN = 13;
     REASON_TASK_GROUP_INVALID = 25;
     REASON_TASK_GROUP_UNAUTHORIZED = 26;
     REASON_TASK_INVALID = 14;
@@ -1614,8 +1613,8 @@ message TaskStatus {
   optional Source source = 9;
   optional Reason reason = 10;
   optional bytes data = 3;
-  optional SlaveID slave_id = 5;
-  optional ExecutorID executor_id = 7; // TODO(benh): Use in master/slave.
+  optional AgentID agent_id = 5;
+  optional ExecutorID executor_id = 7; // TODO(benh): Use in master/agent.
   optional double timestamp = 6;
 
   // Statuses that are delivered reliably to the scheduler will
@@ -1635,11 +1634,11 @@ message TaskStatus {
   optional bool healthy = 8;
 
   // Labels are free-form key value pairs which are exposed through
-  // master and slave endpoints. Labels will not be interpreted or
+  // master and agent endpoints. Labels will not be interpreted or
   // acted upon by Mesos itself. As opposed to the data field, labels
-  // will be kept in memory on master and slave processes. Therefore,
+  // will be kept in memory on master and agent processes. Therefore,
   // labels should be used to tag TaskStatus message with light-weight
-  // meta-data. Labels should not contain duplicate key-value pairs.
+  // meta-data.  Labels should not contain duplicate key-value pairs.
   optional Labels labels = 12;
 
   // Container related information that is resolved dynamically such as
@@ -2109,7 +2108,7 @@ message ContainerInfo {
 
     // With this flag set to true, the docker containerizer will
     // pull the docker image from the registry even if the image
-    // is already downloaded on the slave.
+    // is already downloaded on the agent.
     optional bool force_pull_image = 6;
 
     // The name of volume driver plugin.
