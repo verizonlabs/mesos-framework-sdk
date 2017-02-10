@@ -14,10 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mesos;
-
-option java_package = "org.apache.mesos";
-option java_outer_classname = "Protos";
+package mesos.v1;
 
 
 /**
