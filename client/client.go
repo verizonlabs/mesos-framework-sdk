@@ -1,17 +1,17 @@
 package client
 
 import (
-	"net/http"
 	sched "mesos-framework-sdk/include/scheduler"
+	"net/http"
 	//mesos "mesos-framework-sdk/include/mesos"
-	"fmt"
 	"bytes"
-	"io/ioutil"
+	"fmt"
 	"github.com/gogo/protobuf/proto"
+	"io/ioutil"
 	"log"
 )
 
-func Subscribe_Call(call *sched.Call){
+func Subscribe_Call(call *sched.Call) {
 	client := &http.Client{}
 	k, err := proto.Marshal(call)
 	if err != nil {
