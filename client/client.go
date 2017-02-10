@@ -5,6 +5,7 @@ import (
 	"net/http"
 	//mesos "mesos-framework-sdk/include/mesos"
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
@@ -46,6 +47,17 @@ func (c *Client) Request(data []byte) (*http.Response, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
+		log.Println("Old Master:", c.master)
+
+		master := resp.Header.Get("Location")
+		c.master = master
+
+		log.Println("New Master:", c.master)
+
+		return nil, errors.New("Redirect encountered, new master found")
 	}
 
 	streamID := resp.Header.Get("Mesos-Stream-Id")
