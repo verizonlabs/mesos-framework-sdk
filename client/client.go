@@ -6,7 +6,7 @@ import (
 	//mesos "mesos-framework-sdk/include/mesos"
 	"bytes"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
 )
@@ -18,7 +18,7 @@ func Subscribe_Call(call *sched.Call) {
 		log.Println(err.Error())
 	}
 	req, err := http.NewRequest("POST", "http://10.0.0.10:5050/api/v1/scheduler", bytes.NewBuffer(k))
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-protobuf")
 
 	resp, err := client.Do(req)
 	if err != nil {
