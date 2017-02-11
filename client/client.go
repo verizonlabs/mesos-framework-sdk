@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"github.com/golang/protobuf/proto"
-	"io/ioutil"
 	"log"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"net"
 	"net/http"
 	"time"
 )
@@ -28,7 +28,12 @@ func NewClient(master string) *Client {
 	return &Client{
 		master: master,
 		client: &http.Client{
-			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				Dial: (&net.Dialer{
+					Timeout:   10 * time.Second,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+			},
 		},
 	}
 }
