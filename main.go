@@ -1,16 +1,14 @@
 package main
 
 import (
-	//exec "mesos-framework-sdk/include/executor"
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
-	sched "mesos-framework-sdk/include/scheduler"
 	"time"
 )
 
 func main() {
-	frameworkInfo := mesos.FrameworkInfo{
+	frameworkInfo := &mesos.FrameworkInfo{
 		User:            proto.String("root"),
 		Name:            proto.String("Sprint"),
 		Id:              &mesos.FrameworkID{Value: proto.String("")},
@@ -21,12 +19,6 @@ func main() {
 		Principal:       proto.String(""),
 	}
 
-	client.Subscribe_Call(&sched.Call{
-		FrameworkId: frameworkInfo.Id,
-		Type:        sched.Call_SUBSCRIBE.Enum(),
-		Subscribe: &sched.Call_Subscribe{
-			FrameworkInfo: &frameworkInfo,
-		},
-	})
-
+	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
+	c.Subscribe(frameworkInfo)
 }

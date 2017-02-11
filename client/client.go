@@ -1,16 +1,19 @@
 package client
 
 import (
-	sched "mesos-framework-sdk/include/scheduler"
-	"net/http"
-	//mesos "mesos-framework-sdk/include/mesos"
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
 	"log"
+	mesos "mesos-framework-sdk/include/mesos"
+	sched "mesos-framework-sdk/include/scheduler"
+	"net/http"
 	"time"
+)
+
+const (
+	subscribeRetry = 2
 )
 
 // HTTP client.
@@ -68,28 +71,29 @@ func (c *Client) Request(data []byte) (*http.Response, error) {
 	return resp, nil
 }
 
-func Subscribe_Call(call *sched.Call) {
-	client := &http.Client{}
-	k, err := proto.Marshal(call)
+func (c *Client) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
+	call := &sched.Call{
+		FrameworkId: frameworkInfo.Id,
+		Type:        sched.Call_SUBSCRIBE.Enum(),
+		Subscribe: &sched.Call_Subscribe{
+			FrameworkInfo: frameworkInfo,
+		},
+	}
+	data, err := proto.Marshal(call)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	req, err := http.NewRequest("POST", "http://10.0.0.10:5050/api/v1/scheduler", bytes.NewBuffer(k))
-	req.Header.Set("Content-Type", "application/x-protobuf")
 
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	for {
+		resp, err := c.Request(data)
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			// TODO need to spin off from here and handle/decode events
+			break
+		}
 
-	fmt.Println("response Status:", resp.Status)
-	fmt.Println("response Headers:", resp.Header)
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Print("ERROR: ")
-		log.Println(err.Error())
+		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
-	fmt.Println("response Body:", string(body))
 
 }
