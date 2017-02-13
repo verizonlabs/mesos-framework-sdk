@@ -13,16 +13,16 @@ import (
 
 // HTTP client.
 type Client struct {
-	StreamID string
-	Master   string
-	Client   *http.Client
+	streamID string
+	master   string
+	client   *http.Client
 }
 
 // Return a new HTTP client.
 func NewClient(master string) *Client {
 	return &Client{
-		Master: master,
-		Client: &http.Client{
+		master: master,
+		client: &http.Client{
 			Transport: &http.Transport{
 				Dial: (&net.Dialer{
 					Timeout:   10 * time.Second,
@@ -40,7 +40,7 @@ func (c *Client) Request(call *sched.Call) (*http.Response, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.Master, bytes.NewReader(data))
+	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +49,11 @@ func (c *Client) Request(call *sched.Call) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("Accept", "application/x-protobuf")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
-	if c.StreamID != "" {
-		req.Header.Set("Mesos-Stream-Id", c.StreamID)
+	if c.streamID != "" {
+		req.Header.Set("Mesos-Stream-Id", c.streamID)
 	}
 
-	resp, err := c.Client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -61,16 +61,16 @@ func (c *Client) Request(call *sched.Call) (*http.Response, error) {
 	// We will only get the stream ID after a SUBSCRIBE call.
 	streamID := resp.Header.Get("Mesos-Stream-Id")
 	if streamID != "" {
-		c.StreamID = streamID
+		c.streamID = streamID
 	}
 
 	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
-		log.Println("Old Master:", c.Master)
+		log.Println("Old Master:", c.master)
 
 		master := resp.Header.Get("Location")
-		c.Master = master
+		c.master = master
 
-		log.Println("New Master:", c.Master)
+		log.Println("New Master:", c.master)
 
 		return nil, errors.New("Redirect encountered, new master found")
 	}
