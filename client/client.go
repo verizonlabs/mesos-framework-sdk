@@ -13,7 +13,7 @@ import (
 
 // HTTP client.
 type Client struct {
-	streamID string
+	StreamID string
 	master   string
 	client   *http.Client
 }
@@ -49,8 +49,8 @@ func (c *Client) Request(call *sched.Call) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("Accept", "application/x-protobuf")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
-	if c.streamID != "" {
-		req.Header.Set("Mesos-Stream-Id", c.streamID)
+	if c.StreamID != "" {
+		req.Header.Set("Mesos-Stream-Id", c.StreamID)
 	}
 
 	resp, err := c.client.Do(req)
@@ -61,7 +61,7 @@ func (c *Client) Request(call *sched.Call) (*http.Response, error) {
 	// We will only get the stream ID after a SUBSCRIBE call.
 	streamID := resp.Header.Get("Mesos-Stream-Id")
 	if streamID != "" {
-		c.streamID = streamID
+		c.StreamID = streamID
 	}
 
 	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {

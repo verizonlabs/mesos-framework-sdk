@@ -38,18 +38,23 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 		},
 	}
 
-	for {
-		resp, err := c.client.Request(call)
-		if err != nil {
-			log.Println(err.Error())
-		} else {
-			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			go events.Loop(resp.Body, c.events)
-			break
-		}
+	go func() {
+		for {
+			resp, err := c.client.Request(call)
+			if err != nil {
+				log.Println(err.Error())
+			} else {
 
-		time.Sleep(time.Duration(subscribeRetry) * time.Second)
-	}
+				// We're connected, start decoding events.
+				log.Println(events.Loop(resp.Body, c.events))
+			}
+
+			// If we disconnect we need to reset the stream ID.
+			// Otherwise we'll never be able to reconnect.
+			c.client.StreamID = ""
+			time.Sleep(time.Duration(subscribeRetry) * time.Second)
+		}
+	}()
 
 	return c.events, nil
 }
