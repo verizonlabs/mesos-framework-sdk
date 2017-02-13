@@ -1,16 +1,13 @@
 package scheduler
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"io"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
-	"strconv"
-	"strings"
+	"mesos-framework-sdk/recordio"
 	"time"
 )
 
@@ -18,17 +15,20 @@ const (
 	subscribeRetry = 2
 )
 
-// Do we want the client to hold state regarding calls?
 type Scheduler struct {
 	client *client.Client
+	events chan *sched.Event
 }
 
 func NewScheduler(c *client.Client) *Scheduler {
-	return &Scheduler{client: c}
+	return &Scheduler{
+		client: c,
+		events: make(chan *sched.Event),
+	}
 }
 
 // Create a Subscription to mesos.
-func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
+func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.Event {
 	// We really want the ID after the call...
 	c.client.FrameworkId = *frameworkInfo.GetId()
 	call := &sched.Call{
@@ -54,23 +54,15 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
 		if err != nil {
 			log.Println(err.Error())
 		} else {
-			// TODO need to spin off from here and handle/decode events
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			fmt.Println(resp)
-			var event sched.Event
-			reader := bufio.NewReader(resp.Body)
-			length, _ := reader.ReadString('\n')
-			c, _ := strconv.Atoi(strings.TrimRight(length, "\n"))
-			buffer := make([]byte, c)
-			_, err = io.ReadFull(reader, buffer)
-			proto.Unmarshal(buffer, &event)
-			fmt.Println(event)
-			resp.Body.Close()
+			go recordio.Read(resp.Body, c.events)
 			break
 		}
 
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
+
+	return c.events
 }
 
 // Send a teardown request to mesos master.
