@@ -51,8 +51,6 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
 
-	time.Sleep(time.Duration(subscribeRetry) * time.Second)
-
 	return c.Events, nil
 }
 
