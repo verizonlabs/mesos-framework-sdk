@@ -1,13 +1,16 @@
 package scheduler
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"io"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
-	"mesos-framework-sdk/recordio"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,6 +18,7 @@ const (
 	subscribeRetry = 2
 )
 
+// Do we want the client to hold state regarding calls?
 type Scheduler struct {
 	client *client.Client
 }
@@ -53,7 +57,14 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
 			// TODO need to spin off from here and handle/decode events
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
 			fmt.Println(resp)
-			_ = recordio.NewReader(resp.Body)
+			var event sched.Event
+			reader := bufio.NewReader(resp.Body)
+			length, _ := reader.ReadString('\n')
+			c, _ := strconv.Atoi(strings.TrimRight(length, "\n"))
+			buffer := make([]byte, c)
+			_, err = io.ReadFull(reader, buffer)
+			proto.Unmarshal(buffer, &event)
+			fmt.Println(event)
 			resp.Body.Close()
 			break
 		}
