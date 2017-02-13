@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
@@ -38,21 +37,9 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 			FrameworkInfo: frameworkInfo,
 		},
 	}
-	// Marshal the scheduler protobuf.
-	data, err := proto.Marshal(call)
-	if err != nil {
-		return nil, err
-	}
 
-	// Make a new http request from the subscribe call.
-	req, err := client.NewSubscribeRequest(c.client, data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Make the request.
 	for {
-		resp, err := c.client.Request(req)
+		resp, err := c.client.Request(call)
 		if err != nil {
 			log.Println(err.Error())
 		} else {
@@ -64,6 +51,8 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
 
+	time.Sleep(time.Duration(subscribeRetry) * time.Second)
+
 	return c.Events, nil
 }
 
@@ -73,7 +62,7 @@ func (c *Scheduler) Teardown() {
 		FrameworkId: &c.FrameworkID,
 		Type:        sched.Call_TEARDOWN.Enum(),
 	}
-	resp, err := c.client.DefaultPostRequest(teardown)
+	resp, err := c.client.Request(teardown)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -90,7 +79,7 @@ func (c *Scheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Opera
 		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
 	}
 
-	resp, err := c.client.DefaultPostRequest(accept)
+	resp, err := c.client.Request(accept)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -105,7 +94,7 @@ func (c *Scheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Filters) {
 		Decline:     &sched.Call_Decline{OfferIds: offerIds, Filters: filters},
 	}
 
-	resp, err := c.client.DefaultPostRequest(decline)
+	resp, err := c.client.Request(decline)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -121,7 +110,7 @@ func (c *Scheduler) Revive() {
 		Type:        sched.Call_REVIVE.Enum(),
 	}
 
-	resp, err := c.client.DefaultPostRequest(revive)
+	resp, err := c.client.Request(revive)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -137,7 +126,7 @@ func (c *Scheduler) Kill(taskId *mesos.TaskID, agentid *mesos.AgentID) {
 		Kill:        &sched.Call_Kill{TaskId: taskId, AgentId: agentid},
 	}
 
-	resp, err := c.client.DefaultPostRequest(kill)
+	resp, err := c.client.Request(kill)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -154,7 +143,7 @@ func (c *Scheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.AgentID) {
 			AgentId:    agentId,
 		},
 	}
-	resp, err := c.client.DefaultPostRequest(shutdown)
+	resp, err := c.client.Request(shutdown)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -170,7 +159,7 @@ func (c *Scheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uu
 		Type:        sched.Call_ACKNOWLEDGE.Enum(),
 		Acknowledge: &sched.Call_Acknowledge{AgentId: agentId, TaskId: taskId, Uuid: uuid},
 	}
-	resp, err := c.client.DefaultPostRequest(acknowledge)
+	resp, err := c.client.Request(acknowledge)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -182,7 +171,7 @@ func (c *Scheduler) Reconcile(tasks []*mesos.Task) {
 		FrameworkId: &c.FrameworkID,
 		Type:        sched.Call_RECONCILE.Enum(),
 	}
-	resp, err := c.client.DefaultPostRequest(reconcile)
+	resp, err := c.client.Request(reconcile)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -199,7 +188,7 @@ func (c *Scheduler) Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID
 			Data:       data,
 		},
 	}
-	resp, err := c.client.DefaultPostRequest(message)
+	resp, err := c.client.Request(message)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -218,7 +207,7 @@ func (c *Scheduler) SchedRequest(resources []*mesos.Request) {
 			Requests: resources,
 		},
 	}
-	resp, err := c.client.DefaultPostRequest(request)
+	resp, err := c.client.Request(request)
 	if err != nil {
 		log.Println(err.Error())
 	}
