@@ -15,15 +15,15 @@ const (
 )
 
 type Scheduler struct {
-	FrameworkID mesos.FrameworkID
+	frameworkID mesos.FrameworkID
 	client      *client.Client
-	Events      chan *sched.Event
+	events      chan *sched.Event
 }
 
 func NewScheduler(c *client.Client) *Scheduler {
 	return &Scheduler{
 		client: c,
-		Events: make(chan *sched.Event),
+		events: make(chan *sched.Event),
 	}
 }
 
@@ -44,20 +44,20 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 			log.Println(err.Error())
 		} else {
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			go events.Loop(resp.Body, c.Events)
+			go events.Loop(resp.Body, c.events)
 			break
 		}
 
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
 
-	return c.Events, nil
+	return c.events, nil
 }
 
 // Send a teardown request to mesos master.
 func (c *Scheduler) Teardown() {
 	teardown := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_TEARDOWN.Enum(),
 	}
 	resp, err := c.client.Request(teardown)
@@ -72,7 +72,7 @@ func (c *Scheduler) Teardown() {
 // Accepts offers from mesos master
 func (c *Scheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters) {
 	accept := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_ACCEPT.Enum(),
 		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
 	}
@@ -87,7 +87,7 @@ func (c *Scheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Opera
 func (c *Scheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Filters) {
 	// Get a list of the offer ids to decline and any filters.
 	decline := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_DECLINE.Enum(),
 		Decline:     &sched.Call_Decline{OfferIds: offerIds, Filters: filters},
 	}
@@ -104,7 +104,7 @@ func (c *Scheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Filters) {
 func (c *Scheduler) Revive() {
 
 	revive := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_REVIVE.Enum(),
 	}
 
@@ -119,7 +119,7 @@ func (c *Scheduler) Revive() {
 func (c *Scheduler) Kill(taskId *mesos.TaskID, agentid *mesos.AgentID) {
 	// Probably want some validation that this is a valid task and valid agentid.
 	kill := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_KILL.Enum(),
 		Kill:        &sched.Call_Kill{TaskId: taskId, AgentId: agentid},
 	}
@@ -134,7 +134,7 @@ func (c *Scheduler) Kill(taskId *mesos.TaskID, agentid *mesos.AgentID) {
 
 func (c *Scheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.AgentID) {
 	shutdown := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_SHUTDOWN.Enum(),
 		Shutdown: &sched.Call_Shutdown{
 			ExecutorId: execId,
@@ -153,7 +153,7 @@ func (c *Scheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.AgentID) {
 // TODO import extras uuid funcs.
 func (c *Scheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uuid []byte) {
 	acknowledge := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_ACKNOWLEDGE.Enum(),
 		Acknowledge: &sched.Call_Acknowledge{AgentId: agentId, TaskId: taskId, Uuid: uuid},
 	}
@@ -166,7 +166,7 @@ func (c *Scheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uu
 
 func (c *Scheduler) Reconcile(tasks []*mesos.Task) {
 	reconcile := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_RECONCILE.Enum(),
 	}
 	resp, err := c.client.Request(reconcile)
@@ -178,7 +178,7 @@ func (c *Scheduler) Reconcile(tasks []*mesos.Task) {
 
 func (c *Scheduler) Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID, data []byte) {
 	message := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_MESSAGE.Enum(),
 		Message: &sched.Call_Message{
 			AgentId:    agentId,
@@ -199,7 +199,7 @@ func (c *Scheduler) Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID
 // a customizable fashion.
 func (c *Scheduler) SchedRequest(resources []*mesos.Request) {
 	request := &sched.Call{
-		FrameworkId: &c.FrameworkID,
+		FrameworkId: &c.frameworkID,
 		Type:        sched.Call_REQUEST.Enum(),
 		Request: &sched.Call_Request{
 			Requests: resources,
