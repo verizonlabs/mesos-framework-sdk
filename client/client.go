@@ -150,19 +150,42 @@ func (c *Client) Teardown() {
 
 // Accepts offers from mesos master
 func (c *Client) Accept() {
-
+	// Gather the offer ids, tasks, and filters to build out this call.
 }
 
 func (c *Client) Decline() {
+	// Get a list of the offer ids to decline and any filters.
 
 }
 
 func (c *Client) Revive() {
+	// Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
 
 }
 
-func (c *Client) Kill() {
+func (c *Client) Kill(taskId mesos.TaskID, agentid mesos.AgentID) {
+	// Probably want some validation that this is a valid task and valid agentid.
+	kill := &sched.Call{
+		FrameworkId: c.frameworkId,
+		Type:        sched.Call_KILL.Enum(),
+		Kill:        sched.Call_Kill{TaskId: taskId, AgentId: agentid},
+	}
 
+	// Marshal the scheduler protobuf.
+	data, err := proto.Marshal(kill)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	req, err := NewDefaultPostRequest(c, data)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	resp, err := c.Request(req)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+	return
 }
 
 func (c *Client) Shutdown() {
@@ -181,7 +204,7 @@ func (c *Client) Message() {
 
 }
 
-func (c *Client) Request() {
+func (c *Client) SchedRequest() {
 
 }
 
@@ -191,8 +214,7 @@ func NewDefaultPostRequest(c *Client, data []byte) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-protobuf")
-	req.Header.Set("Accept", "application/x-protobuf")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
 	return req, nil
 }
