@@ -16,7 +16,6 @@ import (
 
 // Subscribe client
 // TODO calls to implement.
-// TEARDOWN
 // ACCEPT
 // DECLINE
 // REVIVE
@@ -145,6 +144,45 @@ func (c *Client) Teardown() {
 	}
 	fmt.Print("No framework id: ")
 	fmt.Println(c.frameworkId.Value)
+}
+
+// Skeleton funcs for the rest of the calls.
+
+// Accepts offers from mesos master
+func (c *Client) Accept() {
+
+}
+
+func (c *Client) Decline() {
+
+}
+
+func (c *Client) Revive() {
+
+}
+
+func (c *Client) Kill() {
+
+}
+
+func (c *Client) Shutdown() {
+
+}
+
+func (c *Client) Acknowledge() {
+
+}
+
+func (c *Client) Reconcile() {
+
+}
+
+func (c *Client) Message() {
+
+}
+
+func (c *Client) Request() {
+
 }
 
 // Default headers to set for a post request for mesos.
