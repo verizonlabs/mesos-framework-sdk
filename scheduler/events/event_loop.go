@@ -16,23 +16,23 @@ func Loop(data io.ReadCloser, events chan<- *sched.Event) {
 	for {
 		lengthStr, err := reader.ReadString('\n')
 		if err != nil {
-			events <- nil
+			continue
 		}
 
 		lengthInt, err := strconv.Atoi(strings.TrimRight(lengthStr, "\n"))
 		if err != nil {
-			events <- nil
+			continue
 		}
 
 		buffer := make([]byte, lengthInt)
 		n, err := io.ReadFull(reader, buffer)
 		if n != lengthInt {
-			events <- nil
+			continue
 		}
 
 		err = proto.Unmarshal(buffer, &event)
 		if err != nil {
-			events <- nil
+			continue
 		}
 
 		events <- &event
