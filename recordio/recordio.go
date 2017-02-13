@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func Read(data io.ReadCloser, frameworkID *mesos.FrameworkID, events chan *sched.Event) error {
+func Read(data io.ReadCloser, frameworkID *mesos.FrameworkID, events chan<- *sched.Event) error {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 

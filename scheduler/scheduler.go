@@ -29,7 +29,7 @@ func NewScheduler(c *client.Client) *Scheduler {
 }
 
 // Create a Subscription to mesos.
-func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) chan<- *sched.Event {
+func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.Event {
 	// We really want the ID after the call...
 	call := &sched.Call{
 		FrameworkId: frameworkInfo.GetId(),
