@@ -207,20 +207,66 @@ func (c *Client) Shutdown(execId mesos.ExecutorID, agentId mesos.AgentID) {
 	return
 }
 
-func (c *Client) Acknowledge() {
+// UUID should be a type
+// TODO import extras uuid funcs.
+func (c *Client) Acknowledge(agentId mesos.AgentID, taskId mesos.TaskID, uuid string) {
+	acknowledge := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_ACKNOWLEDGE.Enum(),
+		Acknowledge: sched.Call_Acknowledge{AgentId: agentId, TaskId: taskId, Uuid: uuid},
+	}
+	resp, err := c.DefaultPostRequest(acknowledge)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+}
+
+func (c *Client) Reconcile(tasks []mesos.Task) {
+	reconcile := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_RECONCILE.Enum(),
+		Reconcile:   sched.Call_Reconcile{Tasks: tasks},
+	}
+	resp, err := c.DefaultPostRequest(reconcile)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+}
+
+func (c *Client) Message(agentId mesos.AgentID, executorId mesos.ExecutorID, data []byte) {
+	message := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_MESSAGE.Enum(),
+		Message: sched.Call_Message{
+			AgentId:    agentId,
+			ExecutorId: executorId,
+			Data:       data,
+		},
+	}
+	resp, err := c.DefaultPostRequest(message)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
 
 }
 
-func (c *Client) Reconcile() {
-
-}
-
-func (c *Client) Message() {
-
-}
-
-func (c *Client) SchedRequest() {
-
+// Sent by the scheduler to request resources from the master/allocator.
+// The built-in hierarchical allocator simply ignores this request but other allocators (modules) can interpret this in
+// a customizable fashion.
+func (c *Client) SchedRequest(resources []mesos.Resource) {
+	request := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_REQUEST.Enum(),
+		Request:     resources,
+	}
+	resp, err := c.DefaultPostRequest(request)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
 }
 
 // Func that marshals the call, wraps it up in a http.request and sends it off.
@@ -250,7 +296,7 @@ func NewDefaultPostHeaders(c *Client, data []byte) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
 	return req, nil
 }
