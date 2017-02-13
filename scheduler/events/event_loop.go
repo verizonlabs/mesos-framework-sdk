@@ -1,4 +1,4 @@
-package recordio
+package events
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func Read(data io.ReadCloser, events chan<- *sched.Event) error {
+func Loop(data io.ReadCloser, events chan<- *sched.Event) error {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 

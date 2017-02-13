@@ -7,7 +7,7 @@ import (
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
-	"mesos-framework-sdk/recordio"
+	"mesos-framework-sdk/scheduler/events"
 	"time"
 )
 
@@ -57,7 +57,7 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 			log.Println(err.Error())
 		} else {
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			go recordio.Read(resp.Body, c.Events)
+			go events.Loop(resp.Body, c.Events)
 			break
 		}
 
