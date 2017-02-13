@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func Loop(data io.ReadCloser, events chan<- *sched.Event) error {
+func Loop(data io.ReadCloser, events chan<- *sched.Event) {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 
