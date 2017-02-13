@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/scheduler"
 	"time"
 )
 
@@ -20,6 +21,7 @@ func main() {
 	}
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
-	c.Subscribe(frameworkInfo)
-	c.Teardown()
+	s := scheduler.NewScheduler(c)
+	s.Subscribe(frameworkInfo)
+	s.Teardown()
 }
