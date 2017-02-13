@@ -14,18 +14,6 @@ import (
 	"time"
 )
 
-// Subscribe client
-// TODO calls to implement.
-// ACCEPT
-// DECLINE
-// REVIVE
-// KILL
-// SHUTDOWN
-// ACKNOWLEDGE
-// RECONCILE
-// MESSAGE
-// REQUEST
-
 const (
 	subscribeRetry = 2
 )
@@ -126,16 +114,7 @@ func (c *Client) Teardown() {
 			FrameworkId: &c.frameworkId,
 			Type:        sched.Call_TEARDOWN.Enum(),
 		}
-		// Marshal the scheduler protobuf.
-		data, err := proto.Marshal(teardown)
-		if err != nil {
-			log.Println(err.Error())
-		}
-		req, err := NewDefaultPostRequest(c, data)
-		if err != nil {
-			log.Println(err.Error())
-		}
-		resp, err := c.Request(req)
+		resp, err := c.DefaultPostRequest(teardown)
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -149,38 +128,29 @@ func (c *Client) Teardown() {
 // Skeleton funcs for the rest of the calls.
 
 // Accepts offers from mesos master
-func (c *Client) Accept() {
-	// Gather the offer ids, tasks, and filters to build out this call.
+func (c *Client) Accept(offerIds []mesos.OfferID, tasks []mesos.Task, filters mesos.Filters) {
+	accept := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_ACCEPT.Enum(),
+		Accept:      sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
+	}
+
+	resp, err := c.DefaultPostRequest(accept)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
 }
 
-func (c *Client) Decline() {
+func (c *Client) Decline(offerIds []mesos.OfferID, filters mesos.Filters) {
 	// Get a list of the offer ids to decline and any filters.
-
-}
-
-func (c *Client) Revive() {
-	// Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
-
-}
-
-func (c *Client) Kill(taskId mesos.TaskID, agentid mesos.AgentID) {
-	// Probably want some validation that this is a valid task and valid agentid.
-	kill := &sched.Call{
-		FrameworkId: c.frameworkId,
-		Type:        sched.Call_KILL.Enum(),
-		Kill:        sched.Call_Kill{TaskId: taskId, AgentId: agentid},
+	decline := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_DECLINE.Enum(),
+		Decline:     sched.Call_Decline{OfferIds: offerIds, Filters: filters},
 	}
 
-	// Marshal the scheduler protobuf.
-	data, err := proto.Marshal(kill)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	req, err := NewDefaultPostRequest(c, data)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	resp, err := c.Request(req)
+	resp, err := c.DefaultPostRequest(decline)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -188,8 +158,53 @@ func (c *Client) Kill(taskId mesos.TaskID, agentid mesos.AgentID) {
 	return
 }
 
-func (c *Client) Shutdown() {
+// Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
+func (c *Client) Revive() {
 
+	revive := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_REVIVE.Enum(),
+	}
+
+	resp, err := c.DefaultPostRequest(revive)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+	return
+}
+
+func (c *Client) Kill(taskId mesos.TaskID, agentid mesos.AgentID) {
+	// Probably want some validation that this is a valid task and valid agentid.
+	kill := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_KILL.Enum(),
+		Kill:        sched.Call_Kill{TaskId: taskId, AgentId: agentid},
+	}
+
+	resp, err := c.DefaultPostRequest(kill)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+	return
+}
+
+func (c *Client) Shutdown(execId mesos.ExecutorID, agentId mesos.AgentID) {
+	shutdown := &sched.Call{
+		FrameworkId: &c.frameworkId,
+		Type:        sched.Call_SHUTDOWN.Enum(),
+		Shutdown: sched.Call_Shutdown{
+			ExecutorId: execId,
+			AgentId:    agentId,
+		},
+	}
+	resp, err := c.DefaultPostRequest(shutdown)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+	return
 }
 
 func (c *Client) Acknowledge() {
@@ -208,8 +223,29 @@ func (c *Client) SchedRequest() {
 
 }
 
+// Func that marshals the call, wraps it up in a http.request and sends it off.
+func (c *Client) DefaultPostRequest(call *sched.Call) (*http.Response, error) {
+	data, err := proto.Marshal(call)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	req, err := NewDefaultPostHeaders(c, data)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+	resp, err := c.Request(req)
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // Default headers to set for a post request for mesos.
-func NewDefaultPostRequest(c *Client, data []byte) (*http.Request, error) {
+func NewDefaultPostHeaders(c *Client, data []byte) (*http.Request, error) {
 	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
