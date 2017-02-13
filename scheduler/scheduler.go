@@ -29,7 +29,7 @@ func NewScheduler(c *client.Client) *Scheduler {
 }
 
 // Create a Subscription to mesos.
-func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.Event {
+func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched.Event, error) {
 	// We really want the ID after the call...
 	call := &sched.Call{
 		FrameworkId: frameworkInfo.GetId(),
@@ -41,13 +41,15 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.
 	// Marshal the scheduler protobuf.
 	data, err := proto.Marshal(call)
 	if err != nil {
-		log.Println(err.Error())
+		return nil, err
 	}
+
 	// Make a new http request from the subscribe call.
 	req, err := client.NewSubscribeRequest(c.client, data)
 	if err != nil {
-		log.Println(err.Error())
+		return nil, err
 	}
+
 	// Make the request.
 	for {
 		resp, err := c.client.Request(req)
@@ -62,7 +64,7 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
 
-	return c.Events
+	return c.Events, nil
 }
 
 // Send a teardown request to mesos master.
