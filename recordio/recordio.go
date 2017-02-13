@@ -2,7 +2,6 @@ package recordio
 
 import (
 	"bufio"
-	"errors"
 	"github.com/golang/protobuf/proto"
 	"io"
 	sched "mesos-framework-sdk/include/scheduler"
@@ -17,23 +16,23 @@ func Read(data io.ReadCloser, events chan<- *sched.Event) error {
 	for {
 		lengthStr, err := reader.ReadString('\n')
 		if err != nil {
-			return err
+			events <- nil
 		}
 
 		lengthInt, err := strconv.Atoi(strings.TrimRight(lengthStr, "\n"))
 		if err != nil {
-			return err
+			events <- nil
 		}
 
 		buffer := make([]byte, lengthInt)
 		n, err := io.ReadFull(reader, buffer)
 		if n != lengthInt {
-			return errors.New("Bytes read are not equal to the message length")
+			events <- nil
 		}
 
 		err = proto.Unmarshal(buffer, &event)
 		if err != nil {
-			return err
+			events <- nil
 		}
 
 		events <- &event
