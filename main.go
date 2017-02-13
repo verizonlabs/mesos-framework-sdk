@@ -12,7 +12,6 @@ func main() {
 	frameworkInfo := &mesos.FrameworkInfo{
 		User:            proto.String("root"),
 		Name:            proto.String("Sprint"),
-		Id:              &mesos.FrameworkID{Value: proto.String("")},
 		FailoverTimeout: proto.Float64(1 * time.Second.Seconds()),
 		Checkpoint:      proto.Bool(true),
 		Role:            proto.String("*"),

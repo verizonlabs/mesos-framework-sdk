@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"github.com/golang/protobuf/proto"
 	"io"
+	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"strconv"
 	"strings"
 )
 
-func Read(data io.ReadCloser, events chan<- *sched.Event) error {
+func Read(data io.ReadCloser, frameworkID *mesos.FrameworkID, events chan *sched.Event) error {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 
@@ -33,6 +34,10 @@ func Read(data io.ReadCloser, events chan<- *sched.Event) error {
 		err = proto.Unmarshal(buffer, &event)
 		if err != nil {
 			events <- nil
+		}
+
+		if *event.Type == sched.Event_SUBSCRIBED {
+			*frameworkID = *event.GetSubscribed().FrameworkId
 		}
 
 		events <- &event

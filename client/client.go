@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"log"
-	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"net"
 	"net/http"
@@ -14,10 +13,9 @@ import (
 
 // HTTP client.
 type Client struct {
-	StreamID    string
-	Master      string
-	Client      *http.Client
-	FrameworkId mesos.FrameworkID
+	StreamID string
+	Master   string
+	Client   *http.Client
 }
 
 // Return a new HTTP client.
