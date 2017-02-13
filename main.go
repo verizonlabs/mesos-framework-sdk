@@ -21,4 +21,5 @@ func main() {
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
 	c.Subscribe(frameworkInfo)
+	c.Teardown()
 }

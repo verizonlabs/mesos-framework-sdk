@@ -8,10 +8,24 @@ import (
 	"log"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-sdk/recordio"
 	"net"
 	"net/http"
 	"time"
 )
+
+// Subscribe client
+// TODO calls to implement.
+// TEARDOWN
+// ACCEPT
+// DECLINE
+// REVIVE
+// KILL
+// SHUTDOWN
+// ACKNOWLEDGE
+// RECONCILE
+// MESSAGE
+// REQUEST
 
 const (
 	subscribeRetry = 2
@@ -19,9 +33,10 @@ const (
 
 // HTTP client.
 type Client struct {
-	streamID string
-	master   string
-	client   *http.Client
+	streamID    string
+	master      string
+	client      *http.Client
+	frameworkId mesos.FrameworkID
 }
 
 // Return a new HTTP client.
@@ -66,8 +81,10 @@ func (c *Client) Request(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-//
+// Create a Subscription to mesos.
 func (c *Client) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
+	// We really want the ID after the call...
+	c.frameworkId = *frameworkInfo.GetId()
 	call := &sched.Call{
 		FrameworkId: frameworkInfo.GetId(),
 		Type:        sched.Call_SUBSCRIBE.Enum(),
@@ -94,12 +111,52 @@ func (c *Client) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
 			// TODO need to spin off from here and handle/decode events
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
 			fmt.Println(resp)
+			_ = recordio.NewReader(resp.Body)
+			resp.Body.Close()
 			break
 		}
 
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
+}
 
+// Send a teardown request to mesos master.
+func (c *Client) Teardown() {
+	if *c.frameworkId.Value != "" {
+		teardown := &sched.Call{
+			FrameworkId: &c.frameworkId,
+			Type:        sched.Call_TEARDOWN.Enum(),
+		}
+		// Marshal the scheduler protobuf.
+		data, err := proto.Marshal(teardown)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		req, err := NewDefaultPostRequest(c, data)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		resp, err := c.Request(req)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		fmt.Println(resp)
+		return
+	}
+	fmt.Print("No framework id: ")
+	fmt.Println(c.frameworkId.Value)
+}
+
+// Default headers to set for a post request for mesos.
+func NewDefaultPostRequest(c *Client, data []byte) (*http.Request, error) {
+	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-protobuf")
+	req.Header.Set("Accept", "application/x-protobuf")
+	req.Header.Set("User-Agent", "mesos-framework-sdk")
+	return req, nil
 }
 
 // TODO this should be moved to the scheduler struct when it is made.
