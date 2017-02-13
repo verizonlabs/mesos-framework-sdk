@@ -17,14 +17,18 @@ const (
 
 type Scheduler struct {
 	client *client.Client
+	events chan *sched.Event
 }
 
 func NewScheduler(c *client.Client) *Scheduler {
-	return &Scheduler{client: c}
+	return &Scheduler{
+		client: c,
+		events: make(chan *sched.Event),
+	}
 }
 
 // Create a Subscription to mesos.
-func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
+func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.Event {
 	// We really want the ID after the call...
 	c.client.FrameworkId = *frameworkInfo.GetId()
 	call := &sched.Call{
@@ -50,16 +54,15 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) {
 		if err != nil {
 			log.Println(err.Error())
 		} else {
-			// TODO need to spin off from here and handle/decode events
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			fmt.Println(resp)
-			_ = recordio.NewReader(resp.Body)
-			resp.Body.Close()
+			go recordio.Read(resp.Body)
 			break
 		}
 
 		time.Sleep(time.Duration(subscribeRetry) * time.Second)
 	}
+
+	return c.events
 }
 
 // Send a teardown request to mesos master.
