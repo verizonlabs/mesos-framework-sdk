@@ -55,7 +55,7 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) <-chan *sched.
 			log.Println(err.Error())
 		} else {
 			// Once connected the client should set our framework ID for all outgoing calls after successful subscribe.
-			go recordio.Read(resp.Body)
+			go recordio.Read(resp.Body, c.events)
 			break
 		}
 

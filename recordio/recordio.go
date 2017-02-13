@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func Read(data io.ReadCloser) error {
+func Read(data io.ReadCloser, events chan<- *sched.Event) error {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 
@@ -35,5 +35,7 @@ func Read(data io.ReadCloser) error {
 		if err != nil {
 			return err
 		}
+
+		events <- &event
 	}
 }
