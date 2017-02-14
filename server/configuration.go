@@ -25,11 +25,13 @@ type ServerConfiguration struct {
 	tls    bool
 }
 
-// Applies values to the various configurations from user-supplied flags.
-func NewConfiguration(cert, key string) *ServerConfiguration {
+// Creates a new configuration to be used in the server.
+func NewConfiguration(cert, key, path string, port int) Configuration {
 	return &ServerConfiguration{
 		cert: cert,
 		key:  key,
+		path: path,
+		port: port,
 		server: &http.Server{
 			TLSConfig: &tls.Config{
 				// Use only the most secure protocol version.
