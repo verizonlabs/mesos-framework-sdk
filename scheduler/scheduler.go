@@ -50,35 +50,39 @@ func (c *Scheduler) Run() {
 
 // Main event loop that listens on channels forever until framework terminates.
 func (c *Scheduler) listen() {
-	// Use "events" module to hook in functions end user wants to use for each event.
 	for {
 		switch t := <-c.events; t.GetType() {
 		case sched.Event_SUBSCRIBED:
-			go c.handlers.Subscribe()
-			break
-		case sched.Event_HEARTBEAT:
-			go c.handlers.Heartbeat()
+			go c.handlers.Subscribe(t.GetSubscribed())
 			break
 		case sched.Event_ERROR:
-			go c.handlers.Error()
+			go c.handlers.Error(t.GetError())
 			break
 		case sched.Event_FAILURE:
-			go c.handlers.Failure()
+			go c.handlers.Failure(t.GetFailure())
 			break
 		case sched.Event_INVERSE_OFFERS:
-			fmt.Println("Inverse offers event recieved.")
+			go c.handlers.InverseOffer(t.GetInverseOffers())
 			break
 		case sched.Event_MESSAGE:
-			go c.handlers.Message()
+			go c.handlers.Message(t.GetMessage())
 			break
 		case sched.Event_OFFERS:
-			go c.handlers.Offers(t.GetOffers().Offers)
+			go c.handlers.Offers(t.GetOffers())
 			break
 		case sched.Event_RESCIND:
-			go c.handlers.Rescind()
+			go c.handlers.Rescind(t.GetRescind())
 			break
 		case sched.Event_RESCIND_INVERSE_OFFER:
-			fmt.Println("Rescind inverse offer recieved.")
+			go c.handlers.RescindInverseOffer(t.GetRescindInverseOffer())
+			break
+		case sched.Event_UPDATE:
+			go c.handlers.Update(t.GetUpdate())
+			break
+		case sched.Event_HEARTBEAT:
+			break
+		case sched.Event_UNKNOWN:
+			fmt.Println("Unknown event recieved.")
 			break
 		}
 	}

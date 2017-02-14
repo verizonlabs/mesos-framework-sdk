@@ -25,5 +25,4 @@ func main() {
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
 	s := scheduler.NewScheduler(c, frameworkInfo, events.NewSchedulerEvents())
 	s.Run()
-	//s.Subscribe(frameworkInfo)
 }

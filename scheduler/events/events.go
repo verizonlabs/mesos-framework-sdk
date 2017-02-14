@@ -2,7 +2,7 @@ package events
 
 import (
 	"fmt"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/scheduler"
 )
 
 /*
@@ -11,14 +11,15 @@ The events package will hook in how an end user wants to deal with events receiv
 
 // Define the behavior of how an end user will deal with events.
 type SchedulerEvent interface {
-	Subscribe()
-	Offers([]*mesos_v1.Offer)
-	Rescind()
-	Update()
-	Message()
-	Failure()
-	Error()
-	Heartbeat()
+	Subscribe(*mesos_v1_scheduler.Event_Subscribed)
+	Offers(*mesos_v1_scheduler.Event_Offers)
+	Rescind(*mesos_v1_scheduler.Event_Rescind)
+	Update(*mesos_v1_scheduler.Event_Update)
+	Message(*mesos_v1_scheduler.Event_Message)
+	Failure(*mesos_v1_scheduler.Event_Failure)
+	Error(*mesos_v1_scheduler.Event_Error)
+	InverseOffer(*mesos_v1_scheduler.Event_InverseOffers)
+	RescindInverseOffer(*mesos_v1_scheduler.Event_RescindInverseOffer)
 }
 
 // Mock type that satisfies interface.
@@ -29,31 +30,34 @@ func NewSchedulerEvents() *SchedEvent {
 	return &SchedEvent{}
 }
 
-func (s *SchedEvent) Subscribe() {
-
+func (s *SchedEvent) Subscribe(subEvent *mesos_v1_scheduler.Event_Subscribed) {
+	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
 }
-func (s *SchedEvent) Offers(offers []*mesos_v1.Offer) {
+func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 	fmt.Println("Offers event recieved.")
-	for num, offer := range offers {
-		fmt.Printf("Offer number: %v, Offer info: %v", num, offer)
+	for num, offer := range offerEvent.GetOffers() {
+		fmt.Printf("Offer number: %v, Offer info: %v\n", num, offer)
 	}
 
 }
-func (s *SchedEvent) Rescind() {
-	fmt.Println("Rescind event recieved.")
+func (s *SchedEvent) Rescind(rescindEvent *mesos_v1_scheduler.Event_Rescind) {
+	fmt.Printf("Rescind event recieved.: %v\n", *rescindEvent)
 }
-func (s *SchedEvent) Update() {
-
+func (s *SchedEvent) Update(updateEvent *mesos_v1_scheduler.Event_Update) {
+	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
 }
-func (s *SchedEvent) Message() {
-	fmt.Println("Message event recieved.")
+func (s *SchedEvent) Message(msg *mesos_v1_scheduler.Event_Message) {
+	fmt.Printf("Message event recieved: %v\n", *msg)
 }
-func (s *SchedEvent) Failure() {
-	fmt.Println("Failured event recieved.")
+func (s *SchedEvent) Failure(fail *mesos_v1_scheduler.Event_Failure) {
+	fmt.Printf("Failured event recieved: %v\n", *fail)
 }
-func (s *SchedEvent) Error() {
-	fmt.Println("Error event recieved.")
+func (s *SchedEvent) Error(err *mesos_v1_scheduler.Event_Error) {
+	fmt.Printf("Error event recieved: %v\n", err)
 }
-func (s *SchedEvent) Heartbeat() {
-	fmt.Println("Heartbeat event recieved.")
+func (s *SchedEvent) InverseOffer(ioffers *mesos_v1_scheduler.Event_InverseOffers) {
+	fmt.Printf("Inverse Offer event recieved: %v\n", ioffers)
+}
+func (s *SchedEvent) RescindInverseOffer(rioffers *mesos_v1_scheduler.Event_RescindInverseOffer) {
+	fmt.Printf("Rescind Inverse Offer event recieved: %v\n", rioffers)
 }
