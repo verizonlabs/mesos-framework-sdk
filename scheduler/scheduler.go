@@ -15,26 +15,80 @@ const (
 )
 
 type Scheduler struct {
-	FrameworkID mesos.FrameworkID
-	client      *client.Client
-	events      chan *sched.Event
+	FrameworkID  mesos.FrameworkID
+	FramworkInfo *mesos.FrameworkInfo
+	client       *client.Client
+	events       chan *sched.Event
 }
 
-func NewScheduler(c *client.Client) *Scheduler {
+func NewScheduler(c *client.Client, info *mesos.FrameworkInfo) *Scheduler {
 	return &Scheduler{
-		client: c,
-		events: make(chan *sched.Event),
+		client:       c,
+		events:       make(chan *sched.Event),
+		FramworkInfo: info,
 	}
 }
 
+// Events
+func (c *Scheduler) Run() {
+	// If we don't have a framework id, subscribe.
+	if c.FrameworkID.GetValue() == "" {
+		_, err := c.Subscribe()
+		if err != nil {
+			log.Println(err.Error())
+		}
+		c.listen()
+	}
+
+}
+
+// Main event loop that listens on channels forever until framework terminates.
+func (c *Scheduler) listen() {
+	// Use "events" module to hook in functions end user wants to use for each event.
+	for {
+		switch t := <-c.events; t.GetType() {
+		case sched.Event_SUBSCRIBED:
+			fmt.Println("Heartbeat event recieved.")
+			break
+		case sched.Event_HEARTBEAT:
+			fmt.Println("Heartbeat event recieved.")
+			break
+		case sched.Event_ERROR:
+			fmt.Println("Error event recieved.")
+			break
+		case sched.Event_FAILURE:
+			fmt.Println("Failured event recieved.")
+			break
+		case sched.Event_INVERSE_OFFERS:
+			fmt.Println("Inverse offers event recieved.")
+			break
+		case sched.Event_MESSAGE:
+			fmt.Println("Message event recieved.")
+			break
+		case sched.Event_OFFERS:
+			fmt.Println("Offers event recieved.")
+			fmt.Println(t.GetOffers())
+			break
+		case sched.Event_RESCIND:
+			fmt.Println("Rescind event recieved.")
+			break
+		case sched.Event_RESCIND_INVERSE_OFFER:
+			fmt.Println("Rescind inverse offer recieved.")
+			break
+		}
+	}
+
+}
+
+// Calls
 // Create a Subscription to mesos.
-func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched.Event, error) {
+func (c *Scheduler) Subscribe() (<-chan *sched.Event, error) {
 	// We really want the ID after the call...
 	call := &sched.Call{
-		FrameworkId: frameworkInfo.GetId(),
+		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_SUBSCRIBE.Enum(),
 		Subscribe: &sched.Call_Subscribe{
-			FrameworkInfo: frameworkInfo,
+			FrameworkInfo: c.FramworkInfo,
 		},
 	}
 
@@ -44,8 +98,6 @@ func (c *Scheduler) Subscribe(frameworkInfo *mesos.FrameworkInfo) (<-chan *sched
 			if err != nil {
 				log.Println(err.Error())
 			} else {
-
-				// We're connected, start decoding events.
 				log.Println(events.Loop(resp.Body, c.events))
 			}
 

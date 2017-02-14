@@ -20,7 +20,7 @@ func main() {
 	}
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
-	s := scheduler.NewScheduler(c)
-	s.Subscribe(frameworkInfo)
-	s.Teardown()
+	s := scheduler.NewScheduler(c, frameworkInfo)
+	s.Run()
+	//s.Subscribe(frameworkInfo)
 }
