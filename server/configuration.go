@@ -26,7 +26,7 @@ type ServerConfiguration struct {
 }
 
 // Applies values to the various configurations from user-supplied flags.
-func NewConfiguration(cert, key, path string, port int) *ServerConfiguration {
+func NewConfiguration(cert, key, path string, port int) Configuration {
 	return &ServerConfiguration{
 		cert: cert,
 		key:  key,
