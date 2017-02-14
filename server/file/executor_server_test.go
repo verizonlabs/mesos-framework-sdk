@@ -13,10 +13,6 @@ type mockConfiguration struct {
 	cfg server.ServerConfiguration
 }
 
-func (m *mockConfiguration) Initialize() *server.ServerConfiguration {
-	return m.cfg.Initialize()
-}
-
 func (m *mockConfiguration) Cert() string {
 	return m.cfg.Cert()
 }
@@ -33,14 +29,25 @@ func (m *mockConfiguration) Server() *http.Server {
 	return m.cfg.Server()
 }
 
-var cfg server.Configuration = new(mockConfiguration).Initialize()
+func (m *mockConfiguration) Port() int {
+	return m.cfg.Port()
+}
+
+func (m *mockConfiguration) Path() string {
+	return m.cfg.Path()
+}
+
+func (m *mockConfiguration) TLS() bool {
+	return m.cfg.TLS()
+}
+
+var cfg server.Configuration = new(mockConfiguration)
 var srv *executorServer = NewExecutorServer(cfg)
 
 // Make sure we get the right type for our executor server.
 func TestNewExecutorServer(t *testing.T) {
 	t.Parallel()
 
-	path := "executor"
 	cert := ""
 	key := ""
 
@@ -48,9 +55,6 @@ func TestNewExecutorServer(t *testing.T) {
 		t.Fatal("Executor server is of the wrong type")
 	}
 
-	if *srv.path != path {
-		t.Fatal("Executor server path was not set correctly")
-	}
 	if srv.cfg.Cert() != cert {
 		t.Fatal("Executor server certificate was not set correctly")
 	}
