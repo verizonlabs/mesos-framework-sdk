@@ -39,7 +39,7 @@ func NewScheduler(c *client.Client, info *mesos.FrameworkInfo, handlers events.S
 func (c *Scheduler) Run() {
 	// If we don't have a framework id, subscribe.
 	if c.FramworkInfo.GetId().GetValue() == "" {
-		_, err := c.Subscribe()
+		err := c.Subscribe()
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -91,8 +91,7 @@ func (c *Scheduler) listen() {
 }
 
 // Make a subscription call to mesos.
-func (c *Scheduler) Subscribe() (<-chan *sched.Event, error) {
-	// We really want the ID after the call...
+func (c *Scheduler) Subscribe() error {
 	call := &sched.Call{
 		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_SUBSCRIBE.Enum(),
@@ -100,12 +99,12 @@ func (c *Scheduler) Subscribe() (<-chan *sched.Event, error) {
 			FrameworkInfo: c.FramworkInfo,
 		},
 	}
-
 	go func() {
 		for {
 			resp, err := c.client.Request(call)
 			if err != nil {
 				log.Println(err.Error())
+				return
 			} else {
 				log.Println(recordio.Decode(resp.Body, c.events))
 			}
@@ -117,7 +116,7 @@ func (c *Scheduler) Subscribe() (<-chan *sched.Event, error) {
 		}
 	}()
 
-	return c.events, nil
+	return nil
 }
 
 // Send a teardown request to mesos master.
