@@ -26,10 +26,12 @@ type ServerConfiguration struct {
 }
 
 // Applies values to the various configurations from user-supplied flags.
-func NewConfiguration(cert, key string) *ServerConfiguration {
+func NewConfiguration(cert, key, path string, port int) *ServerConfiguration {
 	return &ServerConfiguration{
 		cert: cert,
 		key:  key,
+		path: path,
+		port: port,
 		server: &http.Server{
 			TLSConfig: &tls.Config{
 				// Use only the most secure protocol version.
