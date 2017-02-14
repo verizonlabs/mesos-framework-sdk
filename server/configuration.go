@@ -10,6 +10,8 @@ type Configuration interface {
 	Initialize() *ServerConfiguration
 	Cert() string
 	Key() string
+	Port() int
+	Path() string
 	Protocol() string
 	Server() *http.Server
 	TLS() bool
@@ -19,6 +21,7 @@ type Configuration interface {
 type ServerConfiguration struct {
 	cert   string
 	key    string
+	port   int
 	path   string
 	server *http.Server
 	tls    bool
@@ -76,4 +79,14 @@ func (c *ServerConfiguration) Server() *http.Server {
 // If a TLS certificate and key have been provided then TLS is enabled.
 func (c *ServerConfiguration) TLS() bool {
 	return c.cert != "" && c.key != ""
+}
+
+// Returns the port that the server listens on.
+func (c *ServerConfiguration) Port() int {
+	return c.port
+}
+
+// Returns the path that specifies where the executor is located on the host.
+func (c *ServerConfiguration) Path() {
+	return c.path
 }
