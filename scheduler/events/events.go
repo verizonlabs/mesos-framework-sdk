@@ -1,42 +1,54 @@
 package events
 
 import (
-	sched "mesos-framework-sdk/include/scheduler"
-	"net/http"
+	"fmt"
 )
 
-type SchedEvents struct {
-	Handlers map[sched.Event_Type]http.HandlerFunc
+/*
+The events package will hook in how an end user wants to deal with events received by the scheduler.
+*/
+
+// Define the behavior of how an end user will deal with events.
+type SchedulerEvent interface {
+	Subscribe()
+	Offers()
+	Rescind()
+	Update()
+	Message()
+	Failure()
+	Error()
+	Heartbeat()
 }
 
-func (e *SchedEvents) Subscribed() {
-
+// Mock type that satisfies interface.
+type SchedEvent struct {
 }
 
-func (e *SchedEvents) Offers() {
-
+func NewSchedulerEvents() *SchedEvent {
+	return &SchedEvent{}
 }
 
-func (e *SchedEvents) Rescind() {
+func (s *SchedEvent) Subscribe() {
 
 }
-
-func (e *SchedEvents) Update() {
+func (s *SchedEvent) Offers() {
+	fmt.Println("Offers event recieved.")
+}
+func (s *SchedEvent) Rescind() {
+	fmt.Println("Rescind event recieved.")
+}
+func (s *SchedEvent) Update() {
 
 }
-
-func (e *SchedEvents) Message() {
-
+func (s *SchedEvent) Message() {
+	fmt.Println("Message event recieved.")
 }
-
-func (e *SchedEvents) Failure() {
-
+func (s *SchedEvent) Failure() {
+	fmt.Println("Failured event recieved.")
 }
-
-func (e *SchedEvents) Error() {
-
+func (s *SchedEvent) Error() {
+	fmt.Println("Error event recieved.")
 }
-
-func (e *SchedEvents) Heartbeat() {
-
+func (s *SchedEvent) Heartbeat() {
+	fmt.Println("Heartbeat event recieved.")
 }

@@ -5,6 +5,7 @@ import (
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/scheduler"
+	"mesos-framework-sdk/scheduler/events"
 	"time"
 )
 
@@ -20,7 +21,7 @@ func main() {
 	}
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
-	s := scheduler.NewScheduler(c, frameworkInfo)
+	s := scheduler.NewScheduler(c, frameworkInfo, events.NewSchedulerEvents())
 	s.Run()
 	//s.Subscribe(frameworkInfo)
 }
