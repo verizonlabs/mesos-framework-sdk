@@ -1,28 +1,15 @@
 package server
 
 import (
+	"log"
 	"net/http"
-	"time"
 )
 
-type SimpleServer struct {
-}
+/*
+Simple server is a basic server that will support serving up executor artifacts onto a cluster.
+*/
 
-func ServerFile(w http.ResponseWriter, r *http.Request) {
-	func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "../foo/bar.css")
-	}
-}
-
-func NewServer(endpoint string) *http.Server {
-	http.Handle("/"+endpoint,
-		func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "")
-		})
-	return &http.Server{
-		Addr:         "10.0.2.15",
-		Handler:      handler,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-	}
+// Pass in end point, port, path of the executor.
+func NewServer(endpoint, port, path string) {
+	log.Fatal(http.ListenAndServe(port, http.FileServer(http.Dir(path))))
 }

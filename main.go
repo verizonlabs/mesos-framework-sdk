@@ -5,6 +5,7 @@ import (
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/scheduler"
+	"mesos-framework-sdk/scheduler/events"
 	"time"
 )
 
@@ -18,9 +19,10 @@ func main() {
 		Hostname:        proto.String(""),
 		Principal:       proto.String(""),
 	}
+	// We can simply serve a file using the server here.
+	//go server.NewServer("executor", ":8080", "/tmp/executor")
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
-	s := scheduler.NewScheduler(c)
-	s.Subscribe(frameworkInfo)
-	s.Teardown()
+	s := scheduler.NewScheduler(c, frameworkInfo, events.NewSchedulerEvents())
+	s.Run()
 }
