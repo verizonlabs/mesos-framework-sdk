@@ -10,6 +10,7 @@ import (
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/recordio"
 	"mesos-framework-sdk/scheduler/events"
 	"time"
 )
@@ -106,7 +107,7 @@ func (c *Scheduler) Subscribe() (<-chan *sched.Event, error) {
 			if err != nil {
 				log.Println(err.Error())
 			} else {
-				log.Println(events.Loop(resp.Body, c.events))
+				log.Println(recordio.Decode(resp.Body, c.events))
 			}
 
 			// If we disconnect we need to reset the stream ID.

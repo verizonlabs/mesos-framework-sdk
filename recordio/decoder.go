@@ -1,4 +1,4 @@
-package events
+package recordio
 
 import (
 	"bufio"
@@ -10,9 +10,8 @@ import (
 	"strings"
 )
 
-// TODO @Aaron I would let this method only handle decoding recordio and sending data back to the channel.
-// We can probably just name is "recordio decoder" or something similar.
-func Loop(data io.ReadCloser, events chan<- *sched.Event) error {
+// Decode continually reads and constructs events from the Mesos stream.
+func Decode(data io.ReadCloser, events chan<- *sched.Event) error {
 	var event sched.Event
 	reader := bufio.NewReader(data)
 
