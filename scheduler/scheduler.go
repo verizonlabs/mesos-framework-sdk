@@ -72,7 +72,7 @@ func (c *Scheduler) listen() {
 			go c.handlers.Message()
 			break
 		case sched.Event_OFFERS:
-			go c.handlers.Offers()
+			go c.handlers.Offers(t.GetOffers().Offers)
 			break
 		case sched.Event_RESCIND:
 			go c.handlers.Rescind()

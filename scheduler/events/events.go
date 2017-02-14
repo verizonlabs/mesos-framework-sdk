@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"mesos-framework-sdk/include/mesos"
 )
 
 /*
@@ -11,7 +12,7 @@ The events package will hook in how an end user wants to deal with events receiv
 // Define the behavior of how an end user will deal with events.
 type SchedulerEvent interface {
 	Subscribe()
-	Offers()
+	Offers([]*mesos_v1.Offer)
 	Rescind()
 	Update()
 	Message()
@@ -31,8 +32,12 @@ func NewSchedulerEvents() *SchedEvent {
 func (s *SchedEvent) Subscribe() {
 
 }
-func (s *SchedEvent) Offers() {
+func (s *SchedEvent) Offers(offers []*mesos_v1.Offer) {
 	fmt.Println("Offers event recieved.")
+	for num, offer := range offers {
+		fmt.Printf("Offer number: %v, Offer info: %v", num, offer)
+	}
+
 }
 func (s *SchedEvent) Rescind() {
 	fmt.Println("Rescind event recieved.")

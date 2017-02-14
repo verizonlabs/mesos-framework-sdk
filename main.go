@@ -19,6 +19,8 @@ func main() {
 		Hostname:        proto.String(""),
 		Principal:       proto.String(""),
 	}
+	// We can simply serve a file using the server here.
+	//go server.NewServer("executor", ":8080", "/tmp/executor")
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
 	s := scheduler.NewScheduler(c, frameworkInfo, events.NewSchedulerEvents())
