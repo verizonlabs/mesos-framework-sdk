@@ -25,7 +25,7 @@ type ServerConfiguration struct {
 	tls    bool
 }
 
-// Applies values to the various configurations from user-supplied flags.
+// Creates a new configuration to be used in the server.
 func NewConfiguration(cert, key, path string, port int) Configuration {
 	return &ServerConfiguration{
 		cert: cert,
