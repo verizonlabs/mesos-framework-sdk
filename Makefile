@@ -1,4 +1,4 @@
-.PHONY: protos
+.PHONY: test test-race bench protos
 
 PROTO_PATH := ${GOPATH}/src
 
