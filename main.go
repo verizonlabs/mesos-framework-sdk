@@ -23,6 +23,6 @@ func main() {
 	//go server.NewServer("executor", ":8080", "/tmp/executor")
 
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
-	s := scheduler.NewScheduler(c, frameworkInfo, events.NewSchedulerEvents())
+	s := scheduler.NewDefaultScheduler(c, frameworkInfo, events.NewSchedulerEvents())
 	s.Run()
 }
