@@ -6,10 +6,17 @@ Executor interface and default executor implementation is defined here.
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"log"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/executor/events"
 	exec "mesos-framework-sdk/include/executor"
 	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/recordio"
+	"time"
+)
+
+const (
+	subscribeRetry = 2
 )
 
 type Executor interface {
@@ -43,7 +50,10 @@ func NewDefaultExecutor(c *client.Client) *DefaultExecutor {
 }
 
 func (d *DefaultExecutor) Run() {
-	go d.listen()
+	if d.frameworkID.GetValue() == "" {
+		d.Subscribe()
+	}
+	d.listen()
 }
 
 // Default listening method on the
@@ -97,7 +107,22 @@ func (d *DefaultExecutor) Subscribe() {
 		ExecutorId:  d.executorID,
 		Type:        exec.Call_SUBSCRIBE.Enum(),
 	}
-	d.client.Request(subscribe)
+
+	go func() {
+		for {
+			resp, err := d.client.Request(subscribe)
+			if err != nil {
+				log.Println(err.Error())
+			} else {
+				log.Println(recordio.Decode(resp.Body, d.events))
+			}
+
+			// If we disconnect we need to reset the stream ID.
+			// Otherwise we'll never be able to reconnect.
+			d.client.StreamID = ""
+			time.Sleep(time.Duration(subscribeRetry) * time.Second)
+		}
+	}()
 }
 
 func (d *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
