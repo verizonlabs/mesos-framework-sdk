@@ -51,28 +51,29 @@ func (d *DefaultExecutor) listen() {
 	for {
 		switch t := <-d.events; t.GetType() {
 		case exec.Event_SUBSCRIBED:
+			d.frameworkID = t.GetSubscribed().GetFrameworkInfo().GetId()
 			go d.handlers.Subscribed()
 			break
 		case exec.Event_ACKNOWLEDGED:
-			go d.handlers.Acknowledged()
+			go d.handlers.Acknowledged(t.GetAcknowledged())
 			break
 		case exec.Event_MESSAGE:
-			go d.handlers.Message()
+			go d.handlers.Message(t.GetMessage())
 			break
 		case exec.Event_KILL:
-			go d.handlers.Kill()
+			go d.handlers.Kill(t.GetKill())
 			break
 		case exec.Event_LAUNCH:
-			go d.handlers.Launch()
+			go d.handlers.Launch(t.GetLaunch())
 			break
 		case exec.Event_LAUNCH_GROUP:
-			go d.handlers.LaunchGroup()
+			go d.handlers.LaunchGroup(t.GetLaunchGroup())
 			break
 		case exec.Event_SHUTDOWN:
 			go d.handlers.Shutdown()
 			break
 		case exec.Event_ERROR:
-			go d.handlers.Error()
+			go d.handlers.Error(t.GetError())
 			break
 		case exec.Event_UNKNOWN:
 			fmt.Println("Unknown event caught.")
@@ -109,8 +110,8 @@ func (d *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
 		},
 	}
 	d.client.Request(update)
-
 }
+
 func (d *DefaultExecutor) Message(data []byte) {
 	message := exec.Call{
 		FrameworkId: d.frameworkID,
@@ -121,5 +122,4 @@ func (d *DefaultExecutor) Message(data []byte) {
 		},
 	}
 	d.client.Request(message)
-
 }
