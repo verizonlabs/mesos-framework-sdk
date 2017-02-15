@@ -13,6 +13,7 @@ End users should only create their own scheduler if they wish to change the beha
 */
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
@@ -74,6 +75,23 @@ func (c *DefaultScheduler) Run() {
 	}
 	// Otherwise we're already connected. Just listen for events.
 	c.listen()
+}
+
+// Create n default executors and launch them.
+func (c *DefaultScheduler) launchExecutors(num int) {
+	var executors []*mesos.ExecutorInfo
+	for i := 0; i < num; i++ {
+		execInfo := mesos.ExecutorInfo{
+			ExecutorId:  mesos.ExecutorID{Value: proto.String("")},
+			Type:        mesos.ExecutorInfo_Type.Enum(),
+			FrameworkId: c.FramworkInfo.GetId(),
+			Command: mesos.CommandInfo{
+				Uris: mesos.CommandInfo_URI{Value: proto.String("http://localhost:8080/executor")},
+			},
+		}
+		executors = append(executors, execInfo)
+	}
+	// Launch tasks.
 }
 
 // Main event loop that listens on channels forever until framework terminates.
