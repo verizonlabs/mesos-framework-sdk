@@ -20,6 +20,7 @@ type Executor interface {
 	Subscribe()
 	Update(taskStatus *mesos_v1.TaskStatus)
 	Message(data []byte)
+	Run()
 }
 
 type DefaultExecutor struct {
@@ -39,6 +40,10 @@ func NewDefaultExecutor(c *client.Client) *DefaultExecutor {
 		events:      make(chan *exec.Event),
 	}
 
+}
+
+func (d *DefaultExecutor) Run() {
+	go d.listen()
 }
 
 // Default listening method on the
