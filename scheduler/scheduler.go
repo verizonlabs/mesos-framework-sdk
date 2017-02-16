@@ -14,6 +14,7 @@ End users should only create their own scheduler if they wish to change the beha
 import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"io/ioutil"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
@@ -73,47 +74,31 @@ func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo, event chan
 func (c *DefaultScheduler) Run() {
 	// If we don't have a framework id, subscribe.
 	if c.FramworkInfo.GetId().GetValue() == "" {
+		fmt.Println("subscribing...")
 		err := c.Subscribe()
 		if err != nil {
 			log.Println(err.Error())
 		}
-		c.launchExecutors(5)
+		c.launchExecutors(1)
 		c.listen()
 		return
 	}
 	// Otherwise we're already connected. Just listen for events.
 	c.listen()
-	return
 }
 
 // Create n default executors and launch them.
 func (c *DefaultScheduler) launchExecutors(num int) {
-	var resources []*mesos.Resource
-
-	resources = append(resources, &mesos.Resource{
-		Name: proto.String("cpu"),
-		Type: mesos.Value_SCALAR.Enum(),
-		Scalar: &mesos.Value_Scalar{
-			Value: proto.Float64(1.0),
-		},
-	})
-	resources = append(resources, &mesos.Resource{
-		Name: proto.String("mem"),
-		Type: mesos.Value_SCALAR.Enum(),
-		Scalar: &mesos.Value_Scalar{
-			Value: proto.Float64(128.0),
-		},
-	})
 
 	for i := 0; i < num; i++ {
 		// Add tasks to task manager
-		c.manager.Add(&mesos.Task{
-			Name:      proto.String("Sprint_" + strconv.Itoa(i)),
-			TaskId:    &mesos.TaskID{Value: proto.String(strconv.Itoa(i))},
-			AgentId:   &mesos.AgentID{Value: proto.String("")},
-			Resources: resources,
-			State:     mesos.TaskState_TASK_STAGING.Enum(),
-		})
+		task := mesos.Task{
+			Name:    proto.String("Sprint_" + strconv.Itoa(i)),
+			TaskId:  &mesos.TaskID{Value: proto.String(strconv.Itoa(i))},
+			AgentId: &mesos.AgentID{Value: proto.String("")},
+			State:   mesos.TaskState_TASK_STAGING.Enum(),
+		}
+		c.manager.Add(&task)
 
 	}
 
@@ -121,12 +106,12 @@ func (c *DefaultScheduler) launchExecutors(num int) {
 
 // Main event loop that listens on channels forever until framework terminates.
 func (c *DefaultScheduler) listen() {
-	fmt.Println("listening.")
 	for {
 		select {
 		case t := <-c.events:
 			switch t.GetType() {
 			case sched.Event_SUBSCRIBED:
+				fmt.Println("Subscribe event.")
 				go c.handlers.Subscribe(t.GetSubscribed())
 			case sched.Event_ERROR:
 				go c.handlers.Error(t.GetError())
@@ -153,8 +138,9 @@ func (c *DefaultScheduler) listen() {
 		case k := <-c.calls:
 			switch k.GetType() {
 			case sched.Call_ACCEPT:
-				fmt.Println("Call for accept recieved.")
-				fmt.Println(k.GetAccept())
+				accept := k.GetAccept()
+				c.FramworkInfo.Id = k.FrameworkId
+				c.Accept(accept.OfferIds, accept.Operations, accept.Filters)
 			case sched.Call_ACCEPT_INVERSE_OFFERS:
 			case sched.Call_ACKNOWLEDGE:
 			case sched.Call_DECLINE:
@@ -164,6 +150,8 @@ func (c *DefaultScheduler) listen() {
 			case sched.Call_RECONCILE:
 			case sched.Call_REVIVE:
 			case sched.Call_SUBSCRIBE:
+				fmt.Println("in subscribe call switch")
+				c.FramworkInfo = k.GetSubscribe().GetFrameworkInfo()
 			case sched.Call_SUPPRESS:
 			case sched.Call_SHUTDOWN:
 			case sched.Call_TEARDOWN:
@@ -177,18 +165,19 @@ func (c *DefaultScheduler) listen() {
 // Make a subscription call to mesos.
 func (c *DefaultScheduler) Subscribe() error {
 	call := &sched.Call{
-		FrameworkId: c.FramworkInfo.GetId(),
-		Type:        sched.Call_SUBSCRIBE.Enum(),
+		Type: sched.Call_SUBSCRIBE.Enum(),
 		Subscribe: &sched.Call_Subscribe{
 			FrameworkInfo: c.FramworkInfo,
 		},
 	}
 	go func() {
 		for {
+			fmt.Println("Trying to sub....")
 			resp, err := c.client.Request(call)
 			if err != nil {
 				log.Println(err.Error())
 			} else {
+				fmt.Println("Connected.")
 				log.Println(recordio.Decode(resp.Body, c.events))
 			}
 
@@ -198,7 +187,6 @@ func (c *DefaultScheduler) Subscribe() error {
 			time.Sleep(time.Duration(subscribeRetry) * time.Second)
 		}
 	}()
-
 	return nil
 }
 
@@ -212,22 +200,31 @@ func (c *DefaultScheduler) Teardown() {
 	if err != nil {
 		log.Println(err.Error())
 	}
+
 	fmt.Println(resp)
 }
 
 // Accepts offers from mesos master
 func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters) {
+	fmt.Println("IN ACCEPT ID")
+	fmt.Println(c.FramworkInfo.GetId())
 	accept := &sched.Call{
 		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_ACCEPT.Enum(),
-		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
+		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks},
 	}
 
 	resp, err := c.client.Request(accept)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
+
+	k, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Println(string(k))
+
 }
 
 func (c *DefaultScheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Filters) {

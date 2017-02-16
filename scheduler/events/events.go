@@ -2,6 +2,7 @@ package events
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/task_manager"
@@ -26,6 +27,7 @@ type SchedulerEvent interface {
 
 // Mock type that satisfies interface.
 type SchedEvent struct {
+	frameworkId *mesos_v1.FrameworkID
 	taskmanager task_manager.TaskManager
 	channel     chan *mesos_v1_scheduler.Call // Channel used to talk to scheduler for making calls.
 }
@@ -39,6 +41,7 @@ func NewSchedulerEvents(manager task_manager.TaskManager, callChan chan *mesos_v
 
 func (s *SchedEvent) Subscribe(subEvent *mesos_v1_scheduler.Event_Subscribed) {
 	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
+	s.frameworkId = subEvent.GetFrameworkId()
 }
 
 func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
@@ -49,21 +52,24 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 		fmt.Printf("Offer number: %v, Offer info: %v\n", num, offer)
 		offerIDs = append(offerIDs, offer.GetId())
 	}
-	fmt.Println(s.taskmanager.HasQueuedTasks())
+
 	// Check task manager for any active tasks.
-	if s.taskmanager.HasQueuedTasks() {
+	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
 		var taskList []*mesos_v1.TaskInfo
-		// If it does, tell the scheduler to launch the tasks.
 
 		// Create the task infos
 		// TODO have task manager convert Task -> TaskInfo
-		for _, task := range s.taskmanager.Tasks() {
+		for i, task := range s.taskmanager.Tasks() {
 			t := &mesos_v1.TaskInfo{
 				Name:      task.Name,
 				TaskId:    task.TaskId,
-				AgentId:   task.AgentId,
-				Resources: task.Resources,
-				Container: task.Container,
+				AgentId:   offerEvent.Offers[0].AgentId,
+				Resources: offerEvent.Offers[0].Resources,
+				Executor: &mesos_v1.ExecutorInfo{
+					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String(i)},
+					FrameworkId: s.frameworkId,
+					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 500")},
+				},
 			}
 			taskList = append(taskList, t)
 		}
@@ -74,10 +80,10 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 
 		operations = append(operations, offer)
 		// Write the call to the scheduler.
-		fmt.Println("Writing to the call channel.")
 		go func() {
 			s.channel <- &mesos_v1_scheduler.Call{
-				Type: mesos_v1_scheduler.Call_ACCEPT.Enum(),
+				FrameworkId: s.frameworkId,
+				Type:        mesos_v1_scheduler.Call_ACCEPT.Enum(),
 				Accept: &mesos_v1_scheduler.Call_Accept{
 					OfferIds:   offerIDs,
 					Operations: operations,
