@@ -20,6 +20,8 @@ import (
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/recordio"
 	"mesos-framework-sdk/scheduler/events"
+	"mesos-framework-sdk/task_manager"
+	"strconv"
 	"time"
 )
 
@@ -51,15 +53,19 @@ type DefaultScheduler struct {
 	FramworkInfo *mesos.FrameworkInfo
 	client       *client.Client
 	events       chan *sched.Event
+	calls        chan *sched.Call
 	handlers     events.SchedulerEvent
+	manager      task_manager.TaskManager
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo, handlers events.SchedulerEvent) *DefaultScheduler {
+func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo, event chan *sched.Event, callChan chan *sched.Call, manager task_manager.TaskManager, handlers events.SchedulerEvent) *DefaultScheduler {
 	return &DefaultScheduler{
 		client:       c,
-		events:       make(chan *sched.Event),
+		events:       event,
+		calls:        callChan,
 		FramworkInfo: info,
 		handlers:     handlers,
+		manager:      manager,
 	}
 }
 
@@ -71,68 +77,101 @@ func (c *DefaultScheduler) Run() {
 		if err != nil {
 			log.Println(err.Error())
 		}
+		c.launchExecutors(5)
 		c.listen()
+		return
 	}
 	// Otherwise we're already connected. Just listen for events.
 	c.listen()
+	return
 }
 
 // Create n default executors and launch them.
 func (c *DefaultScheduler) launchExecutors(num int) {
-	var executors []*mesos.ExecutorInfo
+	var resources []*mesos.Resource
+
+	resources = append(resources, &mesos.Resource{
+		Name: proto.String("cpu"),
+		Type: mesos.Value_SCALAR.Enum(),
+		Scalar: &mesos.Value_Scalar{
+			Value: proto.Float64(1.0),
+		},
+	})
+	resources = append(resources, &mesos.Resource{
+		Name: proto.String("mem"),
+		Type: mesos.Value_SCALAR.Enum(),
+		Scalar: &mesos.Value_Scalar{
+			Value: proto.Float64(128.0),
+		},
+	})
+
 	for i := 0; i < num; i++ {
-		execInfo := mesos.ExecutorInfo{
-			ExecutorId:  mesos.ExecutorID{Value: proto.String("")},
-			Type:        mesos.ExecutorInfo_Type.Enum(),
-			FrameworkId: c.FramworkInfo.GetId(),
-			Command: mesos.CommandInfo{
-				Uris: mesos.CommandInfo_URI{Value: proto.String("http://localhost:8080/executor")},
-			},
-		}
-		executors = append(executors, execInfo)
+		// Add tasks to task manager
+		c.manager.Add(&mesos.Task{
+			Name:      proto.String("Sprint_" + strconv.Itoa(i)),
+			TaskId:    &mesos.TaskID{Value: proto.String(strconv.Itoa(i))},
+			AgentId:   &mesos.AgentID{Value: proto.String("")},
+			Resources: resources,
+			State:     mesos.TaskState_TASK_STAGING.Enum(),
+		})
+
 	}
-	// Launch tasks.
+
 }
 
 // Main event loop that listens on channels forever until framework terminates.
 func (c *DefaultScheduler) listen() {
+	fmt.Println("listening.")
 	for {
-		switch t := <-c.events; t.GetType() {
-		case sched.Event_SUBSCRIBED:
-			go c.handlers.Subscribe(t.GetSubscribed())
-			break
-		case sched.Event_ERROR:
-			go c.handlers.Error(t.GetError())
-			break
-		case sched.Event_FAILURE:
-			go c.handlers.Failure(t.GetFailure())
-			break
-		case sched.Event_INVERSE_OFFERS:
-			go c.handlers.InverseOffer(t.GetInverseOffers())
-			break
-		case sched.Event_MESSAGE:
-			go c.handlers.Message(t.GetMessage())
-			break
-		case sched.Event_OFFERS:
-			go c.handlers.Offers(t.GetOffers())
-			break
-		case sched.Event_RESCIND:
-			go c.handlers.Rescind(t.GetRescind())
-			break
-		case sched.Event_RESCIND_INVERSE_OFFER:
-			go c.handlers.RescindInverseOffer(t.GetRescindInverseOffer())
-			break
-		case sched.Event_UPDATE:
-			go c.handlers.Update(t.GetUpdate())
-			break
-		case sched.Event_HEARTBEAT:
-			break
-		case sched.Event_UNKNOWN:
-			fmt.Println("Unknown event recieved.")
-			break
+		select {
+		case t := <-c.events:
+			switch t.GetType() {
+			case sched.Event_SUBSCRIBED:
+				go c.handlers.Subscribe(t.GetSubscribed())
+			case sched.Event_ERROR:
+				go c.handlers.Error(t.GetError())
+			case sched.Event_FAILURE:
+				go c.handlers.Failure(t.GetFailure())
+			case sched.Event_INVERSE_OFFERS:
+				go c.handlers.InverseOffer(t.GetInverseOffers())
+			case sched.Event_MESSAGE:
+				go c.handlers.Message(t.GetMessage())
+			case sched.Event_OFFERS:
+				log.Println("Offers...")
+				go c.handlers.Offers(t.GetOffers())
+			case sched.Event_RESCIND:
+				go c.handlers.Rescind(t.GetRescind())
+			case sched.Event_RESCIND_INVERSE_OFFER:
+				go c.handlers.RescindInverseOffer(t.GetRescindInverseOffer())
+			case sched.Event_UPDATE:
+				go c.handlers.Update(t.GetUpdate())
+			case sched.Event_HEARTBEAT:
+			case sched.Event_UNKNOWN:
+				fmt.Println("Unknown event recieved.")
+			default:
+			}
+		case k := <-c.calls:
+			switch k.GetType() {
+			case sched.Call_ACCEPT:
+				fmt.Println("Call for accept recieved.")
+				fmt.Println(k.GetAccept())
+			case sched.Call_ACCEPT_INVERSE_OFFERS:
+			case sched.Call_ACKNOWLEDGE:
+			case sched.Call_DECLINE:
+			case sched.Call_DECLINE_INVERSE_OFFERS:
+			case sched.Call_MESSAGE:
+			case sched.Call_KILL:
+			case sched.Call_RECONCILE:
+			case sched.Call_REVIVE:
+			case sched.Call_SUBSCRIBE:
+			case sched.Call_SUPPRESS:
+			case sched.Call_SHUTDOWN:
+			case sched.Call_TEARDOWN:
+			default:
+
+			}
 		}
 	}
-
 }
 
 // Make a subscription call to mesos.

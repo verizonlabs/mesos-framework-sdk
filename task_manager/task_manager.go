@@ -5,19 +5,19 @@ import (
 )
 
 type TaskManager interface {
-	Add(task mesos_v1.Task)
-	Delete(id mesos_v1.TaskID)
+	Add(task *mesos_v1.Task)
+	Delete(id *mesos_v1.TaskID)
 	SetTaskState(task *mesos_v1.Task, state *mesos_v1.TaskState) error
 	IsTaskInState(task *mesos_v1.Task, state *mesos_v1.TaskState) (bool, error)
-	HasTask(task mesos_v1.Task) bool
+	HasTask(task *mesos_v1.Task) bool
 	HasQueuedTasks() bool
 	TotalTasks() int
-	Tasks() map[mesos_v1.TaskID]mesos_v1.Task
+	Tasks() map[string]mesos_v1.Task
 }
 
 type DefaultTaskManager struct {
 	totalTasks int
-	tasks      map[mesos_v1.TaskID]mesos_v1.Task
+	tasks      map[string]mesos_v1.Task
 }
 
 func NewDefaultTaskManager() *DefaultTaskManager {
@@ -26,37 +26,40 @@ func NewDefaultTaskManager() *DefaultTaskManager {
 
 // Provision a task
 func (m *DefaultTaskManager) Add(task *mesos_v1.Task) {
-	m.tasks[task.GetTaskId()] = task
+	m.tasks[task.GetTaskId().GetValue()] = *task
 }
 
 // Delete a task
 func (m *DefaultTaskManager) Delete(id *mesos_v1.TaskID) {
-	delete(m.tasks, id)
+	delete(m.tasks, id.GetValue())
 }
 
 // Set a task status
 func (m *DefaultTaskManager) SetTaskState(task *mesos_v1.Task, state *mesos_v1.TaskState) error {
 	task.State = state
-	m.tasks[task.TaskId()] = task
+	m.tasks[task.GetTaskId().GetValue()] = *task
 	return nil
 }
 
 // Check if a task has a particular status.
 func (m *DefaultTaskManager) IsTaskInState(task *mesos_v1.Task, state *mesos_v1.TaskState) (bool, error) {
-	if _, ok := m.tasks[task.GetTaskId()]; !ok {
+	if _, ok := m.tasks[task.GetTaskId().GetValue()]; !ok {
 		return false, nil
 	}
 	return task.GetState().Enum() == state, nil
 }
 
 // Check if the task is already in the task manager.
-func (m *DefaultTaskManager) HasTask(task mesos_v1.Task) bool {
-	return m.tasks[task.GetTaskId()]
+func (m *DefaultTaskManager) HasTask(task *mesos_v1.Task) bool {
+	if _, ok := m.tasks[task.GetTaskId().GetValue()]; ok {
+		return true
+	}
+	return false
 }
 
 // Check if we have tasks left to execute.
 func (m *DefaultTaskManager) HasQueuedTasks() bool {
-	return !(len(m.tasks) == 0), nil
+	return !(len(m.tasks) == 0)
 }
 
 func (m *DefaultTaskManager) Tasks() map[string]mesos_v1.Task {
