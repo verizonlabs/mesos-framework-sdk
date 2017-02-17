@@ -143,6 +143,9 @@ func (c *DefaultScheduler) listen() {
 				c.Accept(accept.OfferIds, accept.Operations, accept.Filters)
 			case sched.Call_ACCEPT_INVERSE_OFFERS:
 			case sched.Call_ACKNOWLEDGE:
+				fmt.Println("Acknowledging")
+				ack := k.GetAcknowledge()
+				c.Acknowledge(ack.GetAgentId(), ack.GetTaskId(), ack.GetUuid())
 			case sched.Call_DECLINE:
 			case sched.Call_DECLINE_INVERSE_OFFERS:
 			case sched.Call_MESSAGE:
@@ -217,8 +220,8 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offe
 	resp, err := c.client.Request(accept)
 	if err != nil {
 		log.Println(err.Error())
+		return
 	}
-
 	k, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -294,6 +297,7 @@ func (c *DefaultScheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.Age
 // UUID should be a type
 // TODO import extras uuid funcs.
 func (c *DefaultScheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uuid []byte) {
+	fmt.Println("acknowledge event.")
 	acknowledge := &sched.Call{
 		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_ACKNOWLEDGE.Enum(),

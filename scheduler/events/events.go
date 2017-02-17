@@ -68,10 +68,11 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 				Executor: &mesos_v1.ExecutorInfo{
 					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String(i)},
 					FrameworkId: s.frameworkId,
-					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 500")},
+					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 10")},
 				},
 			}
 			taskList = append(taskList, t)
+			s.taskmanager.Delete(&mesos_v1.TaskID{Value: proto.String(i)})
 		}
 		var operations []*mesos_v1.Offer_Operation
 		offer := &mesos_v1.Offer_Operation{
@@ -90,6 +91,7 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 				},
 			}
 		}()
+
 	}
 }
 func (s *SchedEvent) Rescind(rescindEvent *mesos_v1_scheduler.Event_Rescind) {
@@ -97,6 +99,19 @@ func (s *SchedEvent) Rescind(rescindEvent *mesos_v1_scheduler.Event_Rescind) {
 }
 func (s *SchedEvent) Update(updateEvent *mesos_v1_scheduler.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
+	id := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
+	s.taskmanager.SetTaskState(id, updateEvent.GetStatus().State)
+	go func() {
+		s.channel <- &mesos_v1_scheduler.Call{
+			FrameworkId: s.frameworkId,
+			Type:        mesos_v1_scheduler.Call_ACKNOWLEDGE.Enum(),
+			Acknowledge: &mesos_v1_scheduler.Call_Acknowledge{
+				AgentId: updateEvent.GetStatus().GetAgentId(),
+				TaskId:  updateEvent.GetStatus().GetTaskId(),
+				Uuid:    updateEvent.GetStatus().GetUuid(),
+			},
+		}
+	}()
 }
 func (s *SchedEvent) Message(msg *mesos_v1_scheduler.Event_Message) {
 	fmt.Printf("Message event recieved: %v\n", *msg)

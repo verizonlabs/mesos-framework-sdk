@@ -5,11 +5,12 @@ import (
 )
 
 type TaskManager interface {
-	Add(task *mesos_v1.Task)
-	Delete(id *mesos_v1.TaskID)
-	SetTaskState(task *mesos_v1.Task, state *mesos_v1.TaskState) error
-	IsTaskInState(task *mesos_v1.Task, state *mesos_v1.TaskState) (bool, error)
-	HasTask(task *mesos_v1.Task) bool
+	Add(*mesos_v1.Task)
+	Delete(*mesos_v1.TaskID)
+	Get(*mesos_v1.TaskID) *mesos_v1.Task
+	SetTaskState(*mesos_v1.Task, *mesos_v1.TaskState) error
+	IsTaskInState(*mesos_v1.Task, *mesos_v1.TaskState) (bool, error)
+	HasTask(*mesos_v1.Task) bool
 	HasQueuedTasks() bool
 	TotalTasks() int
 	Tasks() map[string]mesos_v1.Task
@@ -39,6 +40,11 @@ func (m *DefaultTaskManager) SetTaskState(task *mesos_v1.Task, state *mesos_v1.T
 	task.State = state
 	m.tasks[task.GetTaskId().GetValue()] = *task
 	return nil
+}
+
+func (m *DefaultTaskManager) Get(id *mesos_v1.TaskID) *mesos_v1.Task {
+	ret := m.tasks[id.GetValue()]
+	return &ret
 }
 
 // Check if a task has a particular status.
