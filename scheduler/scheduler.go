@@ -47,6 +47,7 @@ type Scheduler interface {
 	Reconcile(tasks []*mesos.Task)
 	Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID, data []byte)
 	SchedRequest(resources []*mesos.Request)
+	Suppress()
 }
 
 // Default Scheduler can be used as a higher-level construct.
@@ -154,8 +155,10 @@ func (c *DefaultScheduler) listen() {
 			case sched.Call_RECONCILE:
 			case sched.Call_REVIVE:
 			case sched.Call_SUBSCRIBE:
+				// TODO decide on how we want to set framework info during subscribe call.
 				c.FramworkInfo = k.GetSubscribe().GetFrameworkInfo()
 			case sched.Call_SUPPRESS:
+				c.Suppress()
 			case sched.Call_SHUTDOWN:
 			case sched.Call_TEARDOWN:
 			default:
@@ -350,6 +353,18 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos.Request) {
 		},
 	}
 	resp, err := c.client.Request(request)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(resp)
+}
+
+func (c *DefaultScheduler) Suppress() {
+	supress := &sched.Call{
+		FrameworkId: c.FramworkInfo.GetId(),
+		Type:        sched.Call_SUPPRESS.Enum(),
+	}
+	resp, err := c.client.Request(supress)
 	if err != nil {
 		log.Println(err.Error())
 	}

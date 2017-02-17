@@ -101,6 +101,7 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 		}
 		// decline offers.
 		fmt.Println("Declining offers.")
+
 		go func() {
 			s.channel <- &mesos_v1_scheduler.Call{
 				FrameworkId: s.frameworkId,
@@ -108,6 +109,13 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 				Decline: &mesos_v1_scheduler.Call_Decline{
 					OfferIds: ids,
 				},
+			}
+		}()
+		// Suppress offers.
+		go func() {
+			s.channel <- &mesos_v1_scheduler.Call{
+				FrameworkId: s.frameworkId,
+				Type:        mesos_v1_scheduler.Call_SUPPRESS.Enum(),
 			}
 		}()
 	}
