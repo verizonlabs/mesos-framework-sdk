@@ -1,12 +1,13 @@
 package task_manager
 
 import (
+	"fmt"
 	"mesos-framework-sdk/include/mesos"
 )
 
 type TaskManager interface {
 	Add(*mesos_v1.Task)
-	Delete(*mesos_v1.TaskID)
+	Delete(*mesos_v1.Task)
 	Get(*mesos_v1.TaskID) *mesos_v1.Task
 	SetTaskState(*mesos_v1.Task, *mesos_v1.TaskState) error
 	IsTaskInState(*mesos_v1.Task, *mesos_v1.TaskState) (bool, error)
@@ -27,12 +28,25 @@ func NewDefaultTaskManager() *DefaultTaskManager {
 
 // Provision a task
 func (m *DefaultTaskManager) Add(task *mesos_v1.Task) {
+	fmt.Println(task.GetTaskId().GetValue())
 	m.tasks[task.GetTaskId().GetValue()] = *task
 }
 
 // Delete a task
-func (m *DefaultTaskManager) Delete(id *mesos_v1.TaskID) {
-	delete(m.tasks, id.GetValue())
+func (m *DefaultTaskManager) Delete(task *mesos_v1.Task) {
+	fmt.Println("Deleting...")
+	fmt.Println(task.GetTaskId().GetValue())
+
+	if v, ok := m.tasks[task.GetTaskId().GetValue()]; ok {
+		fmt.Println("Found.")
+		fmt.Println(v)
+	}
+	delete(m.tasks, task.GetTaskId().GetValue())
+
+	if v, ok := m.tasks[task.GetTaskId().GetValue()]; ok {
+		fmt.Println("Found.")
+		fmt.Println(v)
+	}
 }
 
 // Set a task status
@@ -65,7 +79,15 @@ func (m *DefaultTaskManager) HasTask(task *mesos_v1.Task) bool {
 
 // Check if we have tasks left to execute.
 func (m *DefaultTaskManager) HasQueuedTasks() bool {
-	return !(len(m.tasks) == 0)
+	// Check to see if we have any tasks in STAGING state still.
+	for _, v := range m.tasks {
+		fmt.Println(v.State.Enum())
+		fmt.Println(v.GetState() == mesos_v1.TaskState_TASK_STAGING)
+		if v.GetState() == mesos_v1.TaskState_TASK_STAGING {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *DefaultTaskManager) Tasks() map[string]mesos_v1.Task {

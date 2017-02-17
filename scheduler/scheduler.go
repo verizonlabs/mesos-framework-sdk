@@ -59,7 +59,10 @@ type DefaultScheduler struct {
 	manager      task_manager.TaskManager
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo, event chan *sched.Event, callChan chan *sched.Call, manager task_manager.TaskManager, handlers events.SchedulerEvent) *DefaultScheduler {
+func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo,
+	event chan *sched.Event, callChan chan *sched.Call,
+	manager task_manager.TaskManager, handlers events.SchedulerEvent) *DefaultScheduler {
+
 	return &DefaultScheduler{
 		client:       c,
 		events:       event,
@@ -89,7 +92,6 @@ func (c *DefaultScheduler) Run() {
 
 // Create n default executors and launch them.
 func (c *DefaultScheduler) launchExecutors(num int) {
-
 	for i := 0; i < num; i++ {
 		// Add tasks to task manager
 		task := mesos.Task{
@@ -99,9 +101,7 @@ func (c *DefaultScheduler) launchExecutors(num int) {
 			State:   mesos.TaskState_TASK_STAGING.Enum(),
 		}
 		c.manager.Add(&task)
-
 	}
-
 }
 
 // Main event loop that listens on channels forever until framework terminates.
@@ -143,17 +143,17 @@ func (c *DefaultScheduler) listen() {
 				c.Accept(accept.OfferIds, accept.Operations, accept.Filters)
 			case sched.Call_ACCEPT_INVERSE_OFFERS:
 			case sched.Call_ACKNOWLEDGE:
-				fmt.Println("Acknowledging")
 				ack := k.GetAcknowledge()
 				c.Acknowledge(ack.GetAgentId(), ack.GetTaskId(), ack.GetUuid())
 			case sched.Call_DECLINE:
+				decline := k.GetDecline()
+				c.Decline(decline.GetOfferIds(), decline.GetFilters())
 			case sched.Call_DECLINE_INVERSE_OFFERS:
 			case sched.Call_MESSAGE:
 			case sched.Call_KILL:
 			case sched.Call_RECONCILE:
 			case sched.Call_REVIVE:
 			case sched.Call_SUBSCRIBE:
-				fmt.Println("in subscribe call switch")
 				c.FramworkInfo = k.GetSubscribe().GetFrameworkInfo()
 			case sched.Call_SUPPRESS:
 			case sched.Call_SHUTDOWN:
@@ -175,12 +175,10 @@ func (c *DefaultScheduler) Subscribe() error {
 	}
 	go func() {
 		for {
-			fmt.Println("Trying to sub....")
 			resp, err := c.client.Request(call)
 			if err != nil {
 				log.Println(err.Error())
 			} else {
-				fmt.Println("Connected.")
 				log.Println(recordio.Decode(resp.Body, c.events))
 			}
 
@@ -209,12 +207,10 @@ func (c *DefaultScheduler) Teardown() {
 
 // Accepts offers from mesos master
 func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters) {
-	fmt.Println("IN ACCEPT ID")
-	fmt.Println(c.FramworkInfo.GetId())
 	accept := &sched.Call{
 		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_ACCEPT.Enum(),
-		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks},
+		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
 	}
 
 	resp, err := c.client.Request(accept)
@@ -222,6 +218,8 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offe
 		log.Println(err.Error())
 		return
 	}
+	// NOTE: If we get back an improper response, this will panic.
+	// TODO: recover from panics.
 	k, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err.Error())

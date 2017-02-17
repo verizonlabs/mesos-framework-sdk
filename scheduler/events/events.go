@@ -57,8 +57,8 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
 		var taskList []*mesos_v1.TaskInfo
 
-		// Create the task infos
 		// TODO have task manager convert Task -> TaskInfo
+
 		for i, task := range s.taskmanager.Tasks() {
 			t := &mesos_v1.TaskInfo{
 				Name:      task.Name,
@@ -68,14 +68,14 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 				Executor: &mesos_v1.ExecutorInfo{
 					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String(i)},
 					FrameworkId: s.frameworkId,
-					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 10")},
+					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 				},
 			}
 			taskList = append(taskList, t)
-			s.taskmanager.Delete(&mesos_v1.TaskID{Value: proto.String(i)})
 		}
 
 		var operations []*mesos_v1.Offer_Operation
+
 		offer := &mesos_v1.Offer_Operation{
 			Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
 			Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
@@ -94,6 +94,22 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 			}
 		}()
 
+	} else {
+		var ids []*mesos_v1.OfferID
+		for _, v := range offerEvent.GetOffers() {
+			ids = append(ids, v.GetId())
+		}
+		// decline offers.
+		fmt.Println("Declining offers.")
+		go func() {
+			s.channel <- &mesos_v1_scheduler.Call{
+				FrameworkId: s.frameworkId,
+				Type:        mesos_v1_scheduler.Call_DECLINE.Enum(),
+				Decline: &mesos_v1_scheduler.Call_Decline{
+					OfferIds: ids,
+				},
+			}
+		}()
 	}
 }
 func (s *SchedEvent) Rescind(rescindEvent *mesos_v1_scheduler.Event_Rescind) {
