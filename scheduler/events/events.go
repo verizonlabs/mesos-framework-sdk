@@ -74,12 +74,14 @@ func (s *SchedEvent) Offers(offerEvent *mesos_v1_scheduler.Event_Offers) {
 			taskList = append(taskList, t)
 			s.taskmanager.Delete(&mesos_v1.TaskID{Value: proto.String(i)})
 		}
+
 		var operations []*mesos_v1.Offer_Operation
 		offer := &mesos_v1.Offer_Operation{
 			Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
 			Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
 
 		operations = append(operations, offer)
+
 		// Write the call to the scheduler.
 		go func() {
 			s.channel <- &mesos_v1_scheduler.Call{

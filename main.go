@@ -27,6 +27,8 @@ func main() {
 
 	// Channel listens for calls to make from the event handlers
 	callChan := make(chan *mesos_v1_scheduler.Call)
+	defer close(callChan)
+	defer close(eventChan)
 
 	manager := task_manager.NewDefaultTaskManager()
 
