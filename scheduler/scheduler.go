@@ -64,21 +64,6 @@ func (c *DefaultScheduler) FrameworkInfo() *mesos.FrameworkInfo {
 	return c.FramworkInfo
 }
 
-// Create n default executors and launch them.
-/*
-func (c *DefaultScheduler) launchExecutors(num int) {
-	for i := 0; i < num; i++ {
-		// Add tasks to task manager
-		task := mesos.Task{
-			Name:    proto.String("Sprint_" + strconv.Itoa(i)),
-			TaskId:  &mesos.TaskID{Value: proto.String(strconv.Itoa(i))},
-			AgentId: &mesos.AgentID{Value: proto.String("")},
-			State:   mesos.TaskState_TASK_STAGING.Enum(),
-		}
-	}
-}
-*/
-
 // Make a subscription call to mesos.
 // Channel passed is the "listener" channel for Event Controller.
 func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
@@ -211,11 +196,15 @@ func (c *DefaultScheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.Age
 // UUID should be a type
 // TODO import extras uuid funcs.
 func (c *DefaultScheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uuid []byte) {
-	fmt.Println("acknowledge event.")
+	fmt.Println("Acknowledge event.")
 	acknowledge := &sched.Call{
 		FrameworkId: c.FramworkInfo.GetId(),
 		Type:        sched.Call_ACKNOWLEDGE.Enum(),
-		Acknowledge: &sched.Call_Acknowledge{AgentId: agentId, TaskId: taskId, Uuid: uuid},
+		Acknowledge: &sched.Call_Acknowledge{
+			AgentId: agentId,
+			TaskId:  taskId,
+			Uuid:    uuid,
+		},
 	}
 	resp, err := c.client.Request(acknowledge)
 	if err != nil {

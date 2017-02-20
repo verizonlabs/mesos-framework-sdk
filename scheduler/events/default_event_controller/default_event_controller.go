@@ -8,6 +8,7 @@ import (
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
+	"strconv"
 )
 
 // Mock type that satisfies interface.
@@ -33,11 +34,26 @@ func (s *EventController) Run() {
 			log.Printf("Error: %v", err.Error())
 		}
 		s.frameworkId = s.scheduler.FrameworkInfo().GetId()
+		s.launchExecutors(2)
 		s.Listen()
 	} else {
 		s.Listen()
 	}
 
+}
+
+// Create n default executors and launch them.
+func (s *EventController) launchExecutors(num int) {
+	for i := 0; i < num; i++ {
+		// Add tasks to task manager
+		task := &mesos_v1.Task{
+			Name:    proto.String("Sprint_" + strconv.Itoa(i)),
+			TaskId:  &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
+			AgentId: &mesos_v1.AgentID{Value: proto.String("")},
+			State:   mesos_v1.TaskState_TASK_STAGING.Enum(),
+		}
+		s.taskmanager.Add(task)
+	}
 }
 
 // Main event loop that listens on channels forever until framework terminates.
@@ -107,7 +123,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
 		var taskList []*mesos_v1.TaskInfo
-		// TODO check if resources are available for this particular task before launch.
+		// TODO: check if resources are available for this particular task before launch.
 		for i, task := range s.taskmanager.Tasks() {
 			t := &mesos_v1.TaskInfo{
 				Name:      task.Name,
@@ -121,6 +137,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				},
 			}
 			taskList = append(taskList, t)
+			s.taskmanager.Delete(&task)
 		}
 
 		var operations []*mesos_v1.Offer_Operation
@@ -132,7 +149,6 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		operations = append(operations, offer)
 
 		s.scheduler.Accept(offerIDs, operations, nil)
-
 	} else {
 		var ids []*mesos_v1.OfferID
 		for _, v := range offerEvent.GetOffers() {
@@ -140,7 +156,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		}
 		// decline offers.
 		fmt.Println("Declining offers.")
-		s.scheduler.Decline(ids, &mesos_v1.Filters{})
+		s.scheduler.Decline(ids, nil)
 		s.scheduler.Suppress()
 	}
 }

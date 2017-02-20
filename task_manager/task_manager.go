@@ -34,19 +34,7 @@ func (m *DefaultTaskManager) Add(task *mesos_v1.Task) {
 
 // Delete a task
 func (m *DefaultTaskManager) Delete(task *mesos_v1.Task) {
-	fmt.Println("Deleting...")
-	fmt.Println(task.GetTaskId().GetValue())
-
-	if v, ok := m.tasks[task.GetTaskId().GetValue()]; ok {
-		fmt.Println("Found.")
-		fmt.Println(v)
-	}
 	delete(m.tasks, task.GetTaskId().GetValue())
-
-	if v, ok := m.tasks[task.GetTaskId().GetValue()]; ok {
-		fmt.Println("Found.")
-		fmt.Println(v)
-	}
 }
 
 // Set a task status
