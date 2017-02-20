@@ -7,33 +7,6 @@ import (
 
 /*
 This package contains functions to create common protobufs with ease.
-
-Name   *string       `protobuf:"bytes,1,req,name=name" json:"name,omitempty"`
-	Type   *Value_Type   `protobuf:"varint,2,req,name=type,enum=mesos.v1.Value_Type" json:"type,omitempty"`
-	Scalar *Value_Scalar `protobuf:"bytes,3,opt,name=scalar" json:"scalar,omitempty"`
-	Ranges *Value_Ranges `protobuf:"bytes,4,opt,name=ranges" json:"ranges,omitempty"`
-	Set    *Value_Set    `protobuf:"bytes,5,opt,name=set" json:"set,omitempty"`
-	// The role that this resource is reserved for. If "*", this indicates
-	// that the resource is unreserved. Otherwise, the resource will only
-	// be offered to frameworks that belong to this role.
-	Role *string `protobuf:"bytes,6,opt,name=role,def=*" json:"role,omitempty"`
-	// If this is set, this resource was dynamically reserved by an
-	// operator or a framework. Otherwise, this resource is either unreserved
-	// or statically reserved by an operator via the --resources flag.
-	Reservation *Resource_ReservationInfo `protobuf:"bytes,8,opt,name=reservation" json:"reservation,omitempty"`
-	Disk        *Resource_DiskInfo        `protobuf:"bytes,7,opt,name=disk" json:"disk,omitempty"`
-	// If this is set, the resources are revocable, i.e., any tasks or
-	// executors launched using these resources could get preempted or
-	// throttled at any time. This could be used by frameworks to run
-	// best effort tasks that do not need strict uptime or performance
-	// guarantees. Note that if this is set, 'disk' or 'reservation'
-	// cannot be set.
-	Revocable *Resource_RevocableInfo `protobuf:"bytes,9,opt,name=revocable" json:"revocable,omitempty"`
-	// If this is set, the resources are shared, i.e. multiple tasks
-	// can be launched using this resource and all of them shall refer
-	// to the same physical resource on the cluster. Note that only
-	// persistent volumes can be shared currently.
-	Shared           *Resource_SharedInfo `protobuf:"bytes,10,opt,name=shared" json:"shared,omitempty"`
 */
 
 // Creates a cpu share that is not reserved.
