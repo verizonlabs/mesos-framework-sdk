@@ -1,4 +1,4 @@
-package events
+package default_event_controller
 
 import (
 	"fmt"
@@ -35,10 +35,8 @@ func (s *EventController) Run() {
 		}
 		s.frameworkId = s.scheduler.FrameworkInfo().GetId()
 		s.launchExecutors(2)
-		s.Listen()
-	} else {
-		s.Listen()
 	}
+	s.Listen()
 
 }
 
@@ -86,7 +84,6 @@ func (s *EventController) Listen() {
 				fmt.Println("Heart beat.")
 			case sched.Event_UNKNOWN:
 				fmt.Println("Unknown event recieved.")
-			default:
 			}
 		}
 	}
