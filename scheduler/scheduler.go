@@ -13,16 +13,13 @@ End users should only create their own scheduler if they wish to change the beha
 */
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
+
 	"io/ioutil"
 	"log"
 	"mesos-framework-sdk/client"
 	mesos "mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/recordio"
-	"mesos-framework-sdk/scheduler/events"
-	"mesos-framework-sdk/task_manager"
-	"strconv"
 	"time"
 )
 
@@ -32,11 +29,11 @@ const (
 
 type Scheduler interface {
 	// Scheduler must also hold framework information, a client and an event handler.
-	FrameworkInfo()
-	Client()
-	Events()
+	FrameworkInfo() *mesos.FrameworkInfo
+	Client() *client.Client
+
 	// Default Calls for scheduler
-	Subscribe() error
+	Subscribe(chan *sched.Event) error
 	Teardown()
 	Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters)
 	Decline(offerIds []*mesos.OfferID, filters *mesos.Filters)
@@ -54,44 +51,21 @@ type Scheduler interface {
 type DefaultScheduler struct {
 	FramworkInfo *mesos.FrameworkInfo
 	client       *client.Client
-	events       chan *sched.Event
-	calls        chan *sched.Call
-	handlers     events.SchedulerEvent
-	manager      task_manager.TaskManager
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo,
-	event chan *sched.Event, callChan chan *sched.Call,
-	manager task_manager.TaskManager, handlers events.SchedulerEvent) *DefaultScheduler {
-
+func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo) *DefaultScheduler {
 	return &DefaultScheduler{
 		client:       c,
-		events:       event,
-		calls:        callChan,
 		FramworkInfo: info,
-		handlers:     handlers,
-		manager:      manager,
 	}
 }
 
-// Events
-func (c *DefaultScheduler) Run() {
-	// If we don't have a framework id, subscribe.
-	if c.FramworkInfo.GetId().GetValue() == "" {
-		fmt.Println("subscribing...")
-		err := c.Subscribe()
-		if err != nil {
-			log.Println(err.Error())
-		}
-		c.launchExecutors(1)
-		c.listen()
-		return
-	}
-	// Otherwise we're already connected. Just listen for events.
-	c.listen()
+func (c *DefaultScheduler) FrameworkInfo() *mesos.FrameworkInfo {
+	return c.FramworkInfo
 }
 
 // Create n default executors and launch them.
+/*
 func (c *DefaultScheduler) launchExecutors(num int) {
 	for i := 0; i < num; i++ {
 		// Add tasks to task manager
@@ -101,75 +75,13 @@ func (c *DefaultScheduler) launchExecutors(num int) {
 			AgentId: &mesos.AgentID{Value: proto.String("")},
 			State:   mesos.TaskState_TASK_STAGING.Enum(),
 		}
-		c.manager.Add(&task)
 	}
 }
-
-// Main event loop that listens on channels forever until framework terminates.
-func (c *DefaultScheduler) listen() {
-	for {
-		select {
-		case t := <-c.events:
-			switch t.GetType() {
-			case sched.Event_SUBSCRIBED:
-				fmt.Println("Subscribe event.")
-				go c.handlers.Subscribe(t.GetSubscribed())
-			case sched.Event_ERROR:
-				go c.handlers.Error(t.GetError())
-			case sched.Event_FAILURE:
-				go c.handlers.Failure(t.GetFailure())
-			case sched.Event_INVERSE_OFFERS:
-				go c.handlers.InverseOffer(t.GetInverseOffers())
-			case sched.Event_MESSAGE:
-				go c.handlers.Message(t.GetMessage())
-			case sched.Event_OFFERS:
-				log.Println("Offers...")
-				go c.handlers.Offers(t.GetOffers())
-			case sched.Event_RESCIND:
-				go c.handlers.Rescind(t.GetRescind())
-			case sched.Event_RESCIND_INVERSE_OFFER:
-				go c.handlers.RescindInverseOffer(t.GetRescindInverseOffer())
-			case sched.Event_UPDATE:
-				go c.handlers.Update(t.GetUpdate())
-			case sched.Event_HEARTBEAT:
-			case sched.Event_UNKNOWN:
-				fmt.Println("Unknown event recieved.")
-			default:
-			}
-		case k := <-c.calls:
-			switch k.GetType() {
-			case sched.Call_ACCEPT:
-				accept := k.GetAccept()
-				c.FramworkInfo.Id = k.FrameworkId
-				c.Accept(accept.OfferIds, accept.Operations, accept.Filters)
-			case sched.Call_ACCEPT_INVERSE_OFFERS:
-			case sched.Call_ACKNOWLEDGE:
-				ack := k.GetAcknowledge()
-				c.Acknowledge(ack.GetAgentId(), ack.GetTaskId(), ack.GetUuid())
-			case sched.Call_DECLINE:
-				decline := k.GetDecline()
-				c.Decline(decline.GetOfferIds(), decline.GetFilters())
-			case sched.Call_DECLINE_INVERSE_OFFERS:
-			case sched.Call_MESSAGE:
-			case sched.Call_KILL:
-			case sched.Call_RECONCILE:
-			case sched.Call_REVIVE:
-			case sched.Call_SUBSCRIBE:
-				// TODO decide on how we want to set framework info during subscribe call.
-				c.FramworkInfo = k.GetSubscribe().GetFrameworkInfo()
-			case sched.Call_SUPPRESS:
-				c.Suppress()
-			case sched.Call_SHUTDOWN:
-			case sched.Call_TEARDOWN:
-			default:
-
-			}
-		}
-	}
-}
+*/
 
 // Make a subscription call to mesos.
-func (c *DefaultScheduler) Subscribe() error {
+// Channel passed is the "listener" channel for Event Controller.
+func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
 	call := &sched.Call{
 		Type: sched.Call_SUBSCRIBE.Enum(),
 		Subscribe: &sched.Call_Subscribe{
@@ -182,7 +94,7 @@ func (c *DefaultScheduler) Subscribe() error {
 			if err != nil {
 				log.Println(err.Error())
 			} else {
-				log.Println(recordio.Decode(resp.Body, c.events))
+				log.Println(recordio.Decode(resp.Body, eventChan))
 			}
 
 			// If we disconnect we need to reset the stream ID.
@@ -243,7 +155,8 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Fil
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
+	a, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(a))
 	return
 }
 

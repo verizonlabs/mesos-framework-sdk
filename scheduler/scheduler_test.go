@@ -28,7 +28,7 @@ var (
 // Tests if the scheduler can be created.
 func TestNewScheduler(t *testing.T) {
 	mockClient := client.NewClient(clientUrl)
-	mockEventHandler := events.NewSchedulerEvents()
+	mockEventHandler := events.NewDefaultEventController()
 	mockScheduler := NewScheduler(mockClient, frameworkInfo, mockEventHandler)
 	if err := mockScheduler.Subscribe(); err != nil {
 		t.FailNow()
@@ -38,7 +38,7 @@ func TestNewScheduler(t *testing.T) {
 //
 func TestScheduler_Kill(t *testing.T) {
 	mockClient := client.NewClient(clientUrl)
-	mockEventHandler := events.NewSchedulerEvents()
+	mockEventHandler := events.NewDefaultEventController()
 	mockScheduler := NewScheduler(mockClient, frameworkInfo, mockEventHandler)
 	if err := mockScheduler.Subscribe(); err != nil {
 		t.FailNow()
