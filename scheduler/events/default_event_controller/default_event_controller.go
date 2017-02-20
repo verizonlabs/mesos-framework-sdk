@@ -124,14 +124,16 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
 		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
-		for i, task := range s.taskmanager.Tasks() {
+		tasks := s.taskmanager.Tasks()
+		for item := range tasks.Iterate() {
+			task := item.Value.(mesos_v1.Task)
 			t := &mesos_v1.TaskInfo{
 				Name:      task.Name,
 				TaskId:    task.TaskId,
 				AgentId:   offerEvent.Offers[0].AgentId,
 				Resources: offerEvent.Offers[0].Resources,
 				Executor: &mesos_v1.ExecutorInfo{
-					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String(i)},
+					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
 					FrameworkId: s.frameworkId,
 					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 				},
