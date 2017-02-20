@@ -93,7 +93,7 @@ func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
 	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
 	s.frameworkId = subEvent.GetFrameworkId()
 	info := s.scheduler.FrameworkInfo()
-	s.scheduler.FramworkInfo = &mesos_v1.FrameworkInfo{
+	s.scheduler.Info = &mesos_v1.FrameworkInfo{
 		Id:              s.frameworkId,
 		Capabilities:    info.Capabilities,
 		FailoverTimeout: info.FailoverTimeout,
