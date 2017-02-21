@@ -33,11 +33,18 @@ func (s *EventController) Run() {
 		if err != nil {
 			log.Printf("Error: %v", err.Error())
 		}
-		s.frameworkId = s.scheduler.FrameworkInfo().GetId()
+
+		// Wait here until we have our framework ID.
+		select {
+		case e := <-s.events:
+			switch e.GetType() {
+			case sched.Event_SUBSCRIBED:
+				s.Subscribe(e.GetSubscribed())
+			}
+		}
 		s.launchExecutors(2)
 	}
 	s.Listen()
-
 }
 
 // Create n default executors and launch them.
@@ -60,9 +67,6 @@ func (s *EventController) Listen() {
 		select {
 		case t := <-s.events:
 			switch t.GetType() {
-			case sched.Event_SUBSCRIBED:
-				fmt.Println("Subscribe event.")
-				go s.Subscribe(t.GetSubscribed())
 			case sched.Event_ERROR:
 				go s.Error(t.GetError())
 			case sched.Event_FAILURE:
