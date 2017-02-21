@@ -27,20 +27,25 @@ func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager ta
 }
 
 func (s *EventController) Run() {
-	if s.scheduler.FrameworkInfo().GetId().GetValue() == "" {
+	if s.scheduler.FrameworkInfo().GetId() == nil {
 		err := s.scheduler.Subscribe(s.events)
 		if err != nil {
 			log.Printf("Error: %v", err.Error())
 		}
 
+	Loop:
 		// Wait here until we have our framework ID.
-		select {
-		case e := <-s.events:
-			switch e.GetType() {
-			case sched.Event_SUBSCRIBED:
-				id := e.GetSubscribed().GetFrameworkId()
-				s.scheduler.Info.Id = id
-				log.Printf("Subscribed with an ID of %s", id.GetValue())
+		// We can get other events first like a heartbeat so we loop until we're done.
+		for {
+			select {
+			case e := <-s.events:
+				switch e.GetType() {
+				case sched.Event_SUBSCRIBED:
+					id := e.GetSubscribed().GetFrameworkId()
+					s.scheduler.Info.Id = id
+					log.Printf("Subscribed with an ID of %s", id.GetValue())
+					break Loop
+				}
 			}
 		}
 		s.launchExecutors(2)
