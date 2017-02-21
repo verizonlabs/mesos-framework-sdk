@@ -33,20 +33,12 @@ func (s *EventController) Run() {
 			log.Printf("Error: %v", err.Error())
 		}
 
-	Loop:
 		// Wait here until we have our framework ID.
-		// We can get other events first like a heartbeat so we loop until we're done.
-		for {
-			select {
-			case e := <-s.events:
-				switch e.GetType() {
-				case sched.Event_SUBSCRIBED:
-					id := e.GetSubscribed().GetFrameworkId()
-					s.scheduler.Info.Id = id
-					log.Printf("Subscribed with an ID of %s", id.GetValue())
-					break Loop
-				}
-			}
+		select {
+		case e := <-s.events:
+			id := e.GetSubscribed().GetFrameworkId()
+			s.scheduler.Info.Id = id
+			log.Printf("Subscribed with an ID of %s", id.GetValue())
 		}
 		s.launchExecutors(2)
 	}
