@@ -17,7 +17,7 @@ import (
 	"io/ioutil"
 	"log"
 	"mesos-framework-sdk/client"
-	mesos "mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/recordio"
 	"time"
@@ -30,32 +30,32 @@ const (
 
 type Scheduler interface {
 	// Scheduler must also hold framework information, a client and an event handler.
-	FrameworkInfo() *mesos.FrameworkInfo
+	FrameworkInfo() *mesos_v1.FrameworkInfo
 	Client() *client.Client
 
 	// Default Calls for scheduler
 	Subscribe(chan *sched.Event) error
 	Teardown()
-	Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters)
-	Decline(offerIds []*mesos.OfferID, filters *mesos.Filters)
+	Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters)
+	Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters)
 	Revive()
-	Kill(taskId *mesos.TaskID, agentid *mesos.AgentID)
-	Shutdown(execId *mesos.ExecutorID, agentId *mesos.AgentID)
-	Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uuid []byte)
-	Reconcile(tasks []*mesos.Task)
-	Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID, data []byte)
-	SchedRequest(resources []*mesos.Request)
+	Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID)
+	Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID)
+	Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte)
+	Reconcile(tasks []*mesos_v1.Task)
+	Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte)
+	SchedRequest(resources []*mesos_v1.Request)
 	Suppress()
 }
 
 // Default Scheduler can be used as a higher-level construct.
 type DefaultScheduler struct {
-	Info     *mesos.FrameworkInfo
+	Info     *mesos_v1.FrameworkInfo
 	client   *client.Client
 	executor int
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo) *DefaultScheduler {
+func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo) *DefaultScheduler {
 	return &DefaultScheduler{
 		client:   c,
 		Info:     info,
@@ -63,7 +63,7 @@ func NewDefaultScheduler(c *client.Client, info *mesos.FrameworkInfo) *DefaultSc
 	}
 }
 
-func (c *DefaultScheduler) FrameworkInfo() *mesos.FrameworkInfo {
+func (c *DefaultScheduler) FrameworkInfo() *mesos_v1.FrameworkInfo {
 	return c.Info
 }
 
@@ -109,7 +109,7 @@ func (c *DefaultScheduler) Teardown() {
 }
 
 // Accepts offers from mesos master
-func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offer_Operation, filters *mesos.Filters) {
+func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters) {
 	accept := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_ACCEPT.Enum(),
@@ -131,7 +131,7 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos.OfferID, tasks []*mesos.Offe
 
 }
 
-func (c *DefaultScheduler) Decline(offerIds []*mesos.OfferID, filters *mesos.Filters) {
+func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) {
 	// Get a list of the offer ids to decline and any filters.
 	decline := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
@@ -163,7 +163,7 @@ func (c *DefaultScheduler) Revive() {
 	return
 }
 
-func (c *DefaultScheduler) Kill(taskId *mesos.TaskID, agentid *mesos.AgentID) {
+func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) {
 	// Probably want some validation that this is a valid task and valid agentid.
 	kill := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
@@ -179,7 +179,7 @@ func (c *DefaultScheduler) Kill(taskId *mesos.TaskID, agentid *mesos.AgentID) {
 	return
 }
 
-func (c *DefaultScheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.AgentID) {
+func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) {
 	shutdown := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_SHUTDOWN.Enum(),
@@ -198,7 +198,7 @@ func (c *DefaultScheduler) Shutdown(execId *mesos.ExecutorID, agentId *mesos.Age
 
 // UUID should be a type
 // TODO import extras uuid funcs.
-func (c *DefaultScheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.TaskID, uuid []byte) {
+func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) {
 	fmt.Println("Acknowledge event.")
 	acknowledge := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
@@ -216,7 +216,7 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos.AgentID, taskId *mesos.Tas
 	fmt.Println(resp)
 }
 
-func (c *DefaultScheduler) Reconcile(tasks []*mesos.Task) {
+func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
 	reconcile := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_RECONCILE.Enum(),
@@ -228,7 +228,7 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos.Task) {
 	fmt.Println(resp)
 }
 
-func (c *DefaultScheduler) Message(agentId *mesos.AgentID, executorId *mesos.ExecutorID, data []byte) {
+func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) {
 	message := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_MESSAGE.Enum(),
@@ -249,7 +249,7 @@ func (c *DefaultScheduler) Message(agentId *mesos.AgentID, executorId *mesos.Exe
 // Sent by the scheduler to request resources from the master/allocator.
 // The built-in hierarchical allocator simply ignores this request but other allocators (modules) can interpret this in
 // a customizable fashion.
-func (c *DefaultScheduler) SchedRequest(resources []*mesos.Request) {
+func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
 	request := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_REQUEST.Enum(),

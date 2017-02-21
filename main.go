@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/client"
-	mesos "mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/scheduler"
 	eventCtrl "mesos-framework-sdk/scheduler/events/default_event_controller"
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	frameworkInfo := &mesos.FrameworkInfo{
+	frameworkInfo := &mesos_v1.FrameworkInfo{
 		User:            proto.String("root"),
 		Name:            proto.String("Sprint"),
 		FailoverTimeout: proto.Float64(1 * time.Second.Seconds()),
