@@ -1,7 +1,7 @@
 package mesos_framework_sdk
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
 )
 
