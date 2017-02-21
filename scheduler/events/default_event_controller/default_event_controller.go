@@ -14,7 +14,6 @@ import (
 // Mock type that satisfies interface.
 type EventController struct {
 	scheduler   *scheduler.DefaultScheduler
-	frameworkId *mesos_v1.FrameworkID
 	taskmanager task_manager.TaskManager
 	events      chan *sched.Event
 }
@@ -39,7 +38,7 @@ func (s *EventController) Run() {
 		case e := <-s.events:
 			switch e.GetType() {
 			case sched.Event_SUBSCRIBED:
-				s.Subscribe(e.GetSubscribed())
+				s.subscribed(e.GetSubscribed())
 			}
 		}
 		s.launchExecutors(2)
@@ -93,12 +92,11 @@ func (s *EventController) Listen() {
 	}
 }
 
-func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
+func (s *EventController) subscribed(subEvent *sched.Event_Subscribed) {
 	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
-	s.frameworkId = subEvent.GetFrameworkId()
 	info := s.scheduler.FrameworkInfo()
 	s.scheduler.Info = &mesos_v1.FrameworkInfo{
-		Id:              s.frameworkId,
+		Id:              subEvent.GetFrameworkId(),
 		Capabilities:    info.Capabilities,
 		FailoverTimeout: info.FailoverTimeout,
 		Checkpoint:      info.Checkpoint,
@@ -114,6 +112,7 @@ func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
 
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	fmt.Println("Offers event recieved.")
+	frameworkId := s.scheduler.FrameworkInfo().GetId()
 	var offerIDs []*mesos_v1.OfferID
 
 	for num, offer := range offerEvent.GetOffers() {
@@ -122,7 +121,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	}
 
 	// Check task manager for any active tasks.
-	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
+	if s.taskmanager.HasQueuedTasks() && frameworkId.GetValue() != "" {
 		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
 		tasks := s.taskmanager.Tasks()
@@ -135,7 +134,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				Resources: offerEvent.Offers[0].Resources,
 				Executor: &mesos_v1.ExecutorInfo{
 					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
-					FrameworkId: s.frameworkId,
+					FrameworkId: frameworkId,
 					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 				},
 			}
