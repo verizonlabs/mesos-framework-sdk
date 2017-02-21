@@ -14,7 +14,6 @@ import (
 // Mock type that satisfies interface.
 type EventController struct {
 	scheduler   *scheduler.DefaultScheduler
-	frameworkId *mesos_v1.FrameworkID
 	taskmanager task_manager.TaskManager
 	events      chan *sched.Event
 }
@@ -28,16 +27,22 @@ func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager ta
 }
 
 func (s *EventController) Run() {
-	if s.scheduler.FrameworkInfo().GetId().GetValue() == "" {
+	if s.scheduler.FrameworkInfo().GetId() == nil {
 		err := s.scheduler.Subscribe(s.events)
 		if err != nil {
 			log.Printf("Error: %v", err.Error())
 		}
-		s.frameworkId = s.scheduler.FrameworkInfo().GetId()
+
+		// Wait here until we have our framework ID.
+		select {
+		case e := <-s.events:
+			id := e.GetSubscribed().GetFrameworkId()
+			s.scheduler.Info.Id = id
+			log.Printf("Subscribed with an ID of %s", id.GetValue())
+		}
 		s.launchExecutors(2)
 	}
 	s.Listen()
-
 }
 
 // Create n default executors and launch them.
@@ -61,8 +66,7 @@ func (s *EventController) Listen() {
 		case t := <-s.events:
 			switch t.GetType() {
 			case sched.Event_SUBSCRIBED:
-				fmt.Println("Subscribe event.")
-				go s.Subscribe(t.GetSubscribed())
+				log.Println("Subscribe event.")
 			case sched.Event_ERROR:
 				go s.Error(t.GetError())
 			case sched.Event_FAILURE:
@@ -89,25 +93,6 @@ func (s *EventController) Listen() {
 	}
 }
 
-func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
-	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
-	s.frameworkId = subEvent.GetFrameworkId()
-	info := s.scheduler.FrameworkInfo()
-	s.scheduler.Info = &mesos_v1.FrameworkInfo{
-		Id:              s.frameworkId,
-		Capabilities:    info.Capabilities,
-		FailoverTimeout: info.FailoverTimeout,
-		Checkpoint:      info.Checkpoint,
-		Hostname:        info.Hostname,
-		Labels:          info.Labels,
-		Name:            info.Name,
-		Principal:       info.Principal,
-		Role:            info.Role,
-		User:            info.User,
-		WebuiUrl:        info.WebuiUrl,
-	}
-}
-
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	fmt.Println("Offers event recieved.")
 	var offerIDs []*mesos_v1.OfferID
@@ -118,7 +103,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	}
 
 	// Check task manager for any active tasks.
-	if s.taskmanager.HasQueuedTasks() && s.frameworkId.GetValue() != "" {
+	if s.taskmanager.HasQueuedTasks() {
 		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
 		tasks := s.taskmanager.Tasks()
@@ -131,7 +116,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				Resources: offerEvent.Offers[0].Resources,
 				Executor: &mesos_v1.ExecutorInfo{
 					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
-					FrameworkId: s.frameworkId,
+					FrameworkId: s.scheduler.FrameworkInfo().GetId(),
 					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 				},
 			}

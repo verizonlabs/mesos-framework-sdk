@@ -12,10 +12,10 @@ import (
 
 // Decode continually reads and constructs events from the Mesos stream.
 func Decode(data io.ReadCloser, events chan<- *sched.Event) error {
-	var event sched.Event
 	reader := bufio.NewReader(data)
 
 	for {
+		var event sched.Event
 		lengthStr, err := reader.ReadString('\n')
 		if err != nil {
 			return errors.New("Failed to read RecordIO message length: " + err.Error())
