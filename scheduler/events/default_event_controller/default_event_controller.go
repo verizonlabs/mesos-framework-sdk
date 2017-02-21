@@ -93,7 +93,6 @@ func (s *EventController) Listen() {
 
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	fmt.Println("Offers event recieved.")
-	frameworkId := s.scheduler.FrameworkInfo().GetId()
 	var offerIDs []*mesos_v1.OfferID
 
 	for num, offer := range offerEvent.GetOffers() {
@@ -102,7 +101,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	}
 
 	// Check task manager for any active tasks.
-	if s.taskmanager.HasQueuedTasks() && frameworkId.GetValue() != "" {
+	if s.taskmanager.HasQueuedTasks() {
 		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
 		tasks := s.taskmanager.Tasks()
@@ -115,7 +114,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				Resources: offerEvent.Offers[0].Resources,
 				Executor: &mesos_v1.ExecutorInfo{
 					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
-					FrameworkId: frameworkId,
+					FrameworkId: s.scheduler.FrameworkInfo().GetId(),
 					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 				},
 			}
