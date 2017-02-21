@@ -38,7 +38,9 @@ func (s *EventController) Run() {
 		case e := <-s.events:
 			switch e.GetType() {
 			case sched.Event_SUBSCRIBED:
-				s.subscribed(e.GetSubscribed())
+				id := e.GetSubscribed().GetFrameworkId()
+				s.scheduler.Info.Id = id
+				log.Printf("Subscribed with an ID of %s", id.GetValue())
 			}
 		}
 		s.launchExecutors(2)
@@ -89,24 +91,6 @@ func (s *EventController) Listen() {
 				fmt.Println("Unknown event recieved.")
 			}
 		}
-	}
-}
-
-func (s *EventController) subscribed(subEvent *sched.Event_Subscribed) {
-	fmt.Printf("Subscribed event recieved: %v\n", *subEvent)
-	info := s.scheduler.FrameworkInfo()
-	s.scheduler.Info = &mesos_v1.FrameworkInfo{
-		Id:              subEvent.GetFrameworkId(),
-		Capabilities:    info.Capabilities,
-		FailoverTimeout: info.FailoverTimeout,
-		Checkpoint:      info.Checkpoint,
-		Hostname:        info.Hostname,
-		Labels:          info.Labels,
-		Name:            info.Name,
-		Principal:       info.Principal,
-		Role:            info.Role,
-		User:            info.User,
-		WebuiUrl:        info.WebuiUrl,
 	}
 }
 
