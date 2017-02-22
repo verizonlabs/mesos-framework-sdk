@@ -89,7 +89,7 @@ func (c *Cassandra) Update(table string, data, where map[string]string) error {
 	return c.session.Query(query).Exec()
 }
 
-// Deletes data from the database.
+// Deletes data from the database using an optional WHERE clause.
 func (c *Cassandra) Delete(table string, cols []string, where map[string]string) error {
 	query := "DELETE " + c.formatColumns(cols) + " FROM " + table + ""
 	if where != nil {
