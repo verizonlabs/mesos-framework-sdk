@@ -28,7 +28,7 @@ func NewClient(endpoints []string, timeout time.Duration) persistence.KVStorage 
 
 // Inserts a new key/value pair.
 func (e *Etcd) Create(key string, value ...string) error {
-	_, err := e.client.Create(context.Background(), key, value[0], nil)
+	_, err := e.client.Create(context.Background(), key, value[0])
 
 	return err
 }

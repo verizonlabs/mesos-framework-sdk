@@ -28,7 +28,7 @@ func NewClient(endpoints []string, keyspace string) persistence.DBStorage {
 // Dynamically formats columns for use in a query.
 func (c *Cassandra) formatColumns(cols []string) string {
 	var columns string
-	for column := range cols {
+	for _, column := range cols {
 		columns += column + ", "
 	}
 
@@ -38,7 +38,7 @@ func (c *Cassandra) formatColumns(cols []string) string {
 // Generates a bound parameter string based on the number of values that need binding.
 func (c *Cassandra) formatBindings(vals []string) string {
 	var bindings string
-	for _ := range vals {
+	for i := 0; i < len(vals); i++ {
 		bindings += "?, "
 	}
 
