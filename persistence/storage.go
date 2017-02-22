@@ -1,9 +1,9 @@
 package persistence
 
 type KVStorage interface {
-	Create(string, ...string) error
+	Create(string, string) error
 	Read(string) error
-	Update(string, ...string) error
+	Update(string, string) error
 	Delete(string) error
 }
 
