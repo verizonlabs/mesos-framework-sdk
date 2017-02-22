@@ -36,7 +36,7 @@ func (c *Cassandra) formatColumns(cols []string) string {
 }
 
 // Generates a bound parameter string based on the number of values that need binding.
-func (c *Cassandra) formatBindings(vals []string) string {
+func (c *Cassandra) formatBindings(vals []interface{}) string {
 	var bindings string
 	for i := 0; i < len(vals); i++ {
 		bindings += "?, "
@@ -46,8 +46,8 @@ func (c *Cassandra) formatBindings(vals []string) string {
 }
 
 // Generates a formatted WHERE clause with values to be bound for use in a query.
-func (c *Cassandra) formatWhereClause(query string, where map[string]string) (string, []string) {
-	var vals []string
+func (c *Cassandra) formatWhereClause(query string, where map[string]string) (string, []interface{}) {
+	var vals []interface{}
 	query += " WHERE "
 	for col, val := range where {
 		query += col + " = ? AND "
@@ -57,7 +57,7 @@ func (c *Cassandra) formatWhereClause(query string, where map[string]string) (st
 }
 
 // Inserts data into the database.
-func (c *Cassandra) Create(table string, cols, vals []string) error {
+func (c *Cassandra) Create(table string, cols []string, vals []interface{}) error {
 	return c.session.Query("INSERT INTO "+table+" ("+c.formatColumns(cols)+") VALUES ("+c.formatBindings(vals)+")", vals...).Exec()
 }
 
@@ -67,10 +67,10 @@ func (c *Cassandra) Read(table string, cols []string, where map[string]string) (
 	if where != nil {
 		query, vals := c.formatWhereClause(query, where)
 
-		return c.session.Query(query, vals...).Iter().SliceMap(), nil
+		return c.session.Query(query, vals...).Iter().SliceMap()
 	}
 
-	return c.session.Query(query).Iter().SliceMap(), nil
+	return c.session.Query(query).Iter().SliceMap()
 }
 
 // Updates data in the database using an optional WHERE clause.
