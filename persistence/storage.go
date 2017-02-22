@@ -9,5 +9,7 @@ type KVStorage interface {
 
 type DBStorage interface {
 	Create(string, []string, []string) error
-	Read(string)
+	Read(string, []string, map[string]string) ([]map[string]interface{}, error)
+	Update(table string, data, where map[string]string) error
+	Delete(table string, cols []string, where map[string]string) error
 }
