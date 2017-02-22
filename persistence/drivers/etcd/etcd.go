@@ -34,10 +34,13 @@ func (e *Etcd) Create(key string, value string) error {
 }
 
 // Reads a key's value.
-func (e *Etcd) Read(key string) error {
-	_, err := e.client.Get(context.Background(), key, nil)
+func (e *Etcd) Read(key string) (string, error) {
+	resp, err := e.client.Get(context.Background(), key, nil)
+	if err != nil {
+		return "", err
+	}
 
-	return err
+	return resp.Node.Value, nil
 }
 
 // Updates a key's value.
