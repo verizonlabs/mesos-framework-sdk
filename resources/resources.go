@@ -33,14 +33,14 @@ func CreateMem(memShare float64, role string) *mesos_v1.Resource {
 	}
 }
 
-func CreateDisk(vol *mesos_v1.Volume, source *mesos_v1.Resource_DiskInfo_Source) {
+func CreateDisk(vol *mesos_v1.Volume, source *mesos_v1.Resource_DiskInfo_Source) *mesos_v1.Resource_DiskInfo {
 	return &mesos_v1.Resource_DiskInfo{
 		Volume: vol,
 		Source: source,
 	}
 }
 
-func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source mesos_v1.Volume_Source) *mesos_v1.Volume {
+func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source *mesos_v1.Volume_Source) *mesos_v1.Volume {
 	return &mesos_v1.Volume{
 		Mode:          mesos_v1.Volume_RW.Enum(),
 		HostPath:      proto.String(hostPath),
