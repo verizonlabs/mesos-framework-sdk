@@ -265,11 +265,11 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
 }
 
 func (c *DefaultScheduler) Suppress() {
-	supress := &sched.Call{
+	suppress := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_SUPPRESS.Enum(),
 	}
-	resp, err := c.client.Request(supress)
+	resp, err := c.client.Request(suppress)
 	if err != nil {
 		log.Println(err.Error())
 	}
