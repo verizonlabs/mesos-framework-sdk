@@ -62,7 +62,7 @@ func (d *DefaultExecutor) listen() {
 		switch t := <-d.events; t.GetType() {
 		case exec.Event_SUBSCRIBED:
 			d.frameworkID = t.GetSubscribed().GetFrameworkInfo().GetId()
-			go d.handlers.Subscribed()
+			go d.handlers.Subscribed(t.GetSubscribed())
 			break
 		case exec.Event_ACKNOWLEDGED:
 			go d.handlers.Acknowledged(t.GetAcknowledged())
@@ -92,11 +92,11 @@ func (d *DefaultExecutor) listen() {
 	}
 }
 
-func (d *DefaultExecutor) FrameworkID() {
+func (d *DefaultExecutor) FrameworkID() *mesos_v1.FrameworkID {
 	return d.frameworkID
 }
 
-func (d *DefaultExecutor) ExecutorID() {
+func (d *DefaultExecutor) ExecutorID() *mesos_v1.ExecutorID {
 	return d.executorID
 }
 
