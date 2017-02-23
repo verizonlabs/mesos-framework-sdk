@@ -4,13 +4,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
-	"mesos-framework-sdk/scheduler/events"
+	sched "mesos-framework-sdk/include/scheduler"
 	"testing"
 	"time"
 )
 
 const (
-	clientUrl = "http://localhost:5050/api/v1/scheduler"
+	clientUrl = "http://localhost:5050/api/v1/scheduler" // TODO remove this once client is mocked
 )
 
 var (
@@ -27,20 +27,11 @@ var (
 
 // Tests if the scheduler can be created.
 func TestNewScheduler(t *testing.T) {
-	mockClient := client.NewClient(clientUrl)
-	mockEventHandler := events.NewDefaultEventController()
-	mockScheduler := NewScheduler(mockClient, frameworkInfo, mockEventHandler)
-	if err := mockScheduler.Subscribe(); err != nil {
-		t.FailNow()
-	}
-}
+	c := client.NewClient(clientUrl) // TODO mock this so it doesn't make a real HTTP call
+	s := NewDefaultScheduler(c, frameworkInfo)
+	ch := make(chan *sched.Event)
 
-//
-func TestScheduler_Kill(t *testing.T) {
-	mockClient := client.NewClient(clientUrl)
-	mockEventHandler := events.NewDefaultEventController()
-	mockScheduler := NewScheduler(mockClient, frameworkInfo, mockEventHandler)
-	if err := mockScheduler.Subscribe(); err != nil {
+	if err := s.Subscribe(ch); err != nil {
 		t.FailNow()
 	}
 }
