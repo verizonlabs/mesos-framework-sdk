@@ -5,7 +5,8 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"log"
-	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/include/executor"
+	"mesos-framework-sdk/include/scheduler"
 	"net"
 	"net/http"
 	"time"
@@ -34,8 +35,17 @@ func NewClient(master string) *Client {
 }
 
 // Makes a new request with data and sends it to the server.
-func (c *Client) Request(call *sched.Call) (*http.Response, error) {
-	data, err := proto.Marshal(call)
+func (c *Client) Request(call interface{}) (*http.Response, error) {
+	var data []byte
+	var err error
+
+	switch call := call.(type) {
+	case *mesos_v1_scheduler.Call:
+		data, err = proto.Marshal(call)
+	case *mesos_v1_executor.Call:
+		data, err = proto.Marshal(call)
+	}
+
 	if err != nil {
 		return nil, err
 	}
