@@ -39,11 +39,11 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	var data []byte
 	var err error
 
-	switch call.(type) {
+	switch call := call.(type) {
 	case *mesos_v1_scheduler.Call:
-		data, err = proto.Marshal(call.(*mesos_v1_scheduler.Call))
+		data, err = proto.Marshal(call)
 	case *mesos_v1_executor.Call:
-		data, err = proto.Marshal(call.(*mesos_v1_executor.Call))
+		data, err = proto.Marshal(call)
 	}
 
 	if err != nil {
