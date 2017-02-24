@@ -196,10 +196,16 @@ func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_
 	return
 }
 
-// UUID should be a type
-// TODO import extras uuid funcs.
+// Acknowledge call.
 func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) {
-	fmt.Println("Acknowledge event.")
+
+	// Note that with the new API, schedulers are responsible for explicitly acknowledging the receipt of status updates that have “status.uuid()” set.
+	// These status updates are reliably retried until they are acknowledged by the scheduler.
+	// The scheduler must not acknowledge status updates that do not have "status.uuid()" set as they are not retried.
+	if uuid == nil {
+		return
+	}
+
 	acknowledge := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_ACKNOWLEDGE.Enum(),
@@ -209,6 +215,7 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 			Uuid:    uuid,
 		},
 	}
+
 	resp, err := c.client.Request(acknowledge)
 	if err != nil {
 		log.Println(err.Error())

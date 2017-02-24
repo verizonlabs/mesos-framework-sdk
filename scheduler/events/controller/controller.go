@@ -107,10 +107,12 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
-		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
 		tasks := s.taskmanager.Tasks()
 		for _, offer := range offerEvent.Offers {
+			var taskList []*mesos_v1.TaskInfo
+
+			// TODO this needs to stop if it's determined that no more resources are available for further iterations.
 			for item := range tasks.Iterate() {
 				task := item.Value.(mesos_v1.Task)
 				t := &mesos_v1.TaskInfo{
@@ -126,6 +128,10 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 						Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
 					},
 				}
+
+				// TODO we can probably just use the task manager directly when we Accept.
+				// No need for our own copy of tasks here.
+				// We could make the call, check for errors, and delete from the task manager.
 				taskList = append(taskList, t)
 				s.taskmanager.Delete(&task)
 			}
@@ -163,14 +169,7 @@ func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	s.taskmanager.SetTaskState(id, updateEvent.GetStatus().State)
 
 	status := updateEvent.GetStatus()
-	uuid := status.GetUuid()
-
-	// Note that with the new API, schedulers are responsible for explicitly acknowledging the receipt of status updates that have “status.uuid()” set.
-	// These status updates are reliably retried until they are acknowledged by the scheduler.
-	// The scheduler must not acknowledge status updates that do not have "status.uuid()" set as they are not retried.
-	if uuid != nil {
-		s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), uuid)
-	}
+	s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), status.GetUuid())
 }
 func (s *EventController) Message(msg *sched.Event_Message) {
 	fmt.Printf("Message event recieved: %v\n", *msg)
