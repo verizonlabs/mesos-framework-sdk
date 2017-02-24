@@ -26,6 +26,10 @@ func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager ta
 	}
 }
 
+func (s *EventController) Subscribe(*sched.Event_Subscribed) {
+	fmt.Println("Subscribe event.")
+}
+
 func (s *EventController) Run() {
 	if s.scheduler.FrameworkInfo().GetId() == nil {
 		err := s.scheduler.Subscribe(s.events)
