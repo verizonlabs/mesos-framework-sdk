@@ -1,4 +1,4 @@
-package default_event_controller
+package controller
 
 import (
 	"fmt"

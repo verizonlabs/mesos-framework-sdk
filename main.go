@@ -6,7 +6,7 @@ import (
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/scheduler"
-	eventCtrl "mesos-framework-sdk/scheduler/events/default_event_controller"
+	eventCtrl "mesos-framework-sdk/scheduler/events/controller"
 	"mesos-framework-sdk/task_manager"
 	"time"
 )
