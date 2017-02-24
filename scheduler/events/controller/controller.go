@@ -159,7 +159,14 @@ func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	s.taskmanager.SetTaskState(id, updateEvent.GetStatus().State)
 
 	status := updateEvent.GetStatus()
-	s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), status.GetUuid())
+	uuid := status.GetUuid()
+
+	// Note that with the new API, schedulers are responsible for explicitly acknowledging the receipt of status updates that have “status.uuid()” set.
+	// These status updates are reliably retried until they are acknowledged by the scheduler.
+	// The scheduler must not acknowledge status updates that do not have "status.uuid()" set as they are not retried.
+	if uuid != nil {
+		s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), uuid)
+	}
 }
 func (s *EventController) Message(msg *sched.Event_Message) {
 	fmt.Printf("Message event recieved: %v\n", *msg)
