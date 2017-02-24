@@ -33,7 +33,7 @@ func Decode(data io.ReadCloser, events interface{}) error {
 		}
 
 		switch events := events.(type) {
-		case chan<- *mesos_v1_scheduler.Event:
+		case chan *mesos_v1_scheduler.Event:
 			var event mesos_v1_scheduler.Event
 			err := proto.Unmarshal(buffer, &event)
 			if err != nil {
@@ -41,7 +41,7 @@ func Decode(data io.ReadCloser, events interface{}) error {
 			}
 
 			events <- &event
-		case chan<- *mesos_v1_executor.Event:
+		case chan *mesos_v1_executor.Event:
 			var event mesos_v1_executor.Event
 			err := proto.Unmarshal(buffer, &event)
 			if err != nil {
