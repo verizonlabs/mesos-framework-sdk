@@ -54,10 +54,9 @@ func (s *EventController) launchExecutors(num int) {
 	for i := 0; i < num; i++ {
 		// Add tasks to task manager
 		task := &mesos_v1.Task{
-			Name:    proto.String("Sprint_" + strconv.Itoa(i)),
-			TaskId:  &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
-			AgentId: &mesos_v1.AgentID{Value: proto.String("")},
-			State:   mesos_v1.TaskState_TASK_STAGING.Enum(),
+			Name:   proto.String("Sprint_" + strconv.Itoa(i)),
+			TaskId: &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
+			State:  mesos_v1.TaskState_TASK_STAGING.Enum(),
 		}
 		s.taskmanager.Add(task)
 	}
@@ -111,32 +110,37 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		var taskList []*mesos_v1.TaskInfo
 		// TODO: check if resources are available for this particular task before launch.
 		tasks := s.taskmanager.Tasks()
-		for item := range tasks.Iterate() {
-			task := item.Value.(mesos_v1.Task)
-			t := &mesos_v1.TaskInfo{
-				Name:      task.Name,
-				TaskId:    task.TaskId,
-				AgentId:   offerEvent.Offers[0].AgentId,
-				Resources: offerEvent.Offers[0].Resources,
-				Executor: &mesos_v1.ExecutorInfo{
-					ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
-					FrameworkId: s.scheduler.FrameworkInfo().GetId(),
-					Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
-				},
+		for _, offer := range offerEvent.Offers {
+			for item := range tasks.Iterate() {
+				task := item.Value.(mesos_v1.Task)
+				t := &mesos_v1.TaskInfo{
+					Name:      task.Name,
+					TaskId:    task.TaskId,
+					AgentId:   offer.AgentId,
+					Resources: offer.Resources, // TODO need resource management here.
+
+					// TODO hook this up
+					Executor: &mesos_v1.ExecutorInfo{
+						ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
+						FrameworkId: s.scheduler.FrameworkInfo().GetId(),
+						Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
+					},
+				}
+				taskList = append(taskList, t)
+				s.taskmanager.Delete(&task)
 			}
-			taskList = append(taskList, t)
-			s.taskmanager.Delete(&task)
+
+			var operations []*mesos_v1.Offer_Operation
+
+			offer := &mesos_v1.Offer_Operation{
+				Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
+				Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
+
+			operations = append(operations, offer)
+
+			s.scheduler.Accept(offerIDs, operations, nil)
 		}
 
-		var operations []*mesos_v1.Offer_Operation
-
-		offer := &mesos_v1.Offer_Operation{
-			Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
-			Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
-
-		operations = append(operations, offer)
-
-		s.scheduler.Accept(offerIDs, operations, nil)
 	} else {
 		var ids []*mesos_v1.OfferID
 		for _, v := range offerEvent.GetOffers() {
