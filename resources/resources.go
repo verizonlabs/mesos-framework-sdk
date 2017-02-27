@@ -11,26 +11,34 @@ This package contains functions to create common protobufs with ease.
 
 // Creates a cpu share that is not reserved.
 func CreateCpu(cpuShare float64, role string) *mesos_v1.Resource {
-	return &mesos_v1.Resource{
+	resource := &mesos_v1.Resource{
 		Name: proto.String("cpus"),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
 			Value: proto.Float64(cpuShare),
 		},
-		Role: proto.String(role),
 	}
+	if role != "" {
+		resource.Role = proto.String(role)
+	}
+
+	return resource
 }
 
 // Creates a memory share that is not reserved.
 func CreateMem(memShare float64, role string) *mesos_v1.Resource {
-	return &mesos_v1.Resource{
+	resource := &mesos_v1.Resource{
 		Name: proto.String("mem"),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
 			Value: proto.Float64(memShare),
 		},
-		Role: proto.String(role),
 	}
+	if role != "" {
+		resource.Role = proto.String(role)
+	}
+
+	return resource
 }
 
 func CreateDisk(vol *mesos_v1.Volume, source *mesos_v1.Resource_DiskInfo_Source) *mesos_v1.Resource_DiskInfo {
