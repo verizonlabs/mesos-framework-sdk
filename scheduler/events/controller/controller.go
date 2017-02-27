@@ -6,6 +6,7 @@ import (
 	"log"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/resources"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
 	"strconv"
@@ -56,7 +57,6 @@ func (s *EventController) launchExecutors(num int) {
 		task := &mesos_v1.Task{
 			Name:   proto.String("Sprint_" + strconv.Itoa(i)),
 			TaskId: &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
-			State:  mesos_v1.TaskState_TASK_STAGING.Enum(),
 		}
 		s.taskmanager.Add(task)
 	}
@@ -107,25 +107,27 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
+
 		// TODO: check if resources are available for this particular task before launch.
-		tasks := s.taskmanager.Tasks()
 		for _, offer := range offerEvent.Offers {
 			var taskList []*mesos_v1.TaskInfo
 
-			// TODO this needs to stop if it's determined that no more resources are available for further iterations.
-			for item := range tasks.Iterate() {
+			// TODO this needs to break out if it's determined that no more resources are available for further iterations.
+			for item := range s.taskmanager.Tasks().Iterate() {
 				task := item.Value.(mesos_v1.Task)
 				t := &mesos_v1.TaskInfo{
-					Name:      task.Name,
-					TaskId:    task.TaskId,
-					AgentId:   offer.AgentId,
-					Resources: offer.Resources, // TODO need resource management here.
+					Name:    task.Name,
+					TaskId:  task.TaskId,
+					AgentId: offer.AgentId,
+					Command: &mesos_v1.CommandInfo{
+						User:  proto.String("root"),
+						Value: proto.String("/bin/sleep 5"),
+					},
 
-					// TODO hook this up
-					Executor: &mesos_v1.ExecutorInfo{
-						ExecutorId:  &mesos_v1.ExecutorID{Value: proto.String("")},
-						FrameworkId: s.scheduler.FrameworkInfo().GetId(),
-						Command:     &mesos_v1.CommandInfo{Value: proto.String("sleep 5")},
+					// TODO need resource management here.
+					Resources: []*mesos_v1.Resource{
+						resources.CreateCpu(0.1, ""),
+						resources.CreateMem(64.0, ""),
 					},
 				}
 
@@ -145,8 +147,8 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 			operations = append(operations, offer)
 
 			s.scheduler.Accept(offerIDs, operations, nil)
-		}
 
+		}
 	} else {
 		var ids []*mesos_v1.OfferID
 		for _, v := range offerEvent.GetOffers() {
@@ -158,10 +160,12 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		s.scheduler.Suppress()
 	}
 }
+
 func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
 	fmt.Printf("Rescind event recieved.: %v\n", *rescindEvent)
 	rescindEvent.GetOfferId().GetValue()
 }
+
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
 
@@ -171,18 +175,23 @@ func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	status := updateEvent.GetStatus()
 	s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), status.GetUuid())
 }
+
 func (s *EventController) Message(msg *sched.Event_Message) {
 	fmt.Printf("Message event recieved: %v\n", *msg)
 }
+
 func (s *EventController) Failure(fail *sched.Event_Failure) {
-	fmt.Printf("Failured event recieved: %v\n", *fail)
+	log.Println("Executor " + fail.GetExecutorId().GetValue() + " failed with status " + strconv.Itoa(int(fail.GetStatus())))
 }
+
 func (s *EventController) Error(err *sched.Event_Error) {
 	fmt.Printf("Error event recieved: %v\n", err)
 }
+
 func (s *EventController) InverseOffer(ioffers *sched.Event_InverseOffers) {
 	fmt.Printf("Inverse Offer event recieved: %v\n", ioffers)
 }
+
 func (s *EventController) RescindInverseOffer(rioffers *sched.Event_RescindInverseOffer) {
 	fmt.Printf("Rescind Inverse Offer event recieved: %v\n", rioffers)
 }
