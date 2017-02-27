@@ -12,12 +12,12 @@ the protobuf required for the call and send it off to the client.
 End users should only create their own scheduler if they wish to change the behavior of their calls.
 */
 import (
-	"fmt"
 	"log"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/recordio"
+	"strconv"
 	"time"
 )
 
@@ -119,7 +119,7 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v
 		log.Println(err.Error())
 		return
 	}
-	log.Println("Accepting " + len(offerIds) + " offers with " + len(tasks) + " tasks")
+	log.Println("Accepting " + strconv.Itoa(len(offerIds)) + " offers with " + strconv.Itoa(len(tasks)) + " tasks")
 }
 
 func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) {
@@ -134,7 +134,7 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Println("Declining " + len(offerIds) + " offers")
+	log.Println("Declining " + strconv.Itoa(len(offerIds)) + " offers")
 }
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
@@ -217,7 +217,7 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	log.Println("Reconciling " + len(tasks) + " tasks")
+	log.Println("Reconciling " + strconv.Itoa(len(tasks)) + " tasks")
 }
 
 func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) {
