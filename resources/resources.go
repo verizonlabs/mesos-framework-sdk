@@ -1,4 +1,4 @@
-package mesos_framework_sdk
+package resources
 
 import (
 	"github.com/golang/protobuf/proto"
