@@ -13,8 +13,6 @@ End users should only create their own scheduler if they wish to change the beha
 */
 import (
 	"fmt"
-
-	"io/ioutil"
 	"log"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
@@ -100,12 +98,12 @@ func (c *DefaultScheduler) Teardown() {
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_TEARDOWN.Enum(),
 	}
-	resp, err := c.client.Request(teardown)
+	_, err := c.client.Request(teardown)
 	if err != nil {
 		log.Println(err.Error())
 	}
 
-	fmt.Println(resp)
+	log.Println("Tearing down framework")
 }
 
 // Accepts offers from mesos master
@@ -116,19 +114,12 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v
 		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
 	}
 
-	resp, err := c.client.Request(accept)
+	_, err := c.client.Request(accept)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
-	// NOTE: If we get back an improper response, this will panic.
-	// TODO: recover from panics.
-	k, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Println(string(k))
-
+	log.Println("Accepting " + len(offerIds) + " offers with " + len(tasks) + " tasks")
 }
 
 func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) {
@@ -139,13 +130,11 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 		Decline:     &sched.Call_Decline{OfferIds: offerIds, Filters: filters},
 	}
 
-	resp, err := c.client.Request(decline)
+	_, err := c.client.Request(decline)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	a, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(a))
-	return
+	log.Println("Declining " + len(offerIds) + " offers")
 }
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
@@ -155,12 +144,11 @@ func (c *DefaultScheduler) Revive() {
 		Type:        sched.Call_REVIVE.Enum(),
 	}
 
-	resp, err := c.client.Request(revive)
+	_, err := c.client.Request(revive)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
-	return
+	log.Println("Reviving offers")
 }
 
 func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) {
@@ -171,12 +159,11 @@ func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.Agent
 		Kill:        &sched.Call_Kill{TaskId: taskId, AgentId: agentid},
 	}
 
-	resp, err := c.client.Request(kill)
+	_, err := c.client.Request(kill)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
-	return
+	log.Println("Killing task " + taskId.GetValue())
 }
 
 func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) {
@@ -188,12 +175,11 @@ func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_
 			AgentId:    agentId,
 		},
 	}
-	resp, err := c.client.Request(shutdown)
+	_, err := c.client.Request(shutdown)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
-	return
+	log.Println("Shutting down")
 }
 
 // Acknowledge call.
@@ -216,11 +202,10 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 		},
 	}
 
-	resp, err := c.client.Request(acknowledge)
+	_, err := c.client.Request(acknowledge)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
 }
 
 func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
@@ -228,11 +213,11 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_RECONCILE.Enum(),
 	}
-	resp, err := c.client.Request(reconcile)
+	_, err := c.client.Request(reconcile)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
+	log.Println("Reconciling " + len(tasks) + " tasks")
 }
 
 func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) {
@@ -245,12 +230,11 @@ func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_
 			Data:       data,
 		},
 	}
-	resp, err := c.client.Request(message)
+	_, err := c.client.Request(message)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
-
+	log.Println("Message received from agent " + agentId.GetValue() + " and executor " + executorId.GetValue())
 }
 
 // Sent by the scheduler to request resources from the master/allocator.
@@ -264,11 +248,11 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
 			Requests: resources,
 		},
 	}
-	resp, err := c.client.Request(request)
+	_, err := c.client.Request(request)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
+	log.Println("Requesting resources")
 }
 
 func (c *DefaultScheduler) Suppress() {
@@ -276,9 +260,9 @@ func (c *DefaultScheduler) Suppress() {
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_SUPPRESS.Enum(),
 	}
-	resp, err := c.client.Request(suppress)
+	_, err := c.client.Request(suppress)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	fmt.Println(resp)
+	log.Println("Suppressing offers")
 }
