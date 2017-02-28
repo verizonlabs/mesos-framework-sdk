@@ -75,6 +75,9 @@ func (d *DefaultResourceManager) applyFilters() {
 
 }
 
+// Swaps current element with last, then sets the entire slice to the slice without the last element.
+// Faster than taking two slices around the element and re-combining them since no resizing occurs
+// and we don't care about order.
 func (d *DefaultResourceManager) popOffer(i int) {
 	d.offers[len(d.offers)-1], d.offers[i] = d.offers[i], d.offers[len(d.offers)-1]
 	d.offers = d.offers[:len(d.offers)-1]
