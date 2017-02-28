@@ -7,6 +7,7 @@ import (
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/resources"
+	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
 	"strconv"
@@ -14,9 +15,10 @@ import (
 
 // Mock type that satisfies interface.
 type EventController struct {
-	scheduler   *scheduler.DefaultScheduler
-	taskmanager task_manager.TaskManager
-	events      chan *sched.Event
+	scheduler       *scheduler.DefaultScheduler
+	taskmanager     task_manager.TaskManager
+	resourcemanager manager.DefaultResourceManager
+	events          chan *sched.Event
 }
 
 func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, eventChan chan *sched.Event) *EventController {
@@ -57,6 +59,10 @@ func (s *EventController) launchExecutors(num int) {
 		task := &mesos_v1.Task{
 			Name:   proto.String("Sprint_" + strconv.Itoa(i)),
 			TaskId: &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
+			Resources: []*mesos_v1.Resource{
+				resources.CreateCpu(0.1, "*"),
+				resources.CreateMem(128.0, "*"),
+			},
 		}
 		s.taskmanager.Add(task)
 	}
@@ -107,14 +113,22 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
+		s.resourcemanager.AddOffers(offerEvent.GetOffers())
 
-		// TODO: check if resources are available for this particular task before launch.
-		for _, offer := range offerEvent.Offers {
-			var taskList []*mesos_v1.TaskInfo
+		var taskList []*mesos_v1.TaskInfo
 
-			// TODO this needs to break out if it's determined that no more resources are available for further iterations.
-			for item := range s.taskmanager.Tasks().Iterate() {
+		for item := range s.taskmanager.Tasks().Iterate() {
+			// see if we even have resources first to hand out.
+			if s.resourcemanager.HasResources() {
 				task := item.Value.(mesos_v1.Task)
+
+				offer, err := s.resourcemanager.Assign(&task)
+				if err != nil {
+					// It didn't match any offers.
+					log.Println(err.Error())
+					// we simply want to skip this task if there is no offer to satisfy it.
+				}
+
 				t := &mesos_v1.TaskInfo{
 					Name:    task.Name,
 					TaskId:  task.TaskId,
@@ -123,8 +137,6 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 						User:  proto.String("root"),
 						Value: proto.String("/bin/sleep 5"),
 					},
-
-					// TODO need resource management here.
 					Resources: []*mesos_v1.Resource{
 						resources.CreateCpu(0.1, ""),
 						resources.CreateMem(64.0, ""),
@@ -135,6 +147,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				// No need for our own copy of tasks here.
 				// We could make the call, check for errors, and delete from the task manager.
 				taskList = append(taskList, t)
+
 				s.taskmanager.Delete(&task)
 			}
 
