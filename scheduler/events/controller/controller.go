@@ -10,6 +10,7 @@ import (
 	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
+	"mesos-framework-sdk/utils"
 	"strconv"
 )
 
@@ -104,6 +105,10 @@ func (s *EventController) Listen() {
 
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	fmt.Println("Offers event recieved.")
+	//Reconcile any tasks.
+	var reconcileTasks []*mesos_v1.Task
+	s.scheduler.Reconcile(reconcileTasks)
+
 	var offerIDs []*mesos_v1.OfferID
 
 	for num, offer := range offerEvent.GetOffers() {
@@ -114,28 +119,31 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
 		s.resourcemanager.AddOffers(offerEvent.GetOffers())
-
 		var taskList []*mesos_v1.TaskInfo
 
 		for item := range s.taskmanager.Tasks().Iterate() {
 			// see if we even have resources first to hand out.
 			if s.resourcemanager.HasResources() {
-				task := item.Value.(mesos_v1.Task)
+				taskList = []*mesos_v1.TaskInfo{} // Clear it out every time.
+				mesosTask := item.Value.(mesos_v1.Task)
 
-				offer, err := s.resourcemanager.Assign(&task)
+				offer, err := s.resourcemanager.Assign(&mesosTask)
 				if err != nil {
 					// It didn't match any offers.
 					log.Println(err.Error())
-					// we simply want to skip this task if there is no offer to satisfy it.
 				}
-
+				s.taskmanager.Delete(&mesosTask)
+				name, err := utils.UuidToString(utils.Uuid())
+				if err != nil {
+					log.Println(err.Error())
+				}
 				t := &mesos_v1.TaskInfo{
-					Name:    task.Name,
-					TaskId:  task.TaskId,
+					Name:    proto.String(name),
+					TaskId:  mesosTask.TaskId,
 					AgentId: offer.AgentId,
 					Command: &mesos_v1.CommandInfo{
 						User:  proto.String("root"),
-						Value: proto.String("/bin/sleep 5"),
+						Value: proto.String("/bin/sleep 10"),
 					},
 					Resources: []*mesos_v1.Resource{
 						resources.CreateCpu(0.1, ""),
@@ -148,18 +156,17 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 				// We could make the call, check for errors, and delete from the task manager.
 				taskList = append(taskList, t)
 
-				s.taskmanager.Delete(&task)
+				var operations []*mesos_v1.Offer_Operation
+
+				offerOperations := &mesos_v1.Offer_Operation{
+					Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
+					Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
+
+				operations = append(operations, offerOperations)
+				log.Printf("Launching task %v\n", taskList)
+				s.scheduler.Accept(offerIDs, operations, nil)
+
 			}
-
-			var operations []*mesos_v1.Offer_Operation
-
-			offer := &mesos_v1.Offer_Operation{
-				Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
-				Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
-
-			operations = append(operations, offer)
-
-			s.scheduler.Accept(offerIDs, operations, nil)
 
 		}
 	} else {

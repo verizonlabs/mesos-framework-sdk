@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/pkg/errors"
+	"log"
 	"mesos-framework-sdk/include/mesos"
 )
 
@@ -58,9 +59,9 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
-	if d.HasResources() {
-		d.offers = []*MesosOfferResources{} // Assign an empty list.
-	}
+	log.Println("Clearing offers.")
+	d.offers = []*MesosOfferResources{} // Assign an empty list.
+
 }
 
 // Do we have any resources left?
@@ -76,9 +77,14 @@ func (d *DefaultResourceManager) applyFilters() {
 
 }
 
+func (d *DefaultResourceManager) popOffer(i int) {
+	d.offers[len(d.offers)-1], d.offers[i] = d.offers[i], d.offers[len(d.offers)-1]
+	d.offers = d.offers[:len(d.offers)-1]
+}
+
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(task *mesos_v1.Task) (*mesos_v1.Offer, error) {
-	for _, offer := range d.offers {
+	for i, offer := range d.offers {
 		isValid := false
 		// If we don't have any resources, it will never be valid.
 		for _, resource := range task.Resources {
@@ -87,20 +93,26 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.Task) (*mesos_v1.Offer, e
 			case "cpus":
 				if offer.Cpu > resource.GetScalar().GetValue() {
 					isValid = true
+					offer.Cpu = offer.Cpu - resource.GetScalar().GetValue()
 				} else {
 					isValid = false
 				}
 			case "mem":
 				if offer.Mem > resource.GetScalar().GetValue() {
 					isValid = true
+					offer.Mem = offer.Mem - resource.GetScalar().GetValue()
 				} else {
 					isValid = false
 				}
-				// TODO: check for disk here.
+			case "disk":
+				if resource.Disk != nil {
+					offer.Disk = resource.Disk
+				}
 			}
 		}
 		// If we have a valid offer match, return the id.
 		if isValid {
+			d.popOffer(i)
 			return offer.Offer, nil
 		}
 		// Otherwise continue.
