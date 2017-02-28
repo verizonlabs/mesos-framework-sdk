@@ -2,7 +2,6 @@ package manager
 
 import (
 	"github.com/pkg/errors"
-	"log"
 	"mesos-framework-sdk/include/mesos"
 )
 
@@ -59,7 +58,6 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
-	log.Println("Clearing offers.")
 	d.offers = []*MesosOfferResources{} // Assign an empty list.
 
 }
