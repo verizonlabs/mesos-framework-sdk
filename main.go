@@ -5,6 +5,7 @@ import (
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
 	eventCtrl "mesos-framework-sdk/scheduler/events/controller"
 	"mesos-framework-sdk/task_manager"
@@ -25,12 +26,13 @@ func main() {
 	eventChan := make(chan *mesos_v1_scheduler.Event)
 	defer close(eventChan)
 
-	manager := task_manager.NewDefaultTaskManager()
+	m := task_manager.NewDefaultTaskManager()
+	r := manager.NewDefaultResourceManager()
 
 	// Create a http client for mesos, and create a new scheduler with the default handlers.
 	c := client.NewClient("http://localhost:5050/api/v1/scheduler")
 	s := scheduler.NewDefaultScheduler(c, frameworkInfo)
-	e := eventCtrl.NewDefaultEventController(s, manager, eventChan)
+	e := eventCtrl.NewDefaultEventController(s, m, r, eventChan)
 
 	// We can simply serve a file using the server here.
 	//go server.NewServer("executor", ":8080", "/tmp/executor")

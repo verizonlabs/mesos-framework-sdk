@@ -76,7 +76,7 @@ func (d *DefaultResourceManager) popOffer(i int) {
 }
 
 // Assign an offer to a task.
-func (d *DefaultResourceManager) Assign(task *mesos_v1.Task) (*mesos_v1.Offer, error) {
+func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
 	for i, offer := range d.offers {
 		isValid := false
 		// If we don't have any resources, it will never be valid.
