@@ -22,11 +22,12 @@ type EventController struct {
 	events          chan *sched.Event
 }
 
-func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, eventChan chan *sched.Event) *EventController {
+func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event) *EventController {
 	return &EventController{
-		taskmanager: manager,
-		scheduler:   scheduler,
-		events:      eventChan,
+		taskmanager:     manager,
+		scheduler:       scheduler,
+		events:          eventChan,
+		resourcemanager: resourceManager,
 	}
 }
 

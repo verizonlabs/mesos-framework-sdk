@@ -21,6 +21,12 @@ type MesosOfferResources struct {
 	Disk  *mesos_v1.Resource_DiskInfo
 }
 
+func NewDefaultResourceManager() *DefaultResourceManager {
+	return &DefaultResourceManager{
+		offers: make([]*MesosOfferResources, 0),
+	}
+}
+
 // Add in a new batch of offers
 func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 	d.clearOffers() // No matter what we clear offers on this call to make sure we don't have stale offers that are already declined.
