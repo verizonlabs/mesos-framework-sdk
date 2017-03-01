@@ -1,6 +1,8 @@
 package structures
 
-import "sync"
+import (
+	"sync"
+)
 
 type ConcurrentMap struct {
 	data map[interface{}]interface{}
@@ -26,13 +28,11 @@ func NewConcurrentMap(size ...int) *ConcurrentMap {
 }
 
 // Sets a value with an associated key.
-func (c *ConcurrentMap) Set(key, value interface{}) *ConcurrentMap {
+func (c *ConcurrentMap) Set(key, value interface{}) {
 	c.Lock()
 	defer c.Unlock()
 
 	c.data[key] = value
-
-	return c
 }
 
 // Gets the value associated with the specified key.
@@ -44,13 +44,11 @@ func (c *ConcurrentMap) Get(key interface{}) interface{} {
 }
 
 // Removes a value from the map.
-func (c *ConcurrentMap) Delete(key interface{}) *ConcurrentMap {
+func (c *ConcurrentMap) Delete(key interface{}) {
 	c.Lock()
 	defer c.Unlock()
 
 	delete(c.data, key)
-
-	return c
 }
 
 // Safely iterates over the map.

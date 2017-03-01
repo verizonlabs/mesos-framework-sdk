@@ -50,7 +50,6 @@ func (m *DefaultTaskManager) Get(id *mesos_v1.TaskID) *mesos_v1.Task {
 
 // Check if a task has a particular status.
 func (m *DefaultTaskManager) IsTaskInState(task *mesos_v1.Task, state *mesos_v1.TaskState) (bool, error) {
-	m.tasks.Get(task.GetTaskId().GetValue())
 	return task.GetState().Enum() == state, nil
 }
 

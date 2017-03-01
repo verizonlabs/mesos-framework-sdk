@@ -96,3 +96,10 @@ func CreateVolumeSource(source *mesos_v1.Volume_Source_Type,
 	}
 
 }
+
+func LaunchOfferOperation(taskList []*mesos_v1.TaskInfo) *mesos_v1.Offer_Operation {
+	return &mesos_v1.Offer_Operation{
+		Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
+		Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList},
+	}
+}

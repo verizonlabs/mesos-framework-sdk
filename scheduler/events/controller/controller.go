@@ -7,23 +7,27 @@ import (
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/resources"
+	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
+	"mesos-framework-sdk/utils"
 	"strconv"
 )
 
 // Mock type that satisfies interface.
 type EventController struct {
-	scheduler   *scheduler.DefaultScheduler
-	taskmanager task_manager.TaskManager
-	events      chan *sched.Event
+	scheduler       *scheduler.DefaultScheduler
+	taskmanager     task_manager.TaskManager
+	resourcemanager manager.DefaultResourceManager
+	events          chan *sched.Event
 }
 
-func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, eventChan chan *sched.Event) *EventController {
+func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event) *EventController {
 	return &EventController{
-		taskmanager: manager,
-		scheduler:   scheduler,
-		events:      eventChan,
+		taskmanager:     manager,
+		scheduler:       scheduler,
+		events:          eventChan,
+		resourcemanager: resourceManager,
 	}
 }
 
@@ -53,10 +57,16 @@ func (s *EventController) Run() {
 // Create n default executors and launch them.
 func (s *EventController) launchExecutors(num int) {
 	for i := 0; i < num; i++ {
+		id, _ := utils.UuidToString(utils.Uuid())
 		// Add tasks to task manager
 		task := &mesos_v1.Task{
-			Name:   proto.String("Sprint_" + strconv.Itoa(i)),
-			TaskId: &mesos_v1.TaskID{Value: proto.String(strconv.Itoa(i))},
+			Name:   proto.String("Sprint_" + id),
+			TaskId: &mesos_v1.TaskID{Value: proto.String(id)},
+			Resources: []*mesos_v1.Resource{
+				resources.CreateCpu(0.1, "*"),
+				resources.CreateMem(128.0, "*"),
+			},
+			State: mesos_v1.TaskState_TASK_STAGING.Enum(),
 		}
 		s.taskmanager.Add(task)
 	}
@@ -98,6 +108,10 @@ func (s *EventController) Listen() {
 
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	fmt.Println("Offers event recieved.")
+	//Reconcile any tasks.
+	var reconcileTasks []*mesos_v1.Task
+	s.scheduler.Reconcile(reconcileTasks)
+
 	var offerIDs []*mesos_v1.OfferID
 
 	for num, offer := range offerEvent.GetOffers() {
@@ -107,47 +121,52 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
+		// Update our resources in the manager
+		s.resourcemanager.AddOffers(offerEvent.GetOffers())
+		tasksToLaunch := []*mesos_v1.Task{}
 
-		// TODO: check if resources are available for this particular task before launch.
-		for _, offer := range offerEvent.Offers {
-			var taskList []*mesos_v1.TaskInfo
+		// See which tasks still need to be launched.
+		for item := range s.taskmanager.Tasks().Iterate() {
+			t := item.Value.(mesos_v1.Task)
+			if t.GetState() == mesos_v1.TaskState_TASK_STAGING {
+				tasksToLaunch = append(tasksToLaunch, &t)
+			}
+		}
 
-			// TODO this needs to break out if it's determined that no more resources are available for further iterations.
-			for item := range s.taskmanager.Tasks().Iterate() {
-				task := item.Value.(mesos_v1.Task)
+		for _, item := range tasksToLaunch {
+			// See if we have resources.
+			if s.resourcemanager.HasResources() {
+				taskList := []*mesos_v1.TaskInfo{} // Clear it out every time.
+				operations := []*mesos_v1.Offer_Operation{}
+				mesosTask := item
+
+				offer, err := s.resourcemanager.Assign(mesosTask)
+				if err != nil {
+					// It didn't match any offers.
+					log.Println(err.Error())
+				}
+
 				t := &mesos_v1.TaskInfo{
-					Name:    task.Name,
-					TaskId:  task.TaskId,
+					Name:    mesosTask.Name,
+					TaskId:  mesosTask.TaskId,
 					AgentId: offer.AgentId,
 					Command: &mesos_v1.CommandInfo{
 						User:  proto.String("root"),
-						Value: proto.String("/bin/sleep 5"),
+						Value: proto.String("/bin/sleep 10"),
 					},
-
-					// TODO need resource management here.
 					Resources: []*mesos_v1.Resource{
 						resources.CreateCpu(0.1, ""),
 						resources.CreateMem(64.0, ""),
 					},
 				}
 
-				// TODO we can probably just use the task manager directly when we Accept.
-				// No need for our own copy of tasks here.
-				// We could make the call, check for errors, and delete from the task manager.
 				taskList = append(taskList, t)
-				s.taskmanager.Delete(&task)
+
+				operations = append(operations, resources.LaunchOfferOperation(taskList))
+
+				log.Printf("Launching task %v\n", taskList)
+				s.scheduler.Accept(offerIDs, operations, nil)
 			}
-
-			var operations []*mesos_v1.Offer_Operation
-
-			offer := &mesos_v1.Offer_Operation{
-				Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),
-				Launch: &mesos_v1.Offer_Operation_Launch{TaskInfos: taskList}}
-
-			operations = append(operations, offer)
-
-			s.scheduler.Accept(offerIDs, operations, nil)
-
 		}
 	} else {
 		var ids []*mesos_v1.OfferID
