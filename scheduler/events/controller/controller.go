@@ -17,12 +17,12 @@ import (
 // Mock type that satisfies interface.
 type EventController struct {
 	scheduler       *scheduler.DefaultScheduler
-	taskmanager     task_manager.TaskManager
-	resourcemanager manager.DefaultResourceManager
+	taskmanager     *task_manager.DefaultTaskManager
+	resourcemanager *manager.DefaultResourceManager
 	events          chan *sched.Event
 }
 
-func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager task_manager.TaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event) *EventController {
+func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager *task_manager.DefaultTaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event) *EventController {
 	return &EventController{
 		taskmanager:     manager,
 		scheduler:       scheduler,
@@ -59,14 +59,13 @@ func (s *EventController) launchExecutors(num int) {
 	for i := 0; i < num; i++ {
 		id, _ := utils.UuidToString(utils.Uuid())
 		// Add tasks to task manager
-		task := &mesos_v1.Task{
+		task := &mesos_v1.TaskInfo{
 			Name:   proto.String("Sprint_" + id),
 			TaskId: &mesos_v1.TaskID{Value: proto.String(id)},
 			Resources: []*mesos_v1.Resource{
 				resources.CreateCpu(0.1, "*"),
 				resources.CreateMem(128.0, "*"),
 			},
-			State: mesos_v1.TaskState_TASK_STAGING.Enum(),
 		}
 		s.taskmanager.Add(task)
 	}
@@ -123,17 +122,8 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	if s.taskmanager.HasQueuedTasks() {
 		// Update our resources in the manager
 		s.resourcemanager.AddOffers(offerEvent.GetOffers())
-		tasksToLaunch := []*mesos_v1.Task{}
 
-		// See which tasks still need to be launched.
-		for item := range s.taskmanager.Tasks().Iterate() {
-			t := item.Value.(mesos_v1.Task)
-			if t.GetState() == mesos_v1.TaskState_TASK_STAGING {
-				tasksToLaunch = append(tasksToLaunch, &t)
-			}
-		}
-
-		for _, item := range tasksToLaunch {
+		for _, item := range s.taskmanager.QueuedTasks() {
 			// See if we have resources.
 			if s.resourcemanager.HasResources() {
 				taskList := []*mesos_v1.TaskInfo{} // Clear it out every time.
@@ -187,9 +177,12 @@ func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
 
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
-
-	id := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
-	s.taskmanager.SetTaskState(id, updateEvent.GetStatus().State)
+	task := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
+	// TODO: Handle more states in regard to tasks.
+	if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
+		// Only set the task to "launched" if it didn't fail.
+		s.taskmanager.SetTaskLaunched(task)
+	}
 
 	status := updateEvent.GetStatus()
 	s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), status.GetUuid())
