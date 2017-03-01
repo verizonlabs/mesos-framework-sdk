@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"mesos-framework-sdk/include/mesos"
 )
 
