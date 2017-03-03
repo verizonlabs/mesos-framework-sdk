@@ -56,10 +56,7 @@ func (d *DefaultResourceManager) clearOffers() {
 
 // Do we have any resources left?
 func (d *DefaultResourceManager) HasResources() bool {
-	if len(d.offers) > 0 {
-		return true
-	}
-	return false
+	return len(d.offers) > 0
 }
 
 // Applies filters if any.
