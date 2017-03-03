@@ -50,7 +50,7 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
-	d.offers = []*MesosOfferResources{} // Assign an empty list.
+	d.offers = nil // Release memory to the GC.
 
 }
 
