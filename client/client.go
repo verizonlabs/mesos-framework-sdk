@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/golang/protobuf/proto"
+	"io/ioutil"
 	"log"
 	"mesos-framework-sdk/include/executor"
 	"mesos-framework-sdk/include/scheduler"
@@ -66,6 +67,11 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		msg, _ := ioutil.ReadAll(resp.Body)
+		return nil, errors.New(string(msg))
 	}
 
 	// We will only get the stream ID after a SUBSCRIBE call.
