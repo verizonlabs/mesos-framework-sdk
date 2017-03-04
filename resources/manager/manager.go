@@ -105,5 +105,5 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 			return offer.Offer, nil
 		}
 	}
-	return &mesos_v1.Offer{}, errors.New("Cannot find a suitable offer for task.")
+	return nil, errors.New("Cannot find a suitable offer for task.")
 }
