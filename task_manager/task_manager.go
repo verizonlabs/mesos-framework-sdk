@@ -48,11 +48,7 @@ func (m *DefaultTaskManager) Get(id *mesos_v1.TaskID) *mesos_v1.TaskInfo {
 
 // Check if the task is already in the task manager.
 func (m *DefaultTaskManager) HasTask(task *mesos_v1.TaskInfo) bool {
-	ret := m.tasks.Get(task.GetTaskId().GetValue())
-	if ret == nil {
-		return false
-	}
-	return true
+	return m.tasks.Get(task.GetTaskId().GetValue()) == nil
 }
 
 func (m *DefaultTaskManager) SetTaskQueued(task *mesos_v1.TaskInfo) {
