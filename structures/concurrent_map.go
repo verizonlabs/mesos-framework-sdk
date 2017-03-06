@@ -28,11 +28,13 @@ func NewConcurrentMap(size ...int) *ConcurrentMap {
 }
 
 // Sets a value with an associated key.
-func (c *ConcurrentMap) Set(key, value interface{}) {
+func (c *ConcurrentMap) Set(key, value interface{}) *ConcurrentMap {
 	c.Lock()
 	defer c.Unlock()
 
 	c.data[key] = value
+
+	return c
 }
 
 // Gets the value associated with the specified key.

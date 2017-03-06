@@ -50,16 +50,13 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
-	d.offers = []*MesosOfferResources{} // Assign an empty list.
+	d.offers = nil // Release memory to the GC.
 
 }
 
 // Do we have any resources left?
 func (d *DefaultResourceManager) HasResources() bool {
-	if len(d.offers) > 0 {
-		return true
-	}
-	return false
+	return len(d.offers) > 0
 }
 
 // Applies filters if any.
@@ -108,5 +105,5 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 			return offer.Offer, nil
 		}
 	}
-	return &mesos_v1.Offer{}, errors.New("Cannot find a suitable offer for task.")
+	return nil, errors.New("Cannot find a suitable offer for task.")
 }

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"log"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
@@ -10,7 +9,6 @@ import (
 	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
 	"mesos-framework-sdk/task_manager"
-	"mesos-framework-sdk/utils"
 	"strconv"
 )
 
@@ -31,49 +29,27 @@ func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager *t
 	}
 }
 
-func (s *EventController) Subscribe(*sched.Event_Subscribed) {
-	fmt.Println("Subscribe event.")
+func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
+	id := subEvent.GetFrameworkId()
+	idVal := id.GetValue()
+	s.scheduler.Info.Id = id
+	log.Printf("Subscribed with an ID of %s", idVal)
 }
 
 func (s *EventController) Run() {
 	if s.scheduler.FrameworkInfo().GetId() == nil {
 		err := s.scheduler.Subscribe(s.events)
 		if err != nil {
-			log.Printf("Error: %v", err.Error())
+			log.Printf("Failed to subscribe: %s", err.Error())
 		}
 
 		// Wait here until we have our framework ID.
 		select {
 		case e := <-s.events:
-			id := e.GetSubscribed().GetFrameworkId()
-			s.scheduler.Info.Id = id
-			log.Printf("Subscribed with an ID of %s", id.GetValue())
+			s.Subscribe(e.GetSubscribed())
 		}
-		s.launchExecutors(2)
 	}
 	s.Listen()
-}
-
-// Create n default executors and launch them.
-func (s *EventController) launchExecutors(num int) {
-	for i := 0; i < num; i++ {
-		id, _ := utils.UuidToString(utils.Uuid())
-		// Add tasks to task manager
-		task := &mesos_v1.TaskInfo{
-			Name:   proto.String("Sprint_" + id),
-			TaskId: &mesos_v1.TaskID{Value: proto.String(id)},
-			Command: &mesos_v1.CommandInfo{
-				User:  proto.String("root"),
-				Value: proto.String("/bin/sleep 400"),
-			},
-			Resources: []*mesos_v1.Resource{
-				resources.CreateCpu(0.1, "*"),
-				resources.CreateMem(128.0, "*"),
-			},
-		}
-
-		s.taskmanager.Add(task)
-	}
 }
 
 // Main event loop that listens on channels forever until framework terminates.
@@ -82,8 +58,6 @@ func (s *EventController) Listen() {
 		select {
 		case t := <-s.events:
 			switch t.GetType() {
-			case sched.Event_SUBSCRIBED:
-				log.Println("Subscribe event.")
 			case sched.Event_ERROR:
 				go s.Error(t.GetError())
 			case sched.Event_FAILURE:
@@ -116,6 +90,13 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 	var reconcileTasks []*mesos_v1.Task
 	s.scheduler.Reconcile(reconcileTasks)
 
+	var offerIDs []*mesos_v1.OfferID
+
+	for num, offer := range offerEvent.GetOffers() {
+		fmt.Printf("Offer number: %v, Offer info: %v\n", num, offer)
+		offerIDs = append(offerIDs, offer.GetId())
+	}
+
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
 		// Update our resources in the manager
@@ -126,7 +107,6 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 			if s.resourcemanager.HasResources() {
 				taskList := []*mesos_v1.TaskInfo{} // Clear it out every time.
 				operations := []*mesos_v1.Offer_Operation{}
-				offerIDs := []*mesos_v1.OfferID{}
 				mesosTask := item
 
 				offer, err := s.resourcemanager.Assign(mesosTask)
@@ -171,15 +151,13 @@ func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
 
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
-
 	task := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
-	/*
-		// TODO: Handle more states in regard to tasks.
-		if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
-			// Only set the task to "launched" if it didn't fail.
-			s.taskmanager.SetTaskLaunched(task)
-		}*/
-	s.taskmanager.SetTaskLaunched(task)
+	// TODO: Handle more states in regard to tasks.
+	if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
+		// Only set the task to "launched" if it didn't fail.
+		s.taskmanager.SetTaskLaunched(task)
+	}
+
 	status := updateEvent.GetStatus()
 	s.scheduler.Acknowledge(status.GetAgentId(), status.GetTaskId(), status.GetUuid())
 }
