@@ -31,23 +31,24 @@ func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager *t
 	}
 }
 
-func (s *EventController) Subscribe(*sched.Event_Subscribed) {
-	fmt.Println("Subscribe event.")
+func (s *EventController) Subscribe(subEvent *sched.Event_Subscribed) {
+	id := subEvent.GetFrameworkId()
+	idVal := id.GetValue()
+	s.scheduler.Info.Id = id
+	log.Printf("Subscribed with an ID of %s", idVal)
 }
 
 func (s *EventController) Run() {
 	if s.scheduler.FrameworkInfo().GetId() == nil {
 		err := s.scheduler.Subscribe(s.events)
 		if err != nil {
-			log.Printf("Error: %v", err.Error())
+			log.Printf("Failed to subscribe: %s", err.Error())
 		}
 
 		// Wait here until we have our framework ID.
 		select {
 		case e := <-s.events:
-			id := e.GetSubscribed().GetFrameworkId()
-			s.scheduler.Info.Id = id
-			log.Printf("Subscribed with an ID of %s", id.GetValue())
+			s.Subscribe(e.GetSubscribed())
 		}
 		s.launchExecutors(2)
 	}
