@@ -50,26 +50,8 @@ func (s *EventController) Run() {
 		case e := <-s.events:
 			s.Subscribe(e.GetSubscribed())
 		}
-		s.launchExecutors(2)
 	}
 	s.Listen()
-}
-
-// Create n default executors and launch them.
-func (s *EventController) launchExecutors(num int) {
-	for i := 0; i < num; i++ {
-		id, _ := utils.UuidToString(utils.Uuid())
-		// Add tasks to task manager
-		task := &mesos_v1.TaskInfo{
-			Name:   proto.String("Sprint_" + id),
-			TaskId: &mesos_v1.TaskID{Value: proto.String(id)},
-			Resources: []*mesos_v1.Resource{
-				resources.CreateCpu(0.1, "*"),
-				resources.CreateMem(128.0, "*"),
-			},
-		}
-		s.taskmanager.Add(task)
-	}
 }
 
 // Main event loop that listens on channels forever until framework terminates.
