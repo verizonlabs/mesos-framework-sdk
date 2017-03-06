@@ -60,8 +60,6 @@ func (s *EventController) Listen() {
 		select {
 		case t := <-s.events:
 			switch t.GetType() {
-			case sched.Event_SUBSCRIBED:
-				log.Println("Subscribe event.")
 			case sched.Event_ERROR:
 				go s.Error(t.GetError())
 			case sched.Event_FAILURE:
