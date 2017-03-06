@@ -9,7 +9,7 @@ import (
 type TaskManager interface {
 	Add(*mesos_v1.TaskInfo)
 	Delete(*mesos_v1.TaskInfo)
-	Get(*mesos_v1.TaskID) *mesos_v1.TaskInfo
+	Get(*string) *mesos_v1.TaskInfo
 	HasTask(*mesos_v1.TaskInfo) bool
 	TotalTasks() int
 	Tasks() *structures.ConcurrentMap
@@ -33,23 +33,25 @@ func NewDefaultTaskManager() *DefaultTaskManager {
 
 // Provision a task
 func (m *DefaultTaskManager) Add(task *mesos_v1.TaskInfo) {
-	m.tasks.Set(task.GetTaskId().GetValue(), *task)
+	m.tasks.Set(task.GetName(), *task)
 	m.SetTaskQueued(task)
 }
 
 // Delete a task
 func (m *DefaultTaskManager) Delete(task *mesos_v1.TaskInfo) {
-	m.tasks.Delete(task.GetTaskId())
+	m.tasks.Delete(task.GetName())
+	delete(m.queuedTasks, task.GetName())
+	delete(m.launchedTasks, task.GetName())
 }
 
-func (m *DefaultTaskManager) Get(id *mesos_v1.TaskID) *mesos_v1.TaskInfo {
-	ret := m.tasks.Get(id.GetValue()).(mesos_v1.TaskInfo)
+func (m *DefaultTaskManager) Get(name *string) *mesos_v1.TaskInfo {
+	ret := m.tasks.Get(name).(mesos_v1.TaskInfo)
 	return &ret
 }
 
 // Check if the task is already in the task manager.
 func (m *DefaultTaskManager) HasTask(task *mesos_v1.TaskInfo) bool {
-	ret := m.tasks.Get(task.GetTaskId().GetValue())
+	ret := m.tasks.Get(task.GetName())
 	if ret == nil {
 		return false
 	}
@@ -57,13 +59,13 @@ func (m *DefaultTaskManager) HasTask(task *mesos_v1.TaskInfo) bool {
 }
 
 func (m *DefaultTaskManager) SetTaskQueued(task *mesos_v1.TaskInfo) {
-	m.queuedTasks[task.GetTaskId().GetValue()] = task
+	m.queuedTasks[task.GetName()] = task
 }
 
 func (m *DefaultTaskManager) SetTaskLaunched(task *mesos_v1.TaskInfo) error {
-	if _, ok := m.queuedTasks[task.GetTaskId().GetValue()]; ok {
-		delete(m.queuedTasks, task.GetTaskId().GetValue())  // Delete it from queue.
-		m.launchedTasks[task.GetTaskId().GetValue()] = task // Add to launched tasks.
+	if _, ok := m.queuedTasks[task.GetName()]; ok {
+		delete(m.queuedTasks, task.GetName())  // Delete it from queue.
+		m.launchedTasks[task.GetName()] = task // Add to launched tasks.
 		return nil
 	}
 	// This task isn't queued up, reject.
@@ -75,7 +77,7 @@ func (m *DefaultTaskManager) HasQueuedTasks() bool {
 	// Check to see if we have any tasks in the queued tasks map.
 	for v := range m.tasks.Iterate() {
 		task := v.Value.(mesos_v1.TaskInfo)
-		if _, ok := m.queuedTasks[task.GetTaskId().GetValue()]; ok {
+		if _, ok := m.queuedTasks[task.GetName()]; ok {
 			return true
 		}
 	}
