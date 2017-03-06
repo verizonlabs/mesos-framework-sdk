@@ -73,7 +73,9 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
 		Subscribe: &sched.Call_Subscribe{
 			FrameworkInfo: c.Info,
 		},
+		FrameworkId: c.Info.Id,
 	}
+
 	go func() {
 		for {
 			resp, err := c.client.Request(call)
