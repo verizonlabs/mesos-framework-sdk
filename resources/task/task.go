@@ -14,7 +14,7 @@ type HealthCheckJSON struct {
 }
 
 type KillJson struct {
-	TaskID *string `json:"taskid"`
+	Name *string `json:"name"`
 }
 
 type ResourceJSON struct {
