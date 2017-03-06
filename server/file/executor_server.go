@@ -47,7 +47,7 @@ func (s *executorServer) Serve() {
 
 	if s.cfg.TLS() {
 		s.cfg.Server().Handler = s.mux
-		s.cfg.Server().Addr = "68.128.155.54:" + strconv.Itoa(s.cfg.Port())
+		s.cfg.Server().Addr = ":" + strconv.Itoa(s.cfg.Port())
 		fmt.Printf("%v", s.cfg.Server().Addr)
 		log.Fatal(s.cfg.Server().ListenAndServeTLS(s.cfg.Cert(), s.cfg.Key()))
 	} else {
