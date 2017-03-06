@@ -45,8 +45,12 @@ func (m *DefaultTaskManager) Delete(task *mesos_v1.TaskInfo) {
 }
 
 func (m *DefaultTaskManager) Get(name *string) *mesos_v1.TaskInfo {
-	ret := m.tasks.Get(name).(mesos_v1.TaskInfo)
-	return &ret
+	ret := m.tasks.Get(*name)
+	if ret != nil {
+		r := ret.(mesos_v1.TaskInfo)
+		return &r
+	}
+	return &mesos_v1.TaskInfo{}
 }
 
 // Check if the task is already in the task manager.
@@ -82,6 +86,17 @@ func (m *DefaultTaskManager) HasQueuedTasks() bool {
 		}
 	}
 	return false
+}
+
+func (m *DefaultTaskManager) GetById(id *mesos_v1.TaskID) *mesos_v1.TaskInfo {
+	// Check to see if any tasks we have match the id passed in.
+	for v := range m.tasks.Iterate() {
+		task := v.Value.(mesos_v1.TaskInfo)
+		if task.GetTaskId().GetValue() == id.GetValue() {
+			return &task
+		}
+	}
+	return nil
 }
 
 func (m *DefaultTaskManager) QueuedTasks() map[string]*mesos_v1.TaskInfo {
