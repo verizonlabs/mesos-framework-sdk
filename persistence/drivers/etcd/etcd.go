@@ -4,6 +4,7 @@ import (
 	"context"
 	etcd "github.com/coreos/etcd/clientv3"
 	"mesos-framework-sdk/persistence"
+	"runtime"
 	"time"
 )
 
@@ -21,14 +22,21 @@ func NewClient(endpoints []string, timeout time.Duration) persistence.KVStorage 
 		panic("Failed to create etcd client: " + err.Error())
 	}
 
-	return &Etcd{
+	c := &Etcd{
 		client: client,
 	}
+	runtime.SetFinalizer(c, c.finalizer)
+
+	return c
+}
+
+// Close the connection once we're GCed.
+func (e *Etcd) finalizer(f *Etcd) {
+	e.client.Close()
 }
 
 // Inserts a new key/value pair.
 func (e *Etcd) Create(key string, value string) error {
-	defer e.client.Close()
 	_, err := e.client.Put(context.Background(), key, value)
 
 	return err
@@ -36,7 +44,6 @@ func (e *Etcd) Create(key string, value string) error {
 
 // Reads a key's value.
 func (e *Etcd) Read(key string) (string, error) {
-	defer e.client.Close()
 	resp, err := e.client.Get(context.Background(), key)
 	if err != nil {
 		return "", err
@@ -51,7 +58,6 @@ func (e *Etcd) Read(key string) (string, error) {
 
 // Updates a key's value.
 func (e *Etcd) Update(key string, value string) error {
-	defer e.client.Close()
 	_, err := e.client.Put(context.Background(), key, value)
 
 	return err
@@ -59,7 +65,6 @@ func (e *Etcd) Update(key string, value string) error {
 
 // Deletes a key/value pair.
 func (e *Etcd) Delete(key string) error {
-	defer e.client.Close()
 	_, err := e.client.Delete(context.Background(), key)
 
 	return err
