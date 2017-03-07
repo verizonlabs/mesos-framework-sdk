@@ -1,8 +1,8 @@
 package task
 
 import (
+	"errors"
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 	"mesos-framework-sdk/include/mesos"
 )
 
