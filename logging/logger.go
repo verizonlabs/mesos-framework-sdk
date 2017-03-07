@@ -92,9 +92,7 @@ func NewDefaultLogger() *DefaultLogger {
 // emit using the debug severity level, the only
 // optional severity level (see EnableDebug)
 func (l *DefaultLogger) Debug(template string, args ...interface{}) {
-	if l.severity >= DEBUG {
-		l.emit(DEBUG, "", 0, template, args...)
-	}
+	l.emit(DEBUG, "", 0, template, args...)
 }
 
 // Event
