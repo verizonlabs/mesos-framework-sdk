@@ -97,6 +97,31 @@ func CreateVolumeSource(source *mesos_v1.Volume_Source_Type,
 
 }
 
+func CreateCommandInfo(
+	cmd *string, args []string,
+	user *string,
+	uris []*mesos_v1.CommandInfo_URI,
+	env *mesos_v1.Environment,
+	isShell *bool) *mesos_v1.CommandInfo {
+
+	return &mesos_v1.CommandInfo{
+		Value:       cmd,
+		Arguments:   args,
+		User:        user,
+		Environment: env,
+		Shell:       isShell,
+	}
+}
+
+// Assumes only cmd, uris and shell set to true.
+func CreateSimpleCommandInfo(cmd *string, uris []*mesos_v1.CommandInfo_URI) *mesos_v1.CommandInfo {
+	return &mesos_v1.CommandInfo{
+		Value: cmd,
+		Uris:  uris,
+		Shell: proto.Bool(true),
+	}
+}
+
 func LaunchOfferOperation(taskList []*mesos_v1.TaskInfo) *mesos_v1.Offer_Operation {
 	return &mesos_v1.Offer_Operation{
 		Type:   mesos_v1.Offer_Operation_LAUNCH.Enum(),

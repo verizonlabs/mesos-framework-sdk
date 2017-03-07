@@ -1,5 +1,11 @@
 package task
 
+import (
+	"github.com/golang/protobuf/proto"
+	"github.com/pkg/errors"
+	"mesos-framework-sdk/include/mesos"
+)
+
 type ApplicationJSON struct {
 	Name        string              `json:"name"`
 	Resources   *ResourceJSON       `json:"resources"`
@@ -37,6 +43,28 @@ type ContainerJSON struct {
 type NetworkJSON struct {
 	IpAddresses []IpAddressJSON `json:"ipaddress,omitempty"`
 	Name        *string         `json:"name"`
+}
+
+// Parse NetworkJSON into a list of Networkwork Infos.
+func ParseNetworkJSON(networks []NetworkJSON) ([]*mesos_v1.NetworkInfo, error) {
+	if len(networks) == 0 {
+		return []*mesos_v1.NetworkInfo{}, errors.New("Empty list of networks passed in.")
+	}
+	networkSlice := []*mesos_v1.NetworkInfo{}
+	for _, network := range networks {
+		ips := []*mesos_v1.NetworkInfo_IPAddress{}
+		for range network.IpAddresses {
+			i := &mesos_v1.NetworkInfo_IPAddress{
+				IpAddress: proto.String(""),
+			}
+			ips = append(ips, i)
+		}
+		n := &mesos_v1.NetworkInfo{
+			IpAddresses: ips,
+		}
+		networkSlice = append(networkSlice, n)
+	}
+	return networkSlice, nil
 }
 
 type IpAddressJSON struct {
