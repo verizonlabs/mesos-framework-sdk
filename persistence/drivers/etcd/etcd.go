@@ -3,7 +3,6 @@ package etcd
 import (
 	"context"
 	etcd "github.com/coreos/etcd/clientv3"
-	"mesos-framework-sdk/persistence"
 	"runtime"
 	"time"
 )
@@ -13,7 +12,7 @@ type Etcd struct {
 }
 
 // Creates a new etcd client with the specified configuration.
-func NewClient(endpoints []string, timeout time.Duration) persistence.KVStorage {
+func NewClient(endpoints []string, timeout time.Duration) *Etcd {
 	client, err := etcd.New(etcd.Config{
 		Endpoints:   endpoints,
 		DialTimeout: timeout,
