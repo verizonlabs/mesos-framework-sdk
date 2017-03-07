@@ -211,9 +211,16 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 }
 
 func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
+	var reconcileTasks []*sched.Call_Reconcile_Task
+	for _, task := range tasks {
+		reconcileTasks = append(reconcileTasks, &sched.Call_Reconcile_Task{AgentId: task.GetAgentId(), TaskId: task.GetTaskId()})
+	}
 	reconcile := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_RECONCILE.Enum(),
+		Reconcile: &sched.Call_Reconcile{
+			Tasks: reconcileTasks,
+		},
 	}
 	_, err := c.client.Request(reconcile)
 	if err != nil {
