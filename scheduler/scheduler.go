@@ -18,12 +18,6 @@ import (
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/recordio"
 	"strconv"
-	"time"
-)
-
-const (
-	subscribeRetry = 2
-	executors      = 3
 )
 
 type Scheduler interface {
@@ -55,14 +49,17 @@ type DefaultScheduler struct {
 
 func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo) *DefaultScheduler {
 	return &DefaultScheduler{
-		client:   c,
-		Info:     info,
-		executor: executors,
+		client: c,
+		Info:   info,
 	}
 }
 
 func (c *DefaultScheduler) FrameworkInfo() *mesos_v1.FrameworkInfo {
 	return c.Info
+}
+
+func (c *DefaultScheduler) Client() *client.Client {
+	return c.client
 }
 
 // Make a subscription call to mesos.
@@ -76,22 +73,16 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
 		FrameworkId: c.Info.Id,
 	}
 
-	go func() {
-		for {
-			resp, err := c.client.Request(call)
-			if err != nil {
-				log.Println(err.Error())
-			} else {
-				log.Println(recordio.Decode(resp.Body, eventChan))
-			}
+	// If we disconnect we need to reset the stream ID. For this reason always start with a fresh stream ID.
+	// Otherwise we'll never be able to reconnect.
+	c.client.StreamID = ""
 
-			// If we disconnect we need to reset the stream ID.
-			// Otherwise we'll never be able to reconnect.
-			c.client.StreamID = ""
-			time.Sleep(time.Duration(subscribeRetry) * time.Second)
-		}
-	}()
-	return nil
+	resp, err := c.client.Request(call)
+	if err != nil {
+		return err
+	} else {
+		return recordio.Decode(resp.Body, eventChan)
+	}
 }
 
 // Send a teardown request to mesos master.
