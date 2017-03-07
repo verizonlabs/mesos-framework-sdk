@@ -36,8 +36,20 @@ func (e *Etcd) finalizer(f *Etcd) {
 }
 
 // Inserts a new key/value pair.
-func (e *Etcd) Create(key string, value string) error {
+func (e *Etcd) Create(key, value string) error {
 	_, err := e.client.Put(context.Background(), key, value)
+
+	return err
+}
+
+// Creates a key with a specified TTL.
+func (e *Etcd) CreateWithLease(key, value string, ttl int64) error {
+	resp, err := e.client.Grant(context.TODO(), ttl)
+	if err != nil {
+		return err
+	}
+
+	_, err = e.client.Put(context.TODO(), key, value, etcd.WithLease(resp.ID))
 
 	return err
 }
@@ -57,7 +69,7 @@ func (e *Etcd) Read(key string) (string, error) {
 }
 
 // Updates a key's value.
-func (e *Etcd) Update(key string, value string) error {
+func (e *Etcd) Update(key, value string) error {
 	_, err := e.client.Put(context.Background(), key, value)
 
 	return err
