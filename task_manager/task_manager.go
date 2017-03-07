@@ -9,7 +9,7 @@ import (
 type TaskManager interface {
 	Add(*mesos_v1.TaskInfo)
 	Delete(*mesos_v1.TaskInfo)
-	Get(*string) *mesos_v1.TaskInfo
+	Get(*string) (*mesos_v1.TaskInfo, error)
 	HasTask(*mesos_v1.TaskInfo) bool
 	TotalTasks() int
 	Tasks() *structures.ConcurrentMap
@@ -43,13 +43,13 @@ func (m *DefaultTaskManager) Delete(task *mesos_v1.TaskInfo) {
 	delete(m.launchedTasks, task.GetName())
 }
 
-func (m *DefaultTaskManager) Get(name *string) *mesos_v1.TaskInfo {
+func (m *DefaultTaskManager) Get(name *string) (*mesos_v1.TaskInfo, error) {
 	ret := m.tasks.Get(*name)
 	if ret != nil {
 		r := ret.(mesos_v1.TaskInfo)
-		return &r
+		return &r, nil
 	}
-	return &mesos_v1.TaskInfo{}
+	return &mesos_v1.TaskInfo{}, errors.New("Could not find task.")
 }
 
 // Check if the task is already in the task manager.
