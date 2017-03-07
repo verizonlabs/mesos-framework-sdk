@@ -20,11 +20,6 @@ import (
 	"strconv"
 )
 
-const (
-	subscribeRetry = 2
-	executors      = 3
-)
-
 type Scheduler interface {
 	// Scheduler must also hold framework information, a client and an event handler.
 	FrameworkInfo() *mesos_v1.FrameworkInfo
@@ -52,11 +47,10 @@ type DefaultScheduler struct {
 	executor int
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo) Scheduler {
+func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo) *DefaultScheduler {
 	return &DefaultScheduler{
-		client:   c,
-		Info:     info,
-		executor: executors,
+		client: c,
+		Info:   info,
 	}
 }
 
