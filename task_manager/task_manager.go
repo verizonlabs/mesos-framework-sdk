@@ -24,8 +24,7 @@ type DefaultTaskManager struct {
 
 func NewDefaultTaskManager() *DefaultTaskManager {
 	return &DefaultTaskManager{
-		tasks:         structures.NewConcurrentMap(1),
-		totalTasks:    0,
+		tasks:         structures.NewConcurrentMap(100),
 		launchedTasks: make(map[string]*mesos_v1.TaskInfo),
 		queuedTasks:   make(map[string]*mesos_v1.TaskInfo),
 	}
