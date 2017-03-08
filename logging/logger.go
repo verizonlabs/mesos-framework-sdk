@@ -56,6 +56,8 @@ func NewDefaultLogger() *DefaultLogger {
 	if group == "" {
 		group = "unknown"
 	}
+
+	// Intentionally misspelled for historical and backwards compatibility reasons with a few internal tools.
 	correlationId := os.Getenv("MON_CORELATIONID")
 	if correlationId == "" {
 		correlationId = "0"
