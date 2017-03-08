@@ -87,10 +87,10 @@ func NewDefaultLogger() *DefaultLogger {
 	return logger
 }
 
-// Prints out the message to the appropriate stream.
-func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{}) {
+// Gets and parses information about the caller.
+func (l *DefaultLogger) callerInfo() (string, int) {
 
-	// Get caller statistics.
+	// Get caller file and line number.
 	_, file, line, ok := runtime.Caller(1)
 	if !ok {
 		file = "???"
@@ -98,21 +98,23 @@ func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{
 	}
 
 	// Determine the short filename.
-	short := file
 	for i := len(file) - 1; i > 0; i-- {
 		if file[i] == '/' {
-			short = file[i+1:]
+			file = file[i+1:]
 			break
 		}
 	}
 
-	file = short
-	linx := strconv.Itoa(line)
-	fileAndLine := strings.Join([]string{file, linx}, ":")
+	return file, line
+}
+
+// Prints out the message to the appropriate stream.
+func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{}) {
+	file, line := l.callerInfo()
+	fileAndLine := strings.Join([]string{file, strconv.Itoa(line)}, ":")
 
 	// Parse any format specifiers that might be passed in.
 	lines := strings.Split(fmt.Sprintf(template, args...), "\n")
-
 	stream := l.severityStreams[severity].writer
 	message := strings.Join([]string{
 		Marker,
