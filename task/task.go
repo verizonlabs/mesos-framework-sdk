@@ -3,7 +3,6 @@ package task
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
-	"log"
 	"mesos-framework-sdk/include/mesos"
 	"strings"
 )
@@ -95,7 +94,6 @@ func ParseNetworkJSON(networks []NetworkJSON) ([]*mesos_v1.NetworkInfo, error) {
 			n.PortMappings = ParseNetworkJSONPortMapping(network.PortMapping)
 		}
 		networkInfos = append(networkInfos, n)
-		log.Printf("Network info parsed: %v", networkInfos)
 	}
 	return networkInfos, nil
 }

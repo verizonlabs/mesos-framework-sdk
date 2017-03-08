@@ -1,7 +1,7 @@
 package file
 
 import (
-	"log"
+	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/server"
 	"net/http"
 	"os"
@@ -9,15 +9,17 @@ import (
 )
 
 type executorServer struct {
-	mux *http.ServeMux
-	cfg server.Configuration
+	mux    *http.ServeMux
+	cfg    server.Configuration
+	logger logging.Logger
 }
 
 // Returns a new instance of our server.
-func NewExecutorServer(cfg server.Configuration) *executorServer {
+func NewExecutorServer(cfg server.Configuration, logger logging.Logger) *executorServer {
 	return &executorServer{
-		mux: http.NewServeMux(),
-		cfg: cfg,
+		mux:    http.NewServeMux(),
+		cfg:    cfg,
+		logger: logger,
 	}
 }
 
@@ -30,7 +32,8 @@ func (s *executorServer) executorHandlers() {
 func (s *executorServer) executorBinary(w http.ResponseWriter, r *http.Request) {
 	_, err := os.Stat(s.cfg.Path()) // check if the file exists first.
 	if err != nil {
-		log.Fatal(s.cfg.Path() + " does not exist. " + err.Error())
+		s.logger.Emit(logging.ERROR, "%s does not exist: %s", s.cfg.Path(), err.Error())
+		os.Exit(1)
 	}
 
 	if s.cfg.TLS() {
@@ -47,8 +50,14 @@ func (s *executorServer) Serve() {
 	if s.cfg.TLS() {
 		s.cfg.Server().Handler = s.mux
 		s.cfg.Server().Addr = ":" + strconv.Itoa(s.cfg.Port())
-		log.Fatal(s.cfg.Server().ListenAndServeTLS(s.cfg.Cert(), s.cfg.Key()))
+		if err := s.cfg.Server().ListenAndServeTLS(s.cfg.Cert(), s.cfg.Key()); err != nil {
+			s.logger.Emit(logging.ERROR, err.Error())
+			os.Exit(1)
+		}
 	} else {
-		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(s.cfg.Port()), s.mux))
+		if err := http.ListenAndServe(":"+strconv.Itoa(s.cfg.Port()), s.mux); err != nil {
+			s.logger.Emit(logging.ERROR, err.Error())
+			os.Exit(1)
+		}
 	}
 }
