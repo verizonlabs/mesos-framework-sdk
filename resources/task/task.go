@@ -2,7 +2,6 @@ package task
 
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
 )
 
@@ -52,15 +51,8 @@ func ParseNetworkJSON(networks []NetworkJSON) ([]*mesos_v1.NetworkInfo, error) {
 	}
 	networkSlice := []*mesos_v1.NetworkInfo{}
 	for _, network := range networks {
-		ips := []*mesos_v1.NetworkInfo_IPAddress{}
-		for range network.IpAddresses {
-			i := &mesos_v1.NetworkInfo_IPAddress{
-				IpAddress: proto.String(""),
-			}
-			ips = append(ips, i)
-		}
 		n := &mesos_v1.NetworkInfo{
-			IpAddresses: ips,
+			Name: network.Name,
 		}
 		networkSlice = append(networkSlice, n)
 	}

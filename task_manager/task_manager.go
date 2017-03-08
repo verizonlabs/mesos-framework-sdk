@@ -16,7 +16,6 @@ type TaskManager interface {
 }
 
 type DefaultTaskManager struct {
-	totalTasks    int
 	tasks         *structures.ConcurrentMap
 	launchedTasks map[string]*mesos_v1.TaskInfo
 	queuedTasks   map[string]*mesos_v1.TaskInfo

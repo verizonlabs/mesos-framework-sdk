@@ -151,7 +151,7 @@ func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
 
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
-	task := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
+	task := s.taskmanager.GetById(updateEvent.GetStatus().GetTaskId())
 	// TODO: Handle more states in regard to tasks.
 	if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
 		// Only set the task to "launched" if it didn't fail.
