@@ -103,6 +103,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 					// It didn't match any offers.
 					s.logger.Emit(logging.ERROR, err.Error())
+					continue // We should decline.
 				}
 
 				t := &mesos_v1.TaskInfo{
@@ -153,7 +154,7 @@ func (s *EventController) Update(updateEvent *sched.Event_Update) {
 }
 
 func (s *EventController) Message(msg *sched.Event_Message) {
-	s.logger.Emit(logging.INFO, "Message event recieved: %v\n", *msg)
+	s.logger.Emit(logging.INFO, "Message event recieved: %v", *msg)
 }
 
 func (s *EventController) Failure(fail *sched.Event_Failure) {
@@ -161,13 +162,13 @@ func (s *EventController) Failure(fail *sched.Event_Failure) {
 }
 
 func (s *EventController) Error(err *sched.Event_Error) {
-	s.logger.Emit(logging.INFO, "Error event recieved: %v\n", err)
+	s.logger.Emit(logging.ERROR, "Error event recieved: %v", err)
 }
 
 func (s *EventController) InverseOffer(ioffers *sched.Event_InverseOffers) {
-	s.logger.Emit(logging.INFO, "Inverse Offer event recieved: %v\n", ioffers)
+	s.logger.Emit(logging.INFO, "Inverse Offer event recieved: %v", ioffers)
 }
 
 func (s *EventController) RescindInverseOffer(rioffers *sched.Event_RescindInverseOffer) {
-	s.logger.Emit(logging.INFO, "Rescind Inverse Offer event recieved: %v\n", rioffers)
+	s.logger.Emit(logging.INFO, "Rescind Inverse Offer event recieved: %v", rioffers)
 }
