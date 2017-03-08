@@ -1,0 +1,44 @@
+{
+  "name": "Test Network protobuf capabilities",
+  "resources": {
+    "cpus": 0.5,
+    "mem": 128.0
+  },
+  "command": {
+    "cmd": "/bin/sleep 4000"
+  },
+  "container": {
+    "image": "debian:latest",
+    "network": [{
+      "group": ["testgroup1"],
+      "labels": [{"test": "something"}, {"test1": "another"}],
+      "ipaddress": [{
+        "ip": "10.2.1.1",
+        "protocol": "ipv4"
+      },
+        {
+          "ip": "2600::1",
+          "protocol": "ipv6"
+        }]
+    },
+      {
+        "group": ["testgroup1"],
+        "labels": [{"test2": "something2"}, {"test2": "another2"}],
+        "ipaddress": [{
+          "ip": "10.2.1.5",
+          "protocol": "ipv4"
+        },
+          {
+            "ip": "2600::5",
+            "protocol": "ipv6"
+          }]
+      }
+    ]
+  },
+  "healthcheck": {
+    "endpoint": "localhost:8080"
+  },
+  "labels": [{
+    "purpose": "Testing"
+  }]
+}
