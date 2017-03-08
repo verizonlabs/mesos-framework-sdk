@@ -89,7 +89,7 @@ func NewDefaultLogger() *DefaultLogger {
 func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{}) {
 
 	// Get caller statistics.
-	_, file, line, ok := runtime.Caller(2)
+	_, file, line, ok := runtime.Caller(1)
 	if !ok {
 		file = "???"
 		line = 0
