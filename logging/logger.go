@@ -25,8 +25,8 @@ const (
 	UNKNOWN
 )
 
-// TODO build this out and make sure our default implementation follows it.
 type Logger interface {
+	Emit(severity uint8, template string, args ...interface{})
 }
 
 type severityWriter struct {
@@ -97,6 +97,7 @@ func (l *DefaultLogger) callerInfo() (string, int) {
 		line = 0
 	}
 
+	// We only want the filename, not the full path.
 	parts := strings.Split(file, "/")
 	file = parts[len(parts)-1]
 
