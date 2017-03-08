@@ -41,7 +41,6 @@ type DefaultLogger struct {
 	pid             string
 	correlationId   string
 	taskId          string
-	severity        uint8
 	severityStreams map[uint8]severityWriter
 }
 
@@ -72,7 +71,6 @@ func NewDefaultLogger() *DefaultLogger {
 		pid:           strconv.Itoa(os.Getpid()),
 		correlationId: correlationId,
 		taskId:        taskId,
-		severity:      INFO,
 		severityStreams: map[uint8]severityWriter{
 			NOP:     {os.Stdout, "NOP"},
 			ALARM:   {os.Stderr, "ALARM"},
@@ -88,56 +86,16 @@ func NewDefaultLogger() *DefaultLogger {
 	return logger
 }
 
-// Debug
-// emit using the debug severity level, the only
-// optional severity level (see EnableDebug)
-func (l *DefaultLogger) Debug(template string, args ...interface{}) {
-	l.emit(DEBUG, "", 0, template, args...)
-}
-
-// Event
-// emit using the event severity level
-func (l *DefaultLogger) Event(template string, args ...interface{}) {
-	l.emit(EVENT, "", 0, template, args...)
-}
-
-// Info
-// emit using the info severity level
-func (l *DefaultLogger) Info(template string, args ...interface{}) {
-	l.emit(INFO, "", 0, template, args...)
-}
-
-// Stat
-// emit using the stat severity level
-func (l *DefaultLogger) Stat(template string, args ...interface{}) {
-	l.emit(STAT, "", 0, template, args...)
-}
-
-// Error
-// emit using the err severity level
-func (l *DefaultLogger) Error(template string, args ...interface{}) {
-	l.emit(ERROR, "", 0, template, args...)
-}
-
-// Alarm
-// emit using the alarm severity level
-func (l *DefaultLogger) Alarm(template string, args ...interface{}) {
-	l.emit(ALARM, "", 0, template, args...)
-}
-
-func (l *DefaultLogger) emit(severity uint8, file string, line int, template string, args ...interface{}) {
+func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{}) {
 
 	// Get caller statistics.
-	if file == "" {
-		ok := false
-		_, file, line, ok = runtime.Caller(2)
-		if !ok {
-			file = "???"
-			line = 0
-		}
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file = "???"
+		line = 0
 	}
 
-	// Determine the short filename and avoid the func call of strings.SplitAfter.
+	// Determine the short filename.
 	short := file
 	for i := len(file) - 1; i > 0; i-- {
 		if file[i] == '/' {
@@ -159,11 +117,11 @@ func (l *DefaultLogger) emit(severity uint8, file string, line int, template str
 		lines = strings.Split(template, "\n")
 	}
 
-	stream := l.severityStreams[l.severity].writer
+	stream := l.severityStreams[severity].writer
 	message := strings.Join([]string{
 		Marker,
 		Version,
-		l.severityStreams[l.severity].name,
+		l.severityStreams[severity].name,
 		l.taskId,
 		l.pid,
 		l.group,
