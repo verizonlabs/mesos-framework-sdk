@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	Version   = "1"
-	Marker    = "*"
-	Separator = "|"
+	version   = "1"
+	marker    = "*"
+	separator = "|"
+	timestamp = "2006/01/02 15:04:05.999999999"
 
 	NOP uint8 = iota
 	ALARM
@@ -115,8 +116,8 @@ func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{
 	lines := strings.Split(fmt.Sprintf(template, args...), "\n")
 	stream := l.severityStreams[severity].writer
 	message := strings.Join([]string{
-		Marker,
-		Version,
+		marker,
+		version,
 		l.severityStreams[severity].name,
 		l.taskId,
 		l.pid,
@@ -124,15 +125,15 @@ func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{
 		l.application,
 		l.name,
 		l.correlationId,
-		fileAndLine}, Separator)
+		fileAndLine}, separator)
 
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
 
-		timestamp := time.Now().UTC().Format("2006/01/02 15:04:05.999999999")
+		timestamp := time.Now().UTC().Format(timestamp)
 
-		fmt.Fprintln(stream, message+Separator+timestamp+Separator+line)
+		fmt.Fprintln(stream, message+separator+timestamp+separator+line)
 	}
 }
