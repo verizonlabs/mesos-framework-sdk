@@ -13,7 +13,7 @@ func CreateTaskInfo(
 	name *string,
 	uuid *mesos_v1.TaskID,
 	cmd *mesos_v1.CommandInfo,
-	res *mesos_v1.Resource,
+	res []*mesos_v1.Resource,
 	con *mesos_v1.ContainerInfo) *mesos_v1.TaskInfo {
 	return &mesos_v1.TaskInfo{
 		Name:      name,
@@ -27,7 +27,7 @@ func CreateTaskInfo(
 
 func CreateDockerContainerInfo(
 	c *mesos_v1.ContainerInfo_DockerInfo,
-	n *mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_DOCKER.Enum(),
 		Docker:       c,
@@ -37,7 +37,7 @@ func CreateDockerContainerInfo(
 
 func CreateMesosContainerInfo(
 	c *mesos_v1.ContainerInfo_MesosInfo,
-	n *mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
 		Mesos:        c,
