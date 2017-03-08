@@ -91,7 +91,7 @@ func NewDefaultLogger() *DefaultLogger {
 func (l *DefaultLogger) callerInfo() (string, int) {
 
 	// Get caller file and line number.
-	_, file, line, ok := runtime.Caller(1)
+	_, file, line, ok := runtime.Caller(2)
 	if !ok {
 		file = "???"
 		line = 0
