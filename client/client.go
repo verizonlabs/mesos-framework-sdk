@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	"io/ioutil"
-	"log"
 	"mesos-framework-sdk/include/executor"
 	"mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/logging"
 	"net"
 	"net/http"
 	"time"
@@ -18,10 +18,11 @@ type Client struct {
 	StreamID string
 	master   string
 	client   *http.Client
+	logger   logging.Logger
 }
 
 // Return a new HTTP client.
-func NewClient(master string) *Client {
+func NewClient(master string, logger logging.Logger) *Client {
 	return &Client{
 		master: master,
 		client: &http.Client{
@@ -32,6 +33,7 @@ func NewClient(master string) *Client {
 				}).Dial,
 			},
 		},
+		logger: logger,
 	}
 }
 
@@ -81,12 +83,12 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	}
 
 	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
-		log.Println("Old Master:", c.master)
+		c.logger.Emit(logging.INFO, "Old master: %s", c.master)
 
 		master := resp.Header.Get("Location")
 		c.master = master
 
-		log.Println("New Master:", c.master)
+		c.logger.Emit(logging.INFO, "New master: %s", c.master)
 
 		return nil, errors.New("Redirect encountered, new master found")
 	}

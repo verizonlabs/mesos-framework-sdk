@@ -5,11 +5,11 @@ import (
 	"log"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/resources"
 	"mesos-framework-sdk/resources/manager"
 	"mesos-framework-sdk/scheduler"
-	"mesos-framework-sdk/task_manager"
-	"strconv"
+	"mesos-framework-sdk/task/manager"
 )
 
 // Mock type that satisfies interface.
@@ -18,14 +18,16 @@ type EventController struct {
 	taskmanager     *task_manager.DefaultTaskManager
 	resourcemanager *manager.DefaultResourceManager
 	events          chan *sched.Event
+	logger          logging.Logger
 }
 
-func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager *task_manager.DefaultTaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event) *EventController {
+func NewDefaultEventController(scheduler *scheduler.DefaultScheduler, manager *task_manager.DefaultTaskManager, resourceManager *manager.DefaultResourceManager, eventChan chan *sched.Event, logger logging.Logger) *EventController {
 	return &EventController{
 		taskmanager:     manager,
 		scheduler:       scheduler,
 		events:          eventChan,
 		resourcemanager: resourceManager,
+		logger:          logger,
 	}
 }
 
@@ -98,8 +100,9 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 				offer, err := s.resourcemanager.Assign(mesosTask)
 				if err != nil {
+
 					// It didn't match any offers.
-					log.Println(err.Error())
+					s.logger.Emit(logging.ERROR, err.Error())
 				}
 
 				t := &mesos_v1.TaskInfo{
@@ -123,20 +126,21 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		for _, v := range offerEvent.GetOffers() {
 			ids = append(ids, v.GetId())
 		}
-		// decline offers.
-		fmt.Println("Declining offers.")
+
+		// Decline and suppress offers until we're ready again.
+		s.logger.Emit(logging.INFO, "Declining %d offers", len(ids))
 		s.scheduler.Decline(ids, nil) // We want to make sure all offers are declined.
 		s.scheduler.Suppress()
 	}
 }
 
 func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
-	fmt.Printf("Rescind event recieved.: %v\n", *rescindEvent)
+	s.logger.Emit(logging.INFO, "Rescind event recieved.: %v", *rescindEvent)
 	rescindEvent.GetOfferId().GetValue()
 }
 
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
-	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
+	s.logger.Emit(logging.INFO, "Update recieved for: %v\n", *updateEvent.GetStatus())
 	task := s.taskmanager.GetById(updateEvent.GetStatus().GetTaskId())
 	// TODO: Handle more states in regard to tasks.
 	if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
@@ -149,21 +153,21 @@ func (s *EventController) Update(updateEvent *sched.Event_Update) {
 }
 
 func (s *EventController) Message(msg *sched.Event_Message) {
-	fmt.Printf("Message event recieved: %v\n", *msg)
+	s.logger.Emit(logging.INFO, "Message event recieved: %v\n", *msg)
 }
 
 func (s *EventController) Failure(fail *sched.Event_Failure) {
-	log.Println("Executor " + fail.GetExecutorId().GetValue() + " failed with status " + strconv.Itoa(int(fail.GetStatus())))
+	s.logger.Emit(logging.ERROR, "Executor %s failed with status %d", fail.GetExecutorId().GetValue(), fail.GetStatus())
 }
 
 func (s *EventController) Error(err *sched.Event_Error) {
-	fmt.Printf("Error event recieved: %v\n", err)
+	s.logger.Emit(logging.INFO, "Error event recieved: %v\n", err)
 }
 
 func (s *EventController) InverseOffer(ioffers *sched.Event_InverseOffers) {
-	fmt.Printf("Inverse Offer event recieved: %v\n", ioffers)
+	s.logger.Emit(logging.INFO, "Inverse Offer event recieved: %v\n", ioffers)
 }
 
 func (s *EventController) RescindInverseOffer(rioffers *sched.Event_RescindInverseOffer) {
-	fmt.Printf("Rescind Inverse Offer event recieved: %v\n", rioffers)
+	s.logger.Emit(logging.INFO, "Rescind Inverse Offer event recieved: %v\n", rioffers)
 }

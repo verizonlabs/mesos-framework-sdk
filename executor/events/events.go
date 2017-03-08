@@ -29,6 +29,8 @@ type ExecutorEvents interface {
 type DefaultExecutorEvents struct {
 }
 
+// TODO replace fmt with our logging interface
+
 func (d *DefaultExecutorEvents) Subscribed(sub *mesos_v1_executor.Event_Subscribed) {
 	sub.GetFrameworkInfo()
 }

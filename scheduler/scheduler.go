@@ -12,12 +12,11 @@ the protobuf required for the call and send it off to the client.
 End users should only create their own scheduler if they wish to change the behavior of their calls.
 */
 import (
-	"log"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
-	"strconv"
 )
 
 type Scheduler interface {
@@ -45,12 +44,14 @@ type DefaultScheduler struct {
 	Info     *mesos_v1.FrameworkInfo
 	client   *client.Client
 	executor int
+	logger   logging.Logger
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo) *DefaultScheduler {
+func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
 		client: c,
 		Info:   info,
+		logger: logger,
 	}
 }
 
@@ -93,10 +94,10 @@ func (c *DefaultScheduler) Teardown() {
 	}
 	_, err := c.client.Request(teardown)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
 
-	log.Println("Tearing down framework")
+	c.logger.Emit(logging.INFO, "Tearing down framework")
 }
 
 // Accepts offers from mesos master
@@ -109,10 +110,10 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v
 
 	_, err := c.client.Request(accept)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 		return
 	}
-	log.Println("Accepting " + strconv.Itoa(len(offerIds)) + " offers with " + strconv.Itoa(len(tasks)) + " tasks")
+	c.logger.Emit(logging.INFO, "Accepting %d offers with %d tasks", len(offerIds), len(tasks))
 }
 
 func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) {
@@ -125,9 +126,9 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 
 	_, err := c.client.Request(decline)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Declining " + strconv.Itoa(len(offerIds)) + " offers")
+	c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
 }
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
@@ -139,9 +140,9 @@ func (c *DefaultScheduler) Revive() {
 
 	_, err := c.client.Request(revive)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Reviving offers")
+	c.logger.Emit(logging.INFO, "Reviving offers")
 }
 
 func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) {
@@ -154,9 +155,9 @@ func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.Agent
 
 	_, err := c.client.Request(kill)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Killing task " + taskId.GetValue())
+	c.logger.Emit(logging.INFO, "Killing task %s", taskId.GetValue())
 }
 
 func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) {
@@ -170,9 +171,9 @@ func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_
 	}
 	_, err := c.client.Request(shutdown)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Shutting down")
+	c.logger.Emit(logging.INFO, "Shutting down")
 }
 
 // Acknowledge call.
@@ -197,7 +198,7 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 
 	_, err := c.client.Request(acknowledge)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
 }
 
@@ -215,9 +216,9 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
 	}
 	_, err := c.client.Request(reconcile)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Reconciling " + strconv.Itoa(len(tasks)) + " tasks")
+	c.logger.Emit(logging.INFO, "Reconciling %d tasks", len(tasks))
 }
 
 func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) {
@@ -232,9 +233,9 @@ func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_
 	}
 	_, err := c.client.Request(message)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Message received from agent " + agentId.GetValue() + " and executor " + executorId.GetValue())
+	c.logger.Emit(logging.INFO, "Message received from agent %s and executor %s", agentId.GetValue(), executorId.GetValue())
 }
 
 // Sent by the scheduler to request resources from the master/allocator.
@@ -250,9 +251,9 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
 	}
 	_, err := c.client.Request(request)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Requesting resources")
+	c.logger.Emit(logging.INFO, "Requesting resources")
 }
 
 func (c *DefaultScheduler) Suppress() {
@@ -262,7 +263,7 @@ func (c *DefaultScheduler) Suppress() {
 	}
 	_, err := c.client.Request(suppress)
 	if err != nil {
-		log.Println(err.Error())
+		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	log.Println("Suppressing offers")
+	c.logger.Emit(logging.INFO, "Suppressing offers")
 }

@@ -4,13 +4,12 @@ package executor
 Executor interface and default executor implementation is defined here.
 */
 import (
-	"fmt"
 	"github.com/golang/protobuf/proto"
-	"log"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/executor/events"
 	exec "mesos-framework-sdk/include/executor"
 	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
 	"time"
 )
@@ -36,15 +35,17 @@ type DefaultExecutor struct {
 	client      *client.Client
 	events      chan *exec.Event
 	handlers    events.ExecutorEvents
+	logger      logging.Logger
 }
 
 // Creates a new default executor
-func NewDefaultExecutor(c *client.Client) *DefaultExecutor {
+func NewDefaultExecutor(c *client.Client, logger logging.Logger) *DefaultExecutor {
 	return &DefaultExecutor{
 		frameworkID: &mesos_v1.FrameworkID{Value: proto.String("")},
 		executorID:  &mesos_v1.ExecutorID{Value: proto.String("")},
 		client:      c,
 		events:      make(chan *exec.Event),
+		logger:      logger,
 	}
 
 }
@@ -86,7 +87,7 @@ func (d *DefaultExecutor) listen() {
 			go d.handlers.Error(t.GetError())
 			break
 		case exec.Event_UNKNOWN:
-			fmt.Println("Unknown event caught.")
+			d.logger.Emit(logging.ALARM, "Unknown event caught")
 			break
 		}
 	}
@@ -112,9 +113,9 @@ func (d *DefaultExecutor) Subscribe() {
 		for {
 			resp, err := d.client.Request(subscribe)
 			if err != nil {
-				log.Println(err.Error())
+				d.logger.Emit(logging.ERROR, err.Error())
 			} else {
-				log.Println(recordio.Decode(resp.Body, d.events))
+				d.logger.Emit(logging.ERROR, recordio.Decode(resp.Body, d.events))
 			}
 
 			// If we disconnect we need to reset the stream ID.
