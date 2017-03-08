@@ -97,13 +97,8 @@ func (l *DefaultLogger) callerInfo() (string, int) {
 		line = 0
 	}
 
-	// Determine the short filename.
-	for i := len(file) - 1; i > 0; i-- {
-		if file[i] == '/' {
-			file = file[i+1:]
-			break
-		}
-	}
+	parts := strings.Split(file, "/")
+	file = parts[len(parts)-1]
 
 	return file, line
 }
