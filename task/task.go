@@ -29,6 +29,7 @@ type ResourceJSON struct {
 	Mem  float64 `json:"mem"`
 	Cpu  float64 `json:"cpu"`
 	Disk float64 `json:"disk"`
+	Role string  `json:"role"`
 }
 
 type CommandJSON struct {
@@ -54,6 +55,17 @@ type PortMapping struct {
 	HostPort      *uint32 `json:"hostport"`
 	ContainerPort *uint32 `json:"containerport"`
 	Protocol      *string `json:"protocol"`
+}
+
+type IpAddressJSON struct {
+	IP       *string `json:"ip"`
+	Protocol *string `json:"protocol"`
+}
+
+type UriJSON struct {
+	Uri     *string `json:"uri"`
+	Extract *bool   `json:"extract"`
+	Execute *bool   `json:"execute"`
 }
 
 // Parse NetworkJSON into a list of Networkwork Infos.
@@ -125,15 +137,4 @@ func ParseNetworkJSONPortMapping(portMap []*PortMapping) (portMapList []*mesos_v
 		portMapList = append(portMapList, pm)
 	}
 	return portMapList
-}
-
-type IpAddressJSON struct {
-	IP       *string `json:"ip"`
-	Protocol *string `json:"protocol"`
-}
-
-type UriJSON struct {
-	Uri     *string `json:"uri"`
-	Extract *bool   `json:"extract"`
-	Execute *bool   `json:"execute"`
 }

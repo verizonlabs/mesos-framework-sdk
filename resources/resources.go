@@ -8,6 +8,48 @@ import (
 /*
 This package contains functions to create common protobufs with ease.
 */
+// Creates a taskInfo
+func CreateTaskInfo(
+	name *string,
+	uuid *mesos_v1.TaskID,
+	cmd *mesos_v1.CommandInfo,
+	res []*mesos_v1.Resource,
+	con *mesos_v1.ContainerInfo) *mesos_v1.TaskInfo {
+	return &mesos_v1.TaskInfo{
+		Name:      name,
+		TaskId:    uuid,
+		Command:   cmd,
+		Resources: res,
+		Container: con,
+	}
+
+}
+
+func CreateDockerContainerInfo(
+	c *mesos_v1.ContainerInfo_DockerInfo,
+	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	return &mesos_v1.ContainerInfo{
+		Type:         mesos_v1.ContainerInfo_DOCKER.Enum(),
+		Docker:       c,
+		NetworkInfos: n,
+	}
+}
+
+func CreateMesosContainerInfo(
+	c *mesos_v1.ContainerInfo_MesosInfo,
+	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	return &mesos_v1.ContainerInfo{
+		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
+		Mesos:        c,
+		NetworkInfos: n,
+	}
+}
+
+func CreateContainerInfoForMesos(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
+	return &mesos_v1.ContainerInfo_MesosInfo{
+		Image: img,
+	}
+}
 
 // Creates a cpu share that is not reserved.
 func CreateCpu(cpuShare float64, role string) *mesos_v1.Resource {
