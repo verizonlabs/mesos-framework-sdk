@@ -44,6 +44,7 @@ type DefaultLogger struct {
 	severityStreams map[uint8]severityWriter
 }
 
+// Sets required information for our default logger and returns a new instance.
 func NewDefaultLogger() *DefaultLogger {
 	path := strings.Split(os.Args[0], "/")
 	name := path[len(path)-1]
@@ -86,6 +87,7 @@ func NewDefaultLogger() *DefaultLogger {
 	return logger
 }
 
+// Prints out the message to the appropriate stream.
 func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{}) {
 
 	// Get caller statistics.
@@ -108,14 +110,8 @@ func (l *DefaultLogger) Emit(severity uint8, template string, args ...interface{
 	linx := strconv.Itoa(line)
 	fileAndLine := strings.Join([]string{file, linx}, ":")
 
-	// Parse formatted string or use the given template then split into individual lines.
-	var lines []string
-	if len(args) > 0 {
-		formatted := fmt.Sprintf(template, args...)
-		lines = strings.Split(formatted, "\n")
-	} else {
-		lines = strings.Split(template, "\n")
-	}
+	// Parse any format specifiers that might be passed in.
+	lines := strings.Split(fmt.Sprintf(template, args...), "\n")
 
 	stream := l.severityStreams[severity].writer
 	message := strings.Join([]string{
