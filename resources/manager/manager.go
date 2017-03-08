@@ -86,6 +86,7 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 					offer.Cpu = offer.Cpu - resource.GetScalar().GetValue()
 				} else {
 					isValid = false
+					break
 				}
 			case "mem":
 				if offer.Mem > resource.GetScalar().GetValue() {
@@ -93,6 +94,7 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 					offer.Mem = offer.Mem - resource.GetScalar().GetValue()
 				} else {
 					isValid = false
+					break
 				}
 			case "disk":
 				if resource.Disk != nil {

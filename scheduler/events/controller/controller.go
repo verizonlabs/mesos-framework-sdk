@@ -67,7 +67,6 @@ func (s *EventController) Listen() {
 			case sched.Event_MESSAGE:
 				go s.Message(t.GetMessage())
 			case sched.Event_OFFERS:
-				log.Println("Offers...")
 				go s.Offers(t.GetOffers())
 			case sched.Event_RESCIND:
 				go s.Rescind(t.GetRescind())
@@ -76,7 +75,6 @@ func (s *EventController) Listen() {
 			case sched.Event_UPDATE:
 				go s.Update(t.GetUpdate())
 			case sched.Event_HEARTBEAT:
-				fmt.Println("Heart beat.")
 			case sched.Event_UNKNOWN:
 				fmt.Println("Unknown event recieved.")
 			}
@@ -85,29 +83,18 @@ func (s *EventController) Listen() {
 }
 
 func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
-	fmt.Println("Offers event recieved.")
-	//Reconcile any tasks.
-	var reconcileTasks []*mesos_v1.Task
-	s.scheduler.Reconcile(reconcileTasks)
-
-	var offerIDs []*mesos_v1.OfferID
-
-	for num, offer := range offerEvent.GetOffers() {
-		fmt.Printf("Offer number: %v, Offer info: %v\n", num, offer)
-		offerIDs = append(offerIDs, offer.GetId())
-	}
 
 	// Check task manager for any active tasks.
 	if s.taskmanager.HasQueuedTasks() {
 		// Update our resources in the manager
 		s.resourcemanager.AddOffers(offerEvent.GetOffers())
 
-		for _, item := range s.taskmanager.QueuedTasks() {
+		offerIDs := []*mesos_v1.OfferID{}
+		operations := []*mesos_v1.Offer_Operation{}
+
+		for _, mesosTask := range s.taskmanager.QueuedTasks() {
 			// See if we have resources.
 			if s.resourcemanager.HasResources() {
-				taskList := []*mesos_v1.TaskInfo{} // Clear it out every time.
-				operations := []*mesos_v1.Offer_Operation{}
-				mesosTask := item
 
 				offer, err := s.resourcemanager.Assign(mesosTask)
 				if err != nil {
@@ -117,21 +104,20 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 
 				t := &mesos_v1.TaskInfo{
 					Name:      mesosTask.Name,
-					TaskId:    mesosTask.TaskId,
-					AgentId:   offer.AgentId,
+					TaskId:    mesosTask.GetTaskId(),
+					AgentId:   offer.GetAgentId(),
 					Command:   mesosTask.GetCommand(),
+					Container: mesosTask.GetContainer(),
 					Resources: mesosTask.GetResources(),
 				}
 
-				taskList = append(taskList, t)
+				s.taskmanager.SetTaskLaunched(t)
 
-				operations = append(operations, resources.LaunchOfferOperation(taskList))
 				offerIDs = append(offerIDs, offer.Id)
-
-				log.Printf("Launching task %v\n", taskList)
-				s.scheduler.Accept(offerIDs, operations, nil)
+				operations = append(operations, resources.LaunchOfferOperation([]*mesos_v1.TaskInfo{t}))
 			}
 		}
+		s.scheduler.Accept(offerIDs, operations, nil)
 	} else {
 		var ids []*mesos_v1.OfferID
 		for _, v := range offerEvent.GetOffers() {
@@ -139,7 +125,7 @@ func (s *EventController) Offers(offerEvent *sched.Event_Offers) {
 		}
 		// decline offers.
 		fmt.Println("Declining offers.")
-		s.scheduler.Decline(ids, nil)
+		s.scheduler.Decline(ids, nil) // We want to make sure all offers are declined.
 		s.scheduler.Suppress()
 	}
 }
@@ -151,7 +137,7 @@ func (s *EventController) Rescind(rescindEvent *sched.Event_Rescind) {
 
 func (s *EventController) Update(updateEvent *sched.Event_Update) {
 	fmt.Printf("Update recieved for: %v\n", *updateEvent.GetStatus())
-	task := s.taskmanager.Get(updateEvent.GetStatus().GetTaskId())
+	task := s.taskmanager.GetById(updateEvent.GetStatus().GetTaskId())
 	// TODO: Handle more states in regard to tasks.
 	if updateEvent.GetStatus().GetState() != mesos_v1.TaskState_TASK_FAILED {
 		// Only set the task to "launched" if it didn't fail.
