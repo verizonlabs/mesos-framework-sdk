@@ -27,21 +27,29 @@ func CreateTaskInfo(
 
 func CreateDockerContainerInfo(
 	c *mesos_v1.ContainerInfo_DockerInfo,
-	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	n []*mesos_v1.NetworkInfo,
+	v []*mesos_v1.Volume,
+	h *string) *mesos_v1.ContainerInfo {
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_DOCKER.Enum(),
+		Hostname:     h,
 		Docker:       c,
 		NetworkInfos: n,
+		Volumes:      v,
 	}
 }
 
 func CreateMesosContainerInfo(
 	c *mesos_v1.ContainerInfo_MesosInfo,
-	n []*mesos_v1.NetworkInfo) *mesos_v1.ContainerInfo {
+	n []*mesos_v1.NetworkInfo,
+	v []*mesos_v1.Volume,
+	h *string) *mesos_v1.ContainerInfo {
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
+		Hostname:     h,
 		Mesos:        c,
 		NetworkInfos: n,
+		Volumes:      v,
 	}
 }
 
