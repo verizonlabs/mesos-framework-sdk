@@ -20,7 +20,7 @@ func ParseVolumeJSON(volumes []task.VolumesJSON) ([]*mesos_v1.Volume, error) {
 			v.Mode = mesos_v1.Volume_RW.Enum()
 		}
 		// Logical XOR to tell if both are set or not.
-		if (volume.ContainerPath) == nil != (volume.HostPath == nil) {
+		if (volume.ContainerPath == nil) != (volume.HostPath == nil) {
 			// Fail parsing and pass back error.
 			return nil, errors.New("Both container and host path must be set.")
 		}
