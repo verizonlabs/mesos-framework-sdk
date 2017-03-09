@@ -110,7 +110,7 @@ func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source 
 
 func CreateImage(name string, id string, imgType *mesos_v1.Image_Type) *mesos_v1.Image {
 	var img *mesos_v1.Image
-	if imgType == mesos_v1.Image_DOCKER.Enum() {
+	if *imgType == mesos_v1.Image_DOCKER {
 		img = &mesos_v1.Image{
 			Type: imgType,
 			Docker: &mesos_v1.Image_Docker{

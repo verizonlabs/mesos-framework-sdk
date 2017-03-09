@@ -1,8 +1,8 @@
 package volume
 
 import (
+	"errors"
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/task"
 	"strings"
@@ -31,21 +31,31 @@ func ParseVolumeJSON(volumes []task.VolumesJSON) ([]*mesos_v1.Volume, error) {
 			v.HostPath = volume.HostPath
 		}
 
-		if volume.Source != nil {
+		if (volume.Source != nil) && (volume.Source.Type != nil) {
 			src := mesos_v1.Volume_Source{}
-			if volume.Source.Type != nil {
-				if strings.ToLower(*volume.Source.Type) == "docker" {
-					src.Type = mesos_v1.Volume_Source_DOCKER_VOLUME.Enum()
-					src.DockerVolume = ParseDockerVolumeJSON(&volume.Source.DockerVolume)
-				}
+			if strings.ToLower(*volume.Source.Type) == "docker" {
+				src.Type = mesos_v1.Volume_Source_DOCKER_VOLUME.Enum()
+				src.DockerVolume = ParseDockerVolumeJSON(&volume.Source.DockerVolume)
 			} else {
+				src.Type = mesos_v1.Volume_Source_SANDBOX_PATH.Enum()
 				sandbox := mesos_v1.Volume_Source_SandboxPath{}
 				sandbox.Type = mesos_v1.Volume_Source_SandboxPath_SELF.Enum()
 				sandbox.Path = proto.String(".")
+
 				v.Source = &src
 				v.Source.SandboxPath = &sandbox
 			}
+		} else {
+			src := mesos_v1.Volume_Source{}
+			src.Type = mesos_v1.Volume_Source_SANDBOX_PATH.Enum()
+			sandbox := mesos_v1.Volume_Source_SandboxPath{}
+			sandbox.Type = mesos_v1.Volume_Source_SandboxPath_SELF.Enum()
+			sandbox.Path = proto.String(".")
+
+			v.Source = &src
+			v.Source.SandboxPath = &sandbox
 		}
+
 		mesosVolumes = append(mesosVolumes, &v)
 	}
 	return mesosVolumes, nil
