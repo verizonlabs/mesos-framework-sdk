@@ -67,6 +67,25 @@ func (e *Etcd) Read(key string) (string, error) {
 	return "", nil
 }
 
+// Read all key/values under a specified key.
+func (e *Etcd) ReadAll(key string) (map[string]string, error) {
+	resp, err := e.client.Get(context.Background(), key, etcd.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Kvs) > 0 {
+		kvs := make(map[string]string)
+		for _, value := range resp.Kvs {
+			kvs[string(value.Key)] = string(value.Value)
+		}
+
+		return kvs, nil
+	}
+
+	return nil, nil
+}
+
 // Updates a key's value.
 func (e *Etcd) Update(key, value string) error {
 	_, err := e.client.Put(context.Background(), key, value)
