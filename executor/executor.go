@@ -115,7 +115,7 @@ func (d *DefaultExecutor) Subscribe() {
 			if err != nil {
 				d.logger.Emit(logging.ERROR, err.Error())
 			} else {
-				d.logger.Emit(logging.ERROR, recordio.Decode(resp.Body, d.events))
+				d.logger.Emit(logging.ERROR, recordio.Decode(resp.Body, d.events).Error())
 			}
 
 			// If we disconnect we need to reset the stream ID.

@@ -5,22 +5,21 @@ import (
 	"mesos-framework-sdk/include/mesos"
 )
 
-/*
-This package contains functions to create common protobufs with ease.
-*/
 // Creates a taskInfo
 func CreateTaskInfo(
 	name *string,
 	uuid *mesos_v1.TaskID,
 	cmd *mesos_v1.CommandInfo,
 	res []*mesos_v1.Resource,
-	con *mesos_v1.ContainerInfo) *mesos_v1.TaskInfo {
+	con *mesos_v1.ContainerInfo,
+	labels *mesos_v1.Labels) *mesos_v1.TaskInfo {
 	return &mesos_v1.TaskInfo{
 		Name:      name,
 		TaskId:    uuid,
 		Command:   cmd,
 		Resources: res,
 		Container: con,
+		Labels: labels,
 	}
 
 }

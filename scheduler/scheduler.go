@@ -43,7 +43,6 @@ type Scheduler interface {
 type DefaultScheduler struct {
 	Info     *mesos_v1.FrameworkInfo
 	client   *client.Client
-	executor int
 	logger   logging.Logger
 }
 
