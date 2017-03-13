@@ -202,11 +202,16 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 	}
 }
 
-func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
+// Reconciles our tasks and keeps our state in check.
+func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) {
 	var reconcileTasks []*sched.Call_Reconcile_Task
 	for _, task := range tasks {
-		reconcileTasks = append(reconcileTasks, &sched.Call_Reconcile_Task{AgentId: task.GetAgentId(), TaskId: task.GetTaskId()})
+		reconcileTasks = append(reconcileTasks, &sched.Call_Reconcile_Task{
+			AgentId: task.GetAgentId(),
+			TaskId:  task.GetTaskId(),
+		})
 	}
+
 	reconcile := &sched.Call{
 		FrameworkId: c.FrameworkInfo().GetId(),
 		Type:        sched.Call_RECONCILE.Enum(),
@@ -218,6 +223,7 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.Task) {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
+
 	c.logger.Emit(logging.INFO, "Reconciling %d tasks", len(tasks))
 }
 
