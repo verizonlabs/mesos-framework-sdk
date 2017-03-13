@@ -204,7 +204,7 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 
 // Reconciles our tasks and keeps our state in check.
 func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) {
-	var reconcileTasks []*sched.Call_Reconcile_Task
+	reconcileTasks := make([]*sched.Call_Reconcile_Task, len(tasks))
 	for _, task := range tasks {
 		reconcileTasks = append(reconcileTasks, &sched.Call_Reconcile_Task{
 			AgentId: task.GetAgentId(),
