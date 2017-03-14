@@ -7,10 +7,16 @@ type ApplicationJSON struct {
 	Container   *ContainerJSON      `json:"container"`
 	HealthCheck *HealthCheckJSON    `json:"healthcheck"`
 	Labels      []map[string]string `json:"labels"`
+	Filters     []Filter            `json:"filters"`
 }
 
 type HealthCheckJSON struct {
 	Endpoint *string `json:"endpoint"`
+}
+
+type Filter struct {
+	Type  string   `json:"type"`
+	Value []string `json:"value"`
 }
 
 type KillJson struct {
