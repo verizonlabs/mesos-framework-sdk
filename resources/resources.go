@@ -19,7 +19,7 @@ func CreateTaskInfo(
 		Command:   cmd,
 		Resources: res,
 		Container: con,
-		Labels: labels,
+		Labels:    labels,
 	}
 
 }
