@@ -87,7 +87,6 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 		c.logger.Emit(logging.INFO, "Old master: %s", c.master)
 
 		master := resp.Header.Get("Location")
-		c.logger.Emit(logging.INFO, "New master from header: %s", master)
 		if strings.Contains(master, "http") {
 			c.master = master
 		} else {
