@@ -1,6 +1,7 @@
 package file
 
 import (
+	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/server"
 	"net/http"
 	"reflect"
@@ -41,8 +42,9 @@ func (m *mockConfiguration) TLS() bool {
 	return m.cfg.TLS()
 }
 
+var logger = logging.NewDefaultLogger()
 var cfg server.Configuration = new(mockConfiguration)
-var srv *executorServer = NewExecutorServer(cfg)
+var srv *executorServer = NewExecutorServer(cfg, logger)
 
 // Make sure we get the right type for our executor server.
 func TestNewExecutorServer(t *testing.T) {

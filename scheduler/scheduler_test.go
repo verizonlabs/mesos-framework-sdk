@@ -5,6 +5,7 @@ import (
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/logging"
 	"testing"
 	"time"
 )
@@ -23,12 +24,13 @@ var (
 		Hostname:        proto.String(""),
 		Principal:       proto.String(""),
 	}
+	logger = logging.NewDefaultLogger()
 )
 
 // Tests if the scheduler can be created.
 func TestNewScheduler(t *testing.T) {
-	c := client.NewClient(clientUrl) // TODO mock this so it doesn't make a real HTTP call
-	s := NewDefaultScheduler(c, frameworkInfo)
+	c := client.NewClient(clientUrl, logger) // TODO mock this so it doesn't make a real HTTP call
+	s := NewDefaultScheduler(c, frameworkInfo, logger)
 	ch := make(chan *sched.Event)
 
 	if err := s.Subscribe(ch); err != nil {
