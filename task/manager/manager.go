@@ -1,4 +1,4 @@
-package taskmanager
+package manager
 
 import (
 	"mesos-framework-sdk/include/mesos"
@@ -32,7 +32,7 @@ type TaskManager interface {
 	Get(*string) (*mesos_v1.TaskInfo, error)
 	GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error)
 	HasTask(*mesos_v1.TaskInfo) bool
-	SetState(*mesos_v1.TaskState, *mesos_v1.TaskInfo) error
+	SetState(*mesos_v1.TaskState, *mesos_v1.TaskInfo)
 	GetState(state *mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
 	Tasks() *structures.ConcurrentMap
