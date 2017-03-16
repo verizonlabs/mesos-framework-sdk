@@ -6,8 +6,9 @@ import (
 )
 
 // Consts for mesos states.
+// TODO do we need these? Can we just use the constants from the protobuf directly?
 const (
-	LAUNCHED         = mesos_v1.TaskState_TASK_RUNNING
+	RUNNING          = mesos_v1.TaskState_TASK_RUNNING
 	KILLED           = mesos_v1.TaskState_TASK_KILLED
 	LOST             = mesos_v1.TaskState_TASK_LOST
 	GONE             = mesos_v1.TaskState_TASK_GONE
@@ -32,7 +33,7 @@ type TaskManager interface {
 	Get(*string) (*mesos_v1.TaskInfo, error)
 	GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error)
 	HasTask(*mesos_v1.TaskInfo) bool
-	SetState(*mesos_v1.TaskState, *mesos_v1.TaskInfo)
+	Set(*mesos_v1.TaskState, *mesos_v1.TaskInfo)
 	GetState(state *mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
 	Tasks() *structures.ConcurrentMap
