@@ -6,7 +6,6 @@ import (
 )
 
 // Consts for mesos states.
-// TODO do we need these? Can we just use the constants from the protobuf directly?
 const (
 	RUNNING          = mesos_v1.TaskState_TASK_RUNNING
 	KILLED           = mesos_v1.TaskState_TASK_KILLED
