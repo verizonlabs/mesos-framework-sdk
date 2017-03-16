@@ -37,3 +37,10 @@ type TaskManager interface {
 	TotalTasks() int
 	Tasks() *structures.ConcurrentMap
 }
+
+// Used to hold information about task states in the task manager.
+// Task and its fields should be public so that we can encode/decode this.
+type Task struct {
+	Info  *mesos_v1.TaskInfo
+	State mesos_v1.TaskState
+}
