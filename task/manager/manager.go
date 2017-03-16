@@ -12,7 +12,7 @@ const (
 	LOST             = mesos_v1.TaskState_TASK_LOST
 	GONE             = mesos_v1.TaskState_TASK_GONE
 	STAGING          = mesos_v1.TaskState_TASK_STAGING
-	STARTING         = mesos_v1.TaskState_TASK_STARTING
+	STARTING         = mesos_v1.TaskState_TASK_STARTING // Default executor never sends this, it sends RUNNING directly.
 	UNKNOWN          = mesos_v1.TaskState_TASK_UNKNOWN
 	UNREACHABLE      = mesos_v1.TaskState_TASK_UNREACHABLE
 	FINISHED         = mesos_v1.TaskState_TASK_FINISHED
