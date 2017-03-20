@@ -40,8 +40,14 @@ func (e *Etcd) finalizer(f *Etcd) {
 }
 
 // Inserts a new key/value pair.
+// This will not overwrite an already existing key.
 func (e *Etcd) Create(key, value string) error {
-	_, err := e.client.Put(context.Background(), key, value)
+	txn := e.client.Txn(context.Background()).If(
+		etcd.Compare(etcd.Version(key), "=", 0),
+	).Then(
+		etcd.OpPut(key, value),
+	)
+	_, err := txn.Commit()
 
 	return err
 }
