@@ -7,10 +7,10 @@ import "net"
 func GetIP(iface string) ([]string, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	ips := make([]net.IP, 0)
+	ips := make([]string, 0)
 
 	for _, i := range ifaces {
 		if i.Name != iface {
@@ -19,7 +19,7 @@ func GetIP(iface string) ([]string, error) {
 
 		addrs, err := i.Addrs()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		for _, addr := range addrs {
