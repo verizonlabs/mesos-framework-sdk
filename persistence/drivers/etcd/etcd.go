@@ -67,7 +67,7 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) err
 	_, err = txn.Commit()
 
 	if keepalive {
-		k, err := e.client.KeepAliveOnce(context.Background(), resp.ID)
+		_, err := e.client.KeepAliveOnce(context.Background(), resp.ID)
 		if err != nil {
 			return err
 		}
