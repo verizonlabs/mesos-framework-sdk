@@ -59,7 +59,12 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64) error {
 		return err
 	}
 
-	_, err = e.client.Put(context.TODO(), key, value, etcd.WithLease(resp.ID))
+	txn := e.client.Txn(context.Background()).If(
+		etcd.Compare(etcd.Version(key), "=", 0),
+	).Then(
+		etcd.OpPut(key, value, etcd.WithLease(resp.ID)),
+	)
+	_, err = txn.Commit()
 
 	return err
 }
