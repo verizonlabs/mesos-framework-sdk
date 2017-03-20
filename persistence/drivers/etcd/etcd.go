@@ -53,7 +53,7 @@ func (e *Etcd) Create(key, value string) error {
 }
 
 // Creates a key with a specified TTL.
-func (e *Etcd) CreateWithLease(key, value string, ttl int64) error {
+func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) error {
 	resp, err := e.client.Grant(context.TODO(), ttl)
 	if err != nil {
 		return err
@@ -65,6 +65,13 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64) error {
 		etcd.OpPut(key, value, etcd.WithLease(resp.ID)),
 	)
 	_, err = txn.Commit()
+
+	if keepalive {
+		k, err := e.client.KeepAliveOnce(context.Background(), resp.ID)
+		if err != nil {
+			return err
+		}
+	}
 
 	return err
 }
