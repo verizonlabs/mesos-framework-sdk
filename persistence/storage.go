@@ -5,7 +5,7 @@ type KVStorage interface {
 	Read(string) (string, error)
 	Update(string, string) error
 	Delete(string) error
-	Watch(string) chan interface{}
+	Watch(string) interface{}
 }
 
 type DBStorage interface {

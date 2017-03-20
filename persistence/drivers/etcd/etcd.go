@@ -106,6 +106,6 @@ func (e *Etcd) Delete(key string) error {
 }
 
 // Starts a watch on a key and returns a channel for listening to events.
-func (e *Etcd) Watch(key string) chan interface{} {
+func (e *Etcd) Watch(key string) interface{} {
 	return e.client.Watch(context.Background(), key)
 }
