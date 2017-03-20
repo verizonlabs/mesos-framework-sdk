@@ -11,6 +11,11 @@ type Etcd struct {
 	client *etcd.Client
 }
 
+type kv struct {
+	key   string
+	value string
+}
+
 // Creates a new etcd client with the specified configuration.
 func NewClient(endpoints []string, timeout time.Duration) *Etcd {
 	client, err := etcd.New(etcd.Config{
@@ -98,4 +103,9 @@ func (e *Etcd) Delete(key string) error {
 	_, err := e.client.Delete(context.Background(), key)
 
 	return err
+}
+
+// Starts a watch on a key and returns a channel for listening to events.
+func (e *Etcd) Watch(key string) chan interface{} {
+	return e.client.Watch(context.Background(), key)
 }
