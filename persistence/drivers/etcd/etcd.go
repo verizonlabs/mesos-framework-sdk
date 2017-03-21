@@ -11,11 +11,6 @@ type Etcd struct {
 	client *etcd.Client
 }
 
-type kv struct {
-	key   string
-	value string
-}
-
 // Creates a new etcd client with the specified configuration.
 func NewClient(endpoints []string, timeout time.Duration) *Etcd {
 	client, err := etcd.New(etcd.Config{
