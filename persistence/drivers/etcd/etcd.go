@@ -48,6 +48,7 @@ func (e *Etcd) Create(key, value string) error {
 }
 
 // Creates a key with a specified TTL.
+// This will not overwrite an already existing key.
 func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) error {
 	resp, err := e.client.Grant(context.TODO(), ttl)
 	if err != nil {
@@ -105,6 +106,7 @@ func (e *Etcd) ReadAll(key string) (map[string]string, error) {
 }
 
 // Updates a key's value.
+// This will overwrite an existing key if present.
 func (e *Etcd) Update(key, value string) error {
 	_, err := e.client.Put(context.Background(), key, value)
 
