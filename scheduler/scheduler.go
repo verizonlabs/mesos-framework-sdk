@@ -40,6 +40,7 @@ type DefaultScheduler struct {
 	Info   *mesos_v1.FrameworkInfo
 	Client *client.Client
 	logger logging.Logger
+	IsSuppressed bool
 }
 
 func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
@@ -47,6 +48,7 @@ func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo, logger 
 		Client: c,
 		Info:   info,
 		logger: logger,
+		IsSuppressed: false,
 	}
 }
 
@@ -129,6 +131,7 @@ func (c *DefaultScheduler) Revive() {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
+	c.IsSuppressed = false
 	c.logger.Emit(logging.INFO, "Reviving offers")
 }
 
@@ -255,5 +258,6 @@ func (c *DefaultScheduler) Suppress() {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
+	c.IsSuppressed = true
 	c.logger.Emit(logging.INFO, "Suppressing offers")
 }
