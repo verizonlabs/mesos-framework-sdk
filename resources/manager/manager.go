@@ -15,6 +15,7 @@ type ResourceManager interface {
 	AddOffers(offers []*mesos_v1.Offer)
 	HasResources() bool
 	Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
+	Offers() []*mesos_v1.Offer
 }
 
 type DefaultResourceManager struct {
@@ -157,4 +158,11 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 		}
 	}
 	return nil, errors.New("Cannot find a suitable offer for task.")
+}
+
+func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
+	for _, o := range d.offers{
+		offers = append(offers, o.Offer)
+	}
+	return offers
 }
