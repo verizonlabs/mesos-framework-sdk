@@ -161,7 +161,7 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 }
 
 func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
-	for _, o := range d.offers{
+	for _, o := range d.offers {
 		offers = append(offers, o.Offer)
 	}
 	return offers
