@@ -35,20 +35,39 @@ func (e *Etcd) finalizer(f *Etcd) {
 }
 
 // Inserts a new key/value pair.
+// This will not overwrite an already existing key.
 func (e *Etcd) Create(key, value string) error {
-	_, err := e.client.Put(context.Background(), key, value)
+	txn := e.client.Txn(context.Background()).If(
+		etcd.Compare(etcd.Version(key), "=", 0),
+	).Then(
+		etcd.OpPut(key, value),
+	)
+	_, err := txn.Commit()
 
 	return err
 }
 
 // Creates a key with a specified TTL.
-func (e *Etcd) CreateWithLease(key, value string, ttl int64) error {
+// This will not overwrite an already existing key.
+func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) error {
 	resp, err := e.client.Grant(context.TODO(), ttl)
 	if err != nil {
 		return err
 	}
 
-	_, err = e.client.Put(context.TODO(), key, value, etcd.WithLease(resp.ID))
+	txn := e.client.Txn(context.Background()).If(
+		etcd.Compare(etcd.Version(key), "=", 0),
+	).Then(
+		etcd.OpPut(key, value, etcd.WithLease(resp.ID)),
+	)
+	_, err = txn.Commit()
+
+	if keepalive {
+		_, err := e.client.KeepAliveOnce(context.Background(), resp.ID)
+		if err != nil {
+			return err
+		}
+	}
 
 	return err
 }
@@ -87,6 +106,7 @@ func (e *Etcd) ReadAll(key string) (map[string]string, error) {
 }
 
 // Updates a key's value.
+// This will overwrite an existing key if present.
 func (e *Etcd) Update(key, value string) error {
 	_, err := e.client.Put(context.Background(), key, value)
 

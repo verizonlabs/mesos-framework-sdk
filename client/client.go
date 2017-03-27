@@ -62,6 +62,7 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("Accept", "application/x-protobuf")
+	req.Header.Set("Accept-Encoding", "gzip")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
 	if c.StreamID != "" {
 		req.Header.Set("Mesos-Stream-Id", c.StreamID)
