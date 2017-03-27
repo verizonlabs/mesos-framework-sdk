@@ -12,4 +12,5 @@ type Storage interface {
 	Update(string, ...string) error
 	Delete(string, ...string) error
 	Driver() string // There is no "setter" because we declare a concrete driver type
+	Engine() interface{} // Pass back an instance of the engine client.
 }

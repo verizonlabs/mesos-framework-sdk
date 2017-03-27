@@ -8,7 +8,7 @@ import (
 // The Storage interface takes in an "Engine" whicsh contains the client
 // to the backend and a description of the driver.
 type EtcdEngine struct {
-	engine Etcd
+	engine *Etcd
 	driver string
 }
 
@@ -43,12 +43,20 @@ func (e *EtcdEngine) Create(key string, args ...string) error {
 }
 
 // Variadic k/v read
-func (e *EtcdEngine) Read(r ...string) (results []string, _ error) {
+func (e *EtcdEngine) Read(r ...string) (results []string, err error) {
 	if len(r) == 1 {
-		results = append(results, e.engine.Read(r[0]))
+		val, err := e.engine.Read(r[0])
+		if err != nil {
+			return results, err
+		}
+		results = append(results, val)
 	} else if len(r) >= 2 {
 		for _, v := range r {
-			results = append(results, e.engine.Read(v))
+			val, err := e.engine.Read(v)
+			if err != nil {
+				return results, err
+			}
+			results = append(results, val)
 		}
 	} else if len(r) == 0 {
 		return nil, errors.New("No read parameters passed in.")
@@ -92,4 +100,8 @@ func (e *EtcdEngine) Delete(key string, args ...string) error {
 
 func (e *EtcdEngine) Driver() string {
 	return e.driver
+}
+
+func (e *EtcdEngine) Engine() interface{} {
+	return e.engine
 }
