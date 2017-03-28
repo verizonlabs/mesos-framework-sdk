@@ -64,12 +64,18 @@ func (e *Etcd) Create(key, value string) error {
 // Creates a key with a specified TTL.
 // This will not overwrite an already existing key.
 func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) error {
-	resp, err := e.client.Grant(context.TODO(), ttl)
+	grantCtx, grantCancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer grantCancel()
+
+	resp, err := e.client.Grant(grantCtx, ttl)
 	if err != nil {
 		return err
 	}
 
-	txn := e.client.Txn(context.Background()).If(
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	txn := e.client.Txn(ctx).If(
 		etcd.Compare(etcd.Version(key), "=", 0),
 	).Then(
 		etcd.OpPut(key, value, etcd.WithLease(resp.ID)),
@@ -77,7 +83,10 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) err
 	_, err = txn.Commit()
 
 	if keepalive {
-		_, err := e.client.KeepAliveOnce(context.Background(), resp.ID)
+		kaCtx, kaCancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+		defer kaCancel()
+
+		_, err := e.client.KeepAliveOnce(kaCtx, resp.ID)
 		if err != nil {
 			return err
 		}
