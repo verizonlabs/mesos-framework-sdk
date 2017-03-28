@@ -21,7 +21,7 @@ const (
 type Executor interface {
 	FrameworkID() *mesos_v1.FrameworkID
 	ExecutorID() *mesos_v1.ExecutorID
-	Client() *client.DefaultClient
+	Client() client.Client
 	Events() chan *exec.Event
 	Subscribe()
 	Update(taskStatus *mesos_v1.TaskStatus)
@@ -32,14 +32,14 @@ type Executor interface {
 type DefaultExecutor struct {
 	frameworkID *mesos_v1.FrameworkID
 	executorID  *mesos_v1.ExecutorID
-	client      *client.DefaultClient
+	client      client.Client
 	events      chan *exec.Event
 	handlers    events.ExecutorEvents
 	logger      logging.Logger
 }
 
 // Creates a new default executor
-func NewDefaultExecutor(c *client.DefaultClient, logger logging.Logger) *DefaultExecutor {
+func NewDefaultExecutor(c client.Client, logger logging.Logger) *DefaultExecutor {
 	return &DefaultExecutor{
 		frameworkID: &mesos_v1.FrameworkID{Value: proto.String("")},
 		executorID:  &mesos_v1.ExecutorID{Value: proto.String("")},
