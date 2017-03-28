@@ -97,7 +97,10 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) err
 
 // Reads a key's value.
 func (e *Etcd) Read(key string) (string, error) {
-	resp, err := e.client.Get(context.Background(), key)
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	resp, err := e.client.Get(ctx, key)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +114,10 @@ func (e *Etcd) Read(key string) (string, error) {
 
 // Read all key/values under a specified key.
 func (e *Etcd) ReadAll(key string) (map[string]string, error) {
-	resp, err := e.client.Get(context.Background(), key, etcd.WithPrefix())
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	resp, err := e.client.Get(ctx, key, etcd.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -131,14 +137,20 @@ func (e *Etcd) ReadAll(key string) (map[string]string, error) {
 // Updates a key's value.
 // This will overwrite an existing key if present.
 func (e *Etcd) Update(key, value string) error {
-	_, err := e.client.Put(context.Background(), key, value)
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	_, err := e.client.Put(ctx, key, value)
 
 	return err
 }
 
 // Deletes a key/value pair.
 func (e *Etcd) Delete(key string) error {
-	_, err := e.client.Delete(context.Background(), key)
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	_, err := e.client.Delete(ctx, key)
 
 	return err
 }
