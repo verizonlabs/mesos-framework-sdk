@@ -10,7 +10,8 @@ import (
 )
 
 type Etcd struct {
-	client *etcd.Client
+	client     *etcd.Client
+	ctxTimeout time.Duration
 }
 
 // Creates a new etcd client with the specified configuration.
@@ -31,7 +32,8 @@ func NewClient(endpoints []string, timeout, kaTime, kaTimeout time.Duration) *Et
 	}
 
 	c := &Etcd{
-		client: client,
+		client:     client,
+		ctxTimeout: timeout,
 	}
 	runtime.SetFinalizer(c, c.finalizer)
 
@@ -46,7 +48,10 @@ func (e *Etcd) finalizer(f *Etcd) {
 // Inserts a new key/value pair.
 // This will not overwrite an already existing key.
 func (e *Etcd) Create(key, value string) error {
-	txn := e.client.Txn(context.Background()).If(
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	txn := e.client.Txn(ctx).If(
 		etcd.Compare(etcd.Version(key), "=", 0),
 	).Then(
 		etcd.OpPut(key, value),

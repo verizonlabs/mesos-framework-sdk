@@ -24,13 +24,23 @@ func NewEtcdEngine(engine *Etcd) *EtcdEngine {
 func (e *EtcdEngine) Create(key string, args ...string) error {
 	// Single k,v pair
 	if len(args) == 1 {
-		e.engine.Create(key, args[0])
+		if err := e.engine.Create(key, args[0]); err != nil {
+			return err
+		}
 		// Multiple k,v pair
 	} else if len(args) > 2 {
 		if len(args)%2 == 0 {
-			e.engine.Create(key, args[0]) // First set of args.
+
+			// First set of args.
+			if err := e.engine.Create(key, args[0]); err != nil {
+				return err
+			}
+
+			// Next two args is k,v
 			for i := 1; i < len(args)-1; i += 2 {
-				e.engine.Create(args[i], args[i+1]) // Next two args is k,v
+				if err := e.engine.Create(args[i], args[i+1]); err != nil {
+					return err
+				}
 			}
 		} else {
 			// Each key needs a value, so disregard odd numbered variadic arguments.
