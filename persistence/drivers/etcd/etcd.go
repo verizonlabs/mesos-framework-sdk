@@ -3,6 +3,8 @@ package etcd
 import (
 	"context"
 	etcd "github.com/coreos/etcd/clientv3"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	"runtime"
 	"time"
 )
@@ -12,10 +14,17 @@ type Etcd struct {
 }
 
 // Creates a new etcd client with the specified configuration.
-func NewClient(endpoints []string, timeout time.Duration) *Etcd {
+func NewClient(endpoints []string, timeout, kaTime, kaTimeout time.Duration) *Etcd {
 	client, err := etcd.New(etcd.Config{
 		Endpoints:   endpoints,
 		DialTimeout: timeout,
+		DialOptions: []grpc.DialOption{
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                kaTime,
+				Timeout:             kaTimeout,
+				PermitWithoutStream: true,
+			}),
+		},
 	})
 	if err != nil {
 		panic("Failed to create etcd client: " + err.Error())
