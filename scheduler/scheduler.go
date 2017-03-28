@@ -38,12 +38,12 @@ type Scheduler interface {
 // Default Scheduler can be used as a higher-level construct.
 type DefaultScheduler struct {
 	Info         *mesos_v1.FrameworkInfo
-	Client       *client.Client
+	Client       client.Client
 	logger       logging.Logger
 	IsSuppressed bool
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
+func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
 		Client:       c,
 		Info:         info,
@@ -65,7 +65,7 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
 
 	// If we disconnect we need to reset the stream ID. For this reason always start with a fresh stream ID.
 	// Otherwise we'll never be able to reconnect.
-	c.Client.StreamID = ""
+	c.Client.SetStreamID("")
 
 	resp, err := c.Client.Request(call)
 	if err != nil {

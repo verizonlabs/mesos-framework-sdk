@@ -14,17 +14,23 @@ import (
 	"time"
 )
 
+type Client interface {
+	Request(interface{}) (*http.Response, error)
+	StreamID() string
+	SetStreamID(string) Client
+}
+
 // HTTP client.
-type Client struct {
-	StreamID string
+type DefaultClient struct {
+	streamID string
 	master   string
 	client   *http.Client
 	logger   logging.Logger
 }
 
 // Return a new HTTP client.
-func NewClient(master string, logger logging.Logger) *Client {
-	return &Client{
+func NewClient(master string, logger logging.Logger) Client {
+	return &DefaultClient{
 		master: master,
 		client: &http.Client{
 			Transport: &http.Transport{
@@ -39,7 +45,7 @@ func NewClient(master string, logger logging.Logger) *Client {
 }
 
 // Makes a new request with data and sends it to the server.
-func (c *Client) Request(call interface{}) (*http.Response, error) {
+func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	var data []byte
 	var err error
 
@@ -64,8 +70,8 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	req.Header.Set("Accept", "application/x-protobuf")
 	req.Header.Set("Accept-Encoding", "gzip")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
-	if c.StreamID != "" {
-		req.Header.Set("Mesos-Stream-Id", c.StreamID)
+	if c.streamID != "" {
+		req.Header.Set("Mesos-Stream-Id", c.streamID)
 	}
 
 	resp, err := c.client.Do(req)
@@ -81,7 +87,7 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	// We will only get the stream ID after a SUBSCRIBE call.
 	streamID := resp.Header.Get("Mesos-Stream-Id")
 	if streamID != "" {
-		c.StreamID = streamID
+		c.streamID = streamID
 	}
 
 	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
@@ -100,4 +106,16 @@ func (c *Client) Request(call interface{}) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// Gets our stream ID.
+func (c *DefaultClient) StreamID() string {
+	return c.streamID
+}
+
+// Sets our stream ID.
+func (c *DefaultClient) SetStreamID(id string) Client {
+	c.streamID = id
+
+	return c
 }
