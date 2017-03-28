@@ -57,14 +57,14 @@ func (e *EtcdEngine) Read(r ...string) (results []string, err error) {
 	if len(r) == 1 {
 		val, err := e.engine.Read(r[0])
 		if err != nil {
-			return results, err
+			return nil, err
 		}
 		results = append(results, val)
 	} else if len(r) >= 2 {
 		for _, v := range r {
 			val, err := e.engine.Read(v)
 			if err != nil {
-				return results, err
+				return nil, err
 			}
 			results = append(results, val)
 		}
@@ -78,13 +78,25 @@ func (e *EtcdEngine) Read(r ...string) (results []string, err error) {
 func (e *EtcdEngine) Update(key string, args ...string) error {
 	// Single k,v pair
 	if len(args) == 1 {
-		e.engine.Update(key, args[0])
+
 		// Multiple k,v pair
+		if err := e.engine.Update(key, args[0]); err != nil {
+			return err
+		}
 	} else if len(args) > 2 {
 		if len(args)%2 == 0 {
-			e.engine.Update(key, args[0]) // First set of args.
+
+			// First set of args.
+			if err := e.engine.Update(key, args[0]); err != nil {
+				return err
+			}
+
 			for i := 1; i < len(args)-1; i += 2 {
-				e.engine.Update(args[i], args[i+1]) // Next two args is k,v
+
+				// Next two args is k,v
+				if err := e.engine.Update(args[i], args[i+1]); err != nil {
+					return err
+				}
 			}
 		} else {
 			// Each key needs a value, so disregard odd numbered variadic arguments.
