@@ -15,7 +15,7 @@ import (
 )
 
 // HTTP client.
-type Client struct {
+type DefaultClient struct {
 	StreamID string
 	master   string
 	client   *http.Client
@@ -23,8 +23,8 @@ type Client struct {
 }
 
 // Return a new HTTP client.
-func NewClient(master string, logger logging.Logger) *Client {
-	return &Client{
+func NewClient(master string, logger logging.Logger) *DefaultClient {
+	return &DefaultClient{
 		master: master,
 		client: &http.Client{
 			Transport: &http.Transport{
@@ -39,7 +39,7 @@ func NewClient(master string, logger logging.Logger) *Client {
 }
 
 // Makes a new request with data and sends it to the server.
-func (c *Client) Request(call interface{}) (*http.Response, error) {
+func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	var data []byte
 	var err error
 

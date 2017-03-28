@@ -38,12 +38,12 @@ type Scheduler interface {
 // Default Scheduler can be used as a higher-level construct.
 type DefaultScheduler struct {
 	Info         *mesos_v1.FrameworkInfo
-	Client       *client.Client
+	Client       *client.DefaultClient
 	logger       logging.Logger
 	IsSuppressed bool
 }
 
-func NewDefaultScheduler(c *client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
+func NewDefaultScheduler(c *client.DefaultClient, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
 		Client:       c,
 		Info:         info,
