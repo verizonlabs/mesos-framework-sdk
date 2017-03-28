@@ -73,7 +73,7 @@ func (e *EtcdEngine) Update(key string, args ...string) error {
 	} else if len(args) > 2 {
 		if len(args)%2 == 0 {
 			e.engine.Update(key, args[0]) // First set of args.
-			for i := 1; i < len(args); i += 2 {
+			for i := 1; i < len(args)-1; i += 2 {
 				e.engine.Update(args[i], args[i+1]) // Next two args is k,v
 			}
 		} else {
