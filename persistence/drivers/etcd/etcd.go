@@ -63,13 +63,14 @@ func (e *Etcd) Create(key, value string) error {
 
 // Creates a key with a specified TTL.
 // This will not overwrite an already existing key.
-func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) error {
+// Optionally makes the lease permanent.
+func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) (*etcd.LeaseID, error) {
 	grantCtx, grantCancel := context.WithTimeout(context.Background(), e.ctxTimeout)
 	defer grantCancel()
 
 	resp, err := e.client.Grant(grantCtx, ttl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
@@ -86,13 +87,13 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64, keepalive bool) err
 		kaCtx, kaCancel := context.WithTimeout(context.Background(), e.ctxTimeout)
 		defer kaCancel()
 
-		_, err := e.client.KeepAliveOnce(kaCtx, resp.ID)
+		_, err := e.client.KeepAlive(kaCtx, resp.ID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return err
+	return &resp.ID, err
 }
 
 // Reads a key's value.
@@ -141,6 +142,16 @@ func (e *Etcd) Update(key, value string) error {
 	defer cancel()
 
 	_, err := e.client.Put(ctx, key, value)
+
+	return err
+}
+
+// Refreshes a lease once.
+func (e *Etcd) RefreshLease(id *etcd.LeaseID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
+	defer cancel()
+
+	_, err := e.client.KeepAliveOnce(ctx, *id)
 
 	return err
 }
