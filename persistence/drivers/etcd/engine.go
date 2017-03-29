@@ -57,14 +57,14 @@ func (e *EtcdEngine) Read(r ...string) (results []string, err error) {
 	if len(r) == 1 {
 		val, err := e.engine.Read(r[0])
 		if err != nil {
-			return nil, err
+			return results, err
 		}
 		results = append(results, val)
 	} else if len(r) >= 2 {
 		for _, v := range r {
 			val, err := e.engine.Read(v)
 			if err != nil {
-				return nil, err
+				return results, err
 			}
 			results = append(results, val)
 		}
