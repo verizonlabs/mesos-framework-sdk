@@ -29,7 +29,7 @@ type Scheduler interface {
 	Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID)
 	Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID)
 	Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte)
-	Reconcile(tasks []*mesos_v1.Task)
+	Reconcile(tasks []*mesos_v1.TaskInfo)
 	Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte)
 	SchedRequest(resources []*mesos_v1.Request)
 	Suppress()
