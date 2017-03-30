@@ -12,27 +12,29 @@ the protobuf required for the call and send it off to the client.
 End users should only create their own scheduler if they wish to change the behavior of their calls.
 */
 import (
+	"errors"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
+	"net/http"
 )
 
 type Scheduler interface {
 	// Default Calls for scheduler
-	Subscribe(chan *sched.Event) error
-	Teardown()
-	Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters)
-	Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters)
-	Revive()
-	Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID)
-	Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID)
-	Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte)
-	Reconcile(tasks []*mesos_v1.TaskInfo)
-	Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte)
-	SchedRequest(resources []*mesos_v1.Request)
-	Suppress()
+	Subscribe(chan *sched.Event) (*http.Response, error)
+	Teardown() (*http.Response, error)
+	Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters) (*http.Response, error)
+	Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) (*http.Response, error)
+	Revive() (*http.Response, error)
+	Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) (*http.Response, error)
+	Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) (*http.Response, error)
+	Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) (*http.Response, error)
+	Reconcile(tasks []*mesos_v1.TaskInfo) (*http.Response, error)
+	Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) (*http.Response, error)
+	SchedRequest(resources []*mesos_v1.Request) (*http.Response, error)
+	Suppress() (*http.Response, error)
 }
 
 // Default Scheduler can be used as a higher-level construct.
@@ -54,7 +56,7 @@ func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger l
 
 // Make a subscription call to mesos.
 // Channel passed is the channel for Event Controller.
-func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
+func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) (*http.Response, error) {
 	call := &sched.Call{
 		Type: sched.Call_SUBSCRIBE.Enum(),
 		Subscribe: &sched.Call_Subscribe{
@@ -69,43 +71,46 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) error {
 
 	resp, err := c.Client.Request(call)
 	if err != nil {
-		return err
+		return nil, err
 	} else {
-		return recordio.Decode(resp.Body, eventChan)
+		// recordio.Decode() returns an err struct
+		return resp, recordio.Decode(resp.Body, eventChan)
 	}
 }
 
 // Send a teardown request to mesos master.
-func (c *DefaultScheduler) Teardown() {
+func (c *DefaultScheduler) Teardown() (*http.Response, error) {
 	teardown := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_TEARDOWN.Enum(),
 	}
-	_, err := c.Client.Request(teardown)
+	resp, err := c.Client.Request(teardown)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 
 	c.logger.Emit(logging.INFO, "Tearing down framework")
+	return resp, err
 }
 
 // Accepts offers from mesos master
-func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters) {
+func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v1.Offer_Operation, filters *mesos_v1.Filters) (*http.Response, error) {
 	accept := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_ACCEPT.Enum(),
 		Accept:      &sched.Call_Accept{OfferIds: offerIds, Operations: tasks, Filters: filters},
 	}
 
-	_, err := c.Client.Request(accept)
+	resp, err := c.Client.Request(accept)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
-		return
+		return nil, err
 	}
 	c.logger.Emit(logging.INFO, "Accepting %d offers with %d tasks", len(offerIds), len(tasks))
+	return resp, err
 }
 
-func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) {
+func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_v1.Filters) (*http.Response, error) {
 	// Get a list of the offer ids to decline and any filters.
 	decline := &sched.Call{
 		FrameworkId: c.Info.GetId(),
@@ -113,44 +118,48 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 		Decline:     &sched.Call_Decline{OfferIds: offerIds, Filters: filters},
 	}
 
-	_, err := c.Client.Request(decline)
+	resp, err := c.Client.Request(decline)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
+	return resp, err
 }
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
-func (c *DefaultScheduler) Revive() {
+func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	revive := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_REVIVE.Enum(),
 	}
 
-	_, err := c.Client.Request(revive)
+	resp, err := c.Client.Request(revive)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.IsSuppressed = false
 	c.logger.Emit(logging.INFO, "Reviving offers")
+	return resp, err
 }
 
-func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) {
-	// Probably want some validation that this is a valid task and valid agentid.
+func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) (*http.Response, error) {
 	kill := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_KILL.Enum(),
 		Kill:        &sched.Call_Kill{TaskId: taskId, AgentId: agentid},
 	}
 
-	_, err := c.Client.Request(kill)
+	resp, err := c.Client.Request(kill)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	c.logger.Emit(logging.INFO, "Killing task %s", taskId.GetValue())
+	if resp.StatusCode == 200 {
+		c.logger.Emit(logging.INFO, "Killing task %s", taskId.GetValue())
+	}
+	return resp, err
 }
 
-func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) {
+func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) (*http.Response, error) {
 	shutdown := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_SHUTDOWN.Enum(),
@@ -159,21 +168,22 @@ func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_
 			AgentId:    agentId,
 		},
 	}
-	_, err := c.Client.Request(shutdown)
+	resp, err := c.Client.Request(shutdown)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.logger.Emit(logging.INFO, "Shutting down")
+	return resp, err
 }
 
-func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) {
+func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) (*http.Response, error) {
 
 	// Note that with the new API, schedulers are responsible for explicitly acknowledging the receipt of status
 	// updates that have “status.uuid()” set.
 	// These status updates are reliably retried until they are acknowledged by the scheduler.
 	// The scheduler must not acknowledge status updates that do not have "status.uuid()" set as they are not retried.
 	if uuid == nil {
-		return
+		return nil, errors.New("No uuid passed in to ACK.")
 	}
 
 	acknowledge := &sched.Call{
@@ -186,13 +196,14 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 		},
 	}
 
-	_, err := c.Client.Request(acknowledge)
+	resp, err := c.Client.Request(acknowledge)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
+	return resp, err
 }
 
-func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) {
+func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) (*http.Response, error) {
 	reconcileTasks := make([]*sched.Call_Reconcile_Task, 0, len(tasks))
 	for _, task := range tasks {
 		reconcileTasks = append(reconcileTasks, &sched.Call_Reconcile_Task{
@@ -208,15 +219,16 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) {
 			Tasks: reconcileTasks,
 		},
 	}
-	_, err := c.Client.Request(reconcile)
+	resp, err := c.Client.Request(reconcile)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 
 	c.logger.Emit(logging.INFO, "Reconciling %d tasks", len(tasks))
+	return resp, err
 }
 
-func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) {
+func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) (*http.Response, error) {
 	message := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_MESSAGE.Enum(),
@@ -226,15 +238,16 @@ func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_
 			Data:       data,
 		},
 	}
-	_, err := c.Client.Request(message)
+	resp, err := c.Client.Request(message)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.logger.Emit(logging.INFO, "Message received from agent %s and executor %s", agentId.GetValue(), executorId.GetValue())
+	return resp, err
 }
 
 // NOTE: This method is only kept to conform to official Mesos codebase.  This does nothing.
-func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
+func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Response, error) {
 	request := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_REQUEST.Enum(),
@@ -242,22 +255,24 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) {
 			Requests: resources,
 		},
 	}
-	_, err := c.Client.Request(request)
+	resp, err := c.Client.Request(request)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.logger.Emit(logging.INFO, "Requesting resources")
+	return resp, err
 }
 
-func (c *DefaultScheduler) Suppress() {
+func (c *DefaultScheduler) Suppress() (*http.Response, error) {
 	suppress := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_SUPPRESS.Enum(),
 	}
-	_, err := c.Client.Request(suppress)
+	resp, err := c.Client.Request(suppress)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
 	c.IsSuppressed = true
 	c.logger.Emit(logging.INFO, "Suppressing offers")
+	return resp, err
 }

@@ -24,13 +24,23 @@ func NewEtcdEngine(engine *Etcd) *EtcdEngine {
 func (e *EtcdEngine) Create(key string, args ...string) error {
 	// Single k,v pair
 	if len(args) == 1 {
-		e.engine.Create(key, args[0])
+		if err := e.engine.Create(key, args[0]); err != nil {
+			return err
+		}
 		// Multiple k,v pair
 	} else if len(args) > 2 {
 		if len(args)%2 == 0 {
-			e.engine.Create(key, args[0]) // First set of args.
+
+			// First set of args.
+			if err := e.engine.Create(key, args[0]); err != nil {
+				return err
+			}
+
+			// Next two args is k,v
 			for i := 1; i < len(args)-1; i += 2 {
-				e.engine.Create(args[i], args[i+1]) // Next two args is k,v
+				if err := e.engine.Create(args[i], args[i+1]); err != nil {
+					return err
+				}
 			}
 		} else {
 			// Each key needs a value, so disregard odd numbered variadic arguments.
@@ -66,15 +76,27 @@ func (e *EtcdEngine) Read(r ...string) (results []string, err error) {
 
 // Variadic k,v update.
 func (e *EtcdEngine) Update(key string, args ...string) error {
-	// Single k,v pair
+	// Single k,v pair.
 	if len(args) == 1 {
-		e.engine.Update(key, args[0])
-		// Multiple k,v pair
+
+		// Multiple k,v pair.
+		if err := e.engine.Update(key, args[0]); err != nil {
+			return err
+		}
 	} else if len(args) > 2 {
 		if len(args)%2 == 0 {
-			e.engine.Update(key, args[0]) // First set of args.
+
+			// First set of args.
+			if err := e.engine.Update(key, args[0]); err != nil {
+				return err
+			}
+
 			for i := 1; i < len(args)-1; i += 2 {
-				e.engine.Update(args[i], args[i+1]) // Next two args is k,v
+
+				// Next two args is k,v.
+				if err := e.engine.Update(args[i], args[i+1]); err != nil {
+					return err
+				}
 			}
 		} else {
 			// Each key needs a value, so disregard odd numbered variadic arguments.
@@ -88,11 +110,19 @@ func (e *EtcdEngine) Update(key string, args ...string) error {
 
 func (e *EtcdEngine) Delete(key string, args ...string) error {
 	if len(args) == 0 {
-		e.engine.Delete(key)
+		if err := e.engine.Delete(key); err != nil {
+			return err
+		}
 	} else if len(args) > 0 {
-		e.engine.Delete(key)     // delete first key
+
+		// Delete first key.
+		if err := e.engine.Delete(key); err != nil {
+			return err
+		}
 		for _, k := range args { // then remaining keys
-			e.engine.Delete(k)
+			if err := e.engine.Delete(k); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
