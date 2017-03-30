@@ -4,6 +4,7 @@ import (
 	"errors"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/task"
+	"strconv"
 	"strings"
 )
 
@@ -14,19 +15,22 @@ The resource manager will handle offers and allocate it to a task.
 type ResourceManager interface {
 	AddOffers(offers []*mesos_v1.Offer)
 	HasResources() bool
+	AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error
 	Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
 	Offers() []*mesos_v1.Offer
 }
 
 type DefaultResourceManager struct {
 	offers   []*MesosOfferResources
-	filterOn map[string]task.Filter // We can hold any type of filter here.
+	filterOn map[string][]task.Filter
 }
 
-// NOTE: Any new filter types should be added here.
+// NOTE (tim): Filter types follow VALUE_TYPE's defined in mesos
 const (
-	HOSTFILTER = "host"
-	IPFILTER   = "ip"
+	SCALAR = mesos_v1.Value_SCALAR
+	TEXT   = mesos_v1.Value_TEXT
+	RANGES = mesos_v1.Value_RANGES
+	SET    = mesos_v1.Value_SET
 )
 
 // This cleans up the logic for the offer->resource matching.
@@ -40,13 +44,15 @@ type MesosOfferResources struct {
 func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
 		offers:   make([]*MesosOfferResources, 0),
-		filterOn: make(map[string]task.Filter),
+		filterOn: make(map[string][]task.Filter),
 	}
 }
 
 // Add in a new batch of offers
 func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
-	d.clearOffers() // No matter what we clear offers on this call to make sure we don't have stale offers that are already declined.
+	// No matter what, we clear offers on this call to make sure
+	// we don't have stale offers that are already declined.
+	d.clearOffers()
 	for _, offer := range offers {
 		mesosOffer := &MesosOfferResources{}
 		for _, resource := range offer.Resources {
@@ -77,15 +83,22 @@ func (d *DefaultResourceManager) HasResources() bool {
 }
 
 // Tells our resource manager to apply filters to this task.
-func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) {
+func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error {
 	for _, f := range filters { // Check all filters
-		switch f.Type {
-		case HOSTFILTER:
-			d.filterOn[t.GetName()] = task.Filter{Type: HOSTFILTER, Value: f.Value}
-		case IPFILTER:
-			d.filterOn[t.GetName()] = task.Filter{Type: IPFILTER, Value: f.Value}
+		switch strings.ToLower(f.Type) {
+		case "scalar":
+			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "scalar", Value: f.Value})
+		case "text":
+			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "text", Value: f.Value})
+		case "set":
+			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "set", Value: f.Value})
+		case "ranges":
+			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "ranges", Value: f.Value})
+		default:
+			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES.")
 		}
 	}
+	return nil
 }
 
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
@@ -96,23 +109,59 @@ func (d *DefaultResourceManager) popOffer(i int) {
 	d.offers = d.offers[:len(d.offers)-1]
 }
 
-func (d *DefaultResourceManager) filter(f task.Filter, offer *mesos_v1.Offer) bool {
-	switch f.Type {
-	// We can simply filter on attributes to see if the terms we want are in the attributes.
-	case HOSTFILTER, IPFILTER:
-		for _, attr := range offer.Attributes {
-			// Host filters have to be text.
-			if attr.GetType() == mesos_v1.Value_TEXT {
-				for _, term := range f.Value {
-					if strings.Contains(attr.Text.GetValue(), term) {
-						// The term we're looking for exists.
-						return true
-					}
-				}
-			}
+// Check if filter applies to a single Text attribute.
+func (d *DefaultResourceManager) filterOnAttrText(f []string, a *mesos_v1.Attribute) bool {
+	for _, term := range f {
+		if strings.Contains(a.Text.GetValue(), term) {
+			// The term we're looking for exists.
+			return true
+		} else {
+			// Immediately return false if not all match.
+			return false
 		}
 	}
 	return false
+}
+
+// Check if filter applies to a single Scalar attribute.
+func (d *DefaultResourceManager) filterOnAttrScalar(f []string, a *mesos_v1.Attribute) bool {
+	for _, term := range f {
+		termFloat64, err := strconv.ParseFloat(term, 64)
+		if err != nil {
+			// We can't parse a proper int, ignore.
+			continue
+		}
+		if a.GetScalar().GetValue() == termFloat64 {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) bool {
+	// Range over all of our filters.
+	for _, filter := range f {
+		// Range over all of our attributes.
+		for _, attr := range offer.Attributes {
+			valType := mesos_v1.Value_Type(mesos_v1.Value_Type_value[strings.ToUpper(filter.Type)])
+			switch valType {
+			case SCALAR:
+				// Filter on Scalar value
+				if !d.filterOnAttrScalar(filter.Value, attr) {
+					return false
+				}
+			case TEXT:
+				// Filter on Text Attr.
+				if !d.filterOnAttrText(filter.Value, attr) {
+					return false
+				}
+			case SET:
+			case RANGES:
+			}
+		}
+	}
+
+	return true
 }
 
 // Assign an offer to a task.
@@ -121,7 +170,8 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 		isValid := false
 		// If this task has filters, make sure to filter on them.
 		if filter, ok := d.filterOn[task.GetName()]; ok {
-			if validOffer := d.filter(filter, offer.Offer); !validOffer {
+			validOffer := d.filter(filter, offer.Offer)
+			if !validOffer {
 				// We don't care about this offer since it does't match our params.
 				continue
 			}
