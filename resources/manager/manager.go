@@ -16,6 +16,7 @@ type ResourceManager interface {
 	HasResources() bool
 	Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
 	Offers() []*mesos_v1.Offer
+	AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter)
 }
 
 type DefaultResourceManager struct {
