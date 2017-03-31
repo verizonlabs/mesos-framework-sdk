@@ -36,10 +36,11 @@ type CommandJSON struct {
 }
 
 type ContainerJSON struct {
-	ImageName *string       `json:"image"`
-	Tag       *string       `json:"tag"`
-	Network   []NetworkJSON `json:"network"`
-	Volumes   []VolumesJSON `json:"volume"`
+	ContainerType *string       `josn:"type"`
+	ImageName     *string       `json:"image"`
+	Tag           *string       `json:"tag"`
+	Network       []NetworkJSON `json:"network"`
+	Volumes       []VolumesJSON `json:"volume"`
 }
 
 type VolumesJSON struct {

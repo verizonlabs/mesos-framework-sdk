@@ -52,6 +52,12 @@ func CreateMesosContainerInfo(
 	}
 }
 
+func CreateContainerInfoForDocker(img *mesos_v1.Image) *mesos_v1.ContainerInfo_DockerInfo {
+	return &mesos_v1.ContainerInfo_DockerInfo{
+		Image: img,
+	}
+}
+
 func CreateContainerInfoForMesos(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
 	return &mesos_v1.ContainerInfo_MesosInfo{
 		Image: img,
