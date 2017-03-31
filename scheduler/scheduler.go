@@ -31,7 +31,7 @@ type Scheduler interface {
 	Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.AgentID) (*http.Response, error)
 	Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_v1.AgentID) (*http.Response, error)
 	Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_v1.TaskID, uuid []byte) (*http.Response, error)
-	Reconcile(tasks []*mesos_v1.Task) (*http.Response, error)
+	Reconcile(tasks []*mesos_v1.TaskInfo) (*http.Response, error)
 	Message(agentId *mesos_v1.AgentID, executorId *mesos_v1.ExecutorID, data []byte) (*http.Response, error)
 	SchedRequest(resources []*mesos_v1.Request) (*http.Response, error)
 	Suppress() (*http.Response, error)
