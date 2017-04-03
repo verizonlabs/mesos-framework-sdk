@@ -8,10 +8,10 @@ import (
 	"mesos-framework-sdk/task/network"
 	"mesos-framework-sdk/task/volume"
 	"strings"
+	"github.com/golang/protobuf/proto"
 )
 
 func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
-	var container *mesos_v1.ContainerInfo_MesosInfo
 	var ret *mesos_v1.ContainerInfo
 	if c == nil {
 		return nil, nil
@@ -34,13 +34,19 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 
 	if c.ImageName != nil {
 		if c.ContainerType != nil {
-			if strings.ToLower(c.ContainerType) == "docker" {
-				container = resources.CreateContainerInfoForDocker(
-					resources.CreateImage(*c.ImageName, "", mesos_v1.Image_DOCKER.Enum()),
+			var dockerContainer *mesos_v1.ContainerInfo_DockerInfo
+			if strings.ToLower(*c.ContainerType) == "docker" {
+				dockerContainer = resources.CreateContainerInfoForDocker(
+					c.ImageName,
+					mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
+					[]*mesos_v1.ContainerInfo_DockerInfo_PortMapping{},
+					[]*mesos_v1.Parameter{},
+					proto.String(""), // volume driver
 				)
 			}
-			ret = resources.CreateDockerContainerInfo(container, networks, vol, nil)
+			ret = resources.CreateDockerContainerInfo(dockerContainer, networks, vol, nil)
 		} else {
+			var container *mesos_v1.ContainerInfo_MesosInfo
 			container = resources.CreateContainerInfoForMesos(
 				resources.CreateImage(
 					*c.ImageName, "", mesos_v1.Image_DOCKER.Enum(),
