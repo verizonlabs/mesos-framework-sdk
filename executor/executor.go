@@ -15,8 +15,8 @@ type Executor interface {
 }
 
 type DefaultExecutor struct {
-	FrameworkID *mesos_v1.FrameworkID
-	ExecutorID  *mesos_v1.ExecutorID
+	frameworkId *mesos_v1.FrameworkID
+	executorId  *mesos_v1.ExecutorID
 	client      client.Client
 	logger      logging.Logger
 }
@@ -29,8 +29,8 @@ func NewDefaultExecutor(
 	lgr logging.Logger) Executor {
 
 	return &DefaultExecutor{
-		FrameworkID: f,
-		ExecutorID:  e,
+		frameworkId: f,
+		executorId:  e,
 		client:      c,
 		logger:      lgr,
 	}
@@ -38,8 +38,8 @@ func NewDefaultExecutor(
 
 func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 	subscribe := &exec.Call{
-		FrameworkId: e.FrameworkID,
-		ExecutorId:  e.ExecutorID,
+		FrameworkId: e.frameworkId,
+		ExecutorId:  e.executorId,
 		Type:        exec.Call_SUBSCRIBE.Enum(),
 	}
 
@@ -57,8 +57,8 @@ func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 
 func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
 	update := exec.Call{
-		FrameworkId: e.FrameworkID,
-		ExecutorId:  e.ExecutorID,
+		FrameworkId: e.frameworkId,
+		ExecutorId:  e.executorId,
 		Type:        exec.Call_UPDATE.Enum(),
 		Update: &exec.Call_Update{
 			Status: taskStatus,
@@ -69,8 +69,8 @@ func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
 
 func (e *DefaultExecutor) Message(data []byte) {
 	message := exec.Call{
-		FrameworkId: e.FrameworkID,
-		ExecutorId:  e.ExecutorID,
+		FrameworkId: e.frameworkId,
+		ExecutorId:  e.executorId,
 		Type:        exec.Call_MESSAGE.Enum(),
 		Message: &exec.Call_Message{
 			Data: data,
