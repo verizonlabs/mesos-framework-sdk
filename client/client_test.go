@@ -1,6 +1,10 @@
 package client
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
 type mockLogger struct{}
 
@@ -29,5 +33,21 @@ func TestDefaultClient_SetStreamID(t *testing.T) {
 	c.SetStreamID(id)
 	if c.StreamID() != id {
 		t.Fatal("Stream ID was not set correctly")
+	}
+}
+
+// Tests if we can make requests successfully or not.
+func TestDefaultClient_Request(t *testing.T) {
+	t.Parallel()
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	c := NewClient(ts.URL, l)
+	_, err := c.Request(nil)
+	if err != nil {
+		t.Fatal("Request could not be made successfully")
 	}
 }
