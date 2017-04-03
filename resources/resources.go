@@ -52,9 +52,18 @@ func CreateMesosContainerInfo(
 	}
 }
 
-func CreateContainerInfoForDocker(img *mesos_v1.Image) *mesos_v1.ContainerInfo_DockerInfo {
+func CreateContainerInfoForDocker(
+	img *string,
+	network *mesos_v1.ContainerInfo_DockerInfo_Network,
+	ports []*mesos_v1.ContainerInfo_DockerInfo_PortMapping,
+	params []*mesos_v1.Parameter,
+	volDriver *string) *mesos_v1.ContainerInfo_DockerInfo {
 	return &mesos_v1.ContainerInfo_DockerInfo{
 		Image: img,
+		Network: network,
+		PortMappings: ports,
+		Parameters: params,
+		VolumeDriver: volDriver,
 	}
 }
 

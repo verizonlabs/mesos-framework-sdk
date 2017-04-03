@@ -36,7 +36,7 @@ type CommandJSON struct {
 }
 
 type ContainerJSON struct {
-	ContainerType *string       `josn:"type"`
+	ContainerType *string       `json:"type"`
 	ImageName     *string       `json:"image"`
 	Tag           *string       `json:"tag"`
 	Network       []NetworkJSON `json:"network"`
