@@ -2,13 +2,13 @@ package container
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/resources"
 	"mesos-framework-sdk/task"
 	"mesos-framework-sdk/task/network"
 	"mesos-framework-sdk/task/volume"
 	"strings"
-	"github.com/golang/protobuf/proto"
 )
 
 func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {

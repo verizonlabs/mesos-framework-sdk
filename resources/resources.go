@@ -59,10 +59,10 @@ func CreateContainerInfoForDocker(
 	params []*mesos_v1.Parameter,
 	volDriver *string) *mesos_v1.ContainerInfo_DockerInfo {
 	return &mesos_v1.ContainerInfo_DockerInfo{
-		Image: img,
-		Network: network,
+		Image:        img,
+		Network:      network,
 		PortMappings: ports,
-		Parameters: params,
+		Parameters:   params,
 		VolumeDriver: volDriver,
 	}
 }
