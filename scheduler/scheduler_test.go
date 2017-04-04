@@ -313,6 +313,7 @@ func BenchmarkDefaultScheduler_Subscribe(b *testing.B) {
 	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
 	c.Request(nil)
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		s.Subscribe(ch)
@@ -332,5 +333,15 @@ func TestDefaultScheduler_Suppress(t *testing.T) {
 
 	if !s.IsSuppressed {
 		t.Fatal("Offers were suppressed but the scheduler state does not show as suppressed")
+	}
+}
+
+// Measures performance of our suppress call to Mesos.
+func BenchmarkDefaultScheduler_Suppress(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Suppress()
 	}
 }
