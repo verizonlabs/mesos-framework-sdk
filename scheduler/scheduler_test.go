@@ -299,7 +299,7 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 
 	// We SHOULD get an error in this case; make sure that's true.
 	if err == nil {
-		t.Fatal(err.Error())
+		t.Fatal("Subscribe should have failed but it didn't")
 	}
 }
 
