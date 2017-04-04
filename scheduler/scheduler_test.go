@@ -345,3 +345,15 @@ func BenchmarkDefaultScheduler_Suppress(b *testing.B) {
 		s.Suppress()
 	}
 }
+
+// Tests our teardown call to Mesos.
+func TestDefaultScheduler_Teardown(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+
+	_, err := s.Teardown()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
