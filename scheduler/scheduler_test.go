@@ -117,3 +117,15 @@ func TestDefaultScheduler_Decline(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our decline call to Mesos.
+func BenchmarkDefaultScheduler_Decline(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	offerIds := []*mesos_v1.OfferID{}
+	filters := &mesos_v1.Filters{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Decline(offerIds, filters)
+	}
+}
