@@ -3,7 +3,9 @@ package scheduler
 import (
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/scheduler"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -277,5 +279,26 @@ func BenchmarkDefaultScheduler_Shutdown(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		s.Shutdown(execId, agentId)
+	}
+}
+
+// Tests our subscribe call to Mesos.
+func TestDefaultScheduler_Subscribe(t *testing.T) {
+	t.Parallel()
+
+	ch := make(chan *mesos_v1_scheduler.Event)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	c := client.NewClient(srv.URL, l)
+	s := NewDefaultScheduler(c, i, l)
+	c.Request(nil)
+
+	_, err := s.Subscribe(ch)
+
+	// We SHOULD get an error in this case; make sure that's true.
+	if err == nil {
+		t.Fatal(err.Error())
 	}
 }
