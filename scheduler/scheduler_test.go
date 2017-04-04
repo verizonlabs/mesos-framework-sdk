@@ -47,3 +47,16 @@ func BenchmarkNewDefaultScheduler(b *testing.B) {
 		NewDefaultScheduler(c, i, l)
 	}
 }
+
+// Tests our accept call to Mesos.
+func TestDefaultScheduler_Accept(t *testing.T) {
+	s := NewDefaultScheduler(c, i, l)
+	offerIds := []*mesos_v1.OfferID{}
+	tasks := []*mesos_v1.Offer_Operation{}
+	filters := &mesos_v1.Filters{}
+
+	_, err := s.Accept(offerIds, tasks, filters)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
