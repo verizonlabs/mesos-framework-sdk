@@ -253,3 +253,17 @@ func BenchmarkDefaultScheduler_SchedRequest(b *testing.B) {
 		s.SchedRequest(res)
 	}
 }
+
+// Tests our shutdown call to Mesos.
+func TestDefaultScheduler_Shutdown(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	execId := &mesos_v1.ExecutorID{}
+	agentId := &mesos_v1.AgentID{}
+
+	_, err := s.Shutdown(execId, agentId)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
