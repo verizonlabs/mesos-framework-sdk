@@ -50,6 +50,8 @@ func BenchmarkNewDefaultScheduler(b *testing.B) {
 
 // Tests our accept call to Mesos.
 func TestDefaultScheduler_Accept(t *testing.T) {
+	t.Parallel()
+
 	s := NewDefaultScheduler(c, i, l)
 	offerIds := []*mesos_v1.OfferID{}
 	tasks := []*mesos_v1.Offer_Operation{}
@@ -71,5 +73,20 @@ func BenchmarkDefaultScheduler_Accept(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		s.Accept(offerIds, tasks, filters)
+	}
+}
+
+// Tests our acknowledge call to Mesos.
+func TestDefaultScheduler_Acknowledge(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	agentId := &mesos_v1.AgentID{}
+	taskId := &mesos_v1.TaskID{}
+	uuid := []byte{}
+
+	_, err := s.Acknowledge(agentId, taskId, uuid)
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 }
