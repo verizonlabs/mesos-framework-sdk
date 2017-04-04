@@ -143,3 +143,15 @@ func TestDefaultScheduler_Kill(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our kill call to Mesos.
+func BenchmarkDefaultScheduler_Kill(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	taskId := &mesos_v1.TaskID{}
+	agentId := &mesos_v1.AgentID{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Kill(taskId, agentId)
+	}
+}
