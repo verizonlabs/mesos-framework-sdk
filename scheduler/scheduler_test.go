@@ -207,3 +207,14 @@ func BenchmarkDefaultScheduler_Reconcile(b *testing.B) {
 		s.Reconcile(tasks)
 	}
 }
+
+// Tests our revive call to Mesos.
+func TestDefaultScheduler_Revive(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	_, err := s.Revive()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
