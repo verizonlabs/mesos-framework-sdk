@@ -218,3 +218,13 @@ func TestDefaultScheduler_Revive(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our revive call.
+func BenchmarkDefaultScheduler_Revive(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Revive()
+	}
+}
