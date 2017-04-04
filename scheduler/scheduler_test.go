@@ -155,3 +155,18 @@ func BenchmarkDefaultScheduler_Kill(b *testing.B) {
 		s.Kill(taskId, agentId)
 	}
 }
+
+// Tests our message call to Mesos.
+func TestDefaultScheduler_Message(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	agentId := &mesos_v1.AgentID{}
+	execId := &mesos_v1.ExecutorID{}
+	data := []byte{}
+
+	_, err := s.Message(agentId, execId, data)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
