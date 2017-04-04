@@ -129,3 +129,17 @@ func BenchmarkDefaultScheduler_Decline(b *testing.B) {
 		s.Decline(offerIds, filters)
 	}
 }
+
+// Tests our kill call to Mesos.
+func TestDefaultScheduler_Kill(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	taskId := &mesos_v1.TaskID{}
+	agentId := &mesos_v1.AgentID{}
+
+	_, err := s.Kill(taskId, agentId)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
