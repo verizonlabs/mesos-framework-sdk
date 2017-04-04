@@ -103,3 +103,17 @@ func BenchmarkDefaultScheduler_Acknowledge(b *testing.B) {
 		s.Acknowledge(agentId, taskId, uuid)
 	}
 }
+
+// Tests our decline call to Mesos.
+func TestDefaultScheduler_Decline(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	offerIds := []*mesos_v1.OfferID{}
+	filters := &mesos_v1.Filters{}
+
+	_, err := s.Decline(offerIds, filters)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
