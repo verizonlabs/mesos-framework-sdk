@@ -15,6 +15,13 @@ func TestUuid(t *testing.T) {
 	}
 }
 
+// Measures performance of generating UUID's.
+func BenchmarkUuid(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		Uuid()
+	}
+}
+
 // Checks if we have a valid v4 UUID.
 func TestUuidToString(t *testing.T) {
 	t.Parallel()
@@ -31,5 +38,15 @@ func TestUuidToString(t *testing.T) {
 
 	if !m {
 		t.Fatal("Not a valid v4 UUID")
+	}
+}
+
+// Measures performance of converting a UUID to a string.
+func BenchmarkUuidToString(b *testing.B) {
+	u := Uuid()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		UuidToString(u)
 	}
 }
