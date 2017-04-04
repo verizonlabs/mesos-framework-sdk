@@ -183,3 +183,16 @@ func BenchmarkDefaultScheduler_Message(b *testing.B) {
 		s.Message(agentId, execId, data)
 	}
 }
+
+// Tests our reconcile call to Mesos.
+func TestDefaultScheduler_Reconcile(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	tasks := []*mesos_v1.TaskInfo{}
+
+	_, err := s.Reconcile(tasks)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
