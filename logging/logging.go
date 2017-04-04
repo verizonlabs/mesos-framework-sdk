@@ -46,7 +46,7 @@ type DefaultLogger struct {
 }
 
 // Sets required information for our default logger and returns a new instance.
-func NewDefaultLogger() *DefaultLogger {
+func NewDefaultLogger() Logger {
 	path := strings.Split(os.Args[0], "/")
 	name := path[len(path)-1]
 	application := os.Getenv("MON_APP")
