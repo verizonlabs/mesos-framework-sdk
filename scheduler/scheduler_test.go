@@ -318,3 +318,19 @@ func BenchmarkDefaultScheduler_Subscribe(b *testing.B) {
 		s.Subscribe(ch)
 	}
 }
+
+// Tests our suppress call to Mesos.
+func TestDefaultScheduler_Suppress(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+
+	_, err := s.Suppress()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if !s.IsSuppressed {
+		t.Fatal("Offers were suppressed but the scheduler state does not show as suppressed")
+	}
+}
