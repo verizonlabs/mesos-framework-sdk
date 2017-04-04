@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
-	"time"
 )
 
 // Mocked configuration
@@ -62,19 +61,5 @@ func TestNewExecutorServer(t *testing.T) {
 	}
 	if srv.cfg.Key() != key {
 		t.Fatal("Executor server key was not set correctly")
-	}
-}
-
-// Make sure we can actually run our server.
-func TestExecutorServer_Serve(t *testing.T) {
-	t.Parallel()
-
-	go srv.Serve()
-
-	// Go 1.8 will allow us to shutdown our server https://github.com/golang/go/issues/4674
-	// For now, let the server fully spin up and then end the test.
-	select {
-	case <-time.After(100 * time.Millisecond):
-		return
 	}
 }

@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -24,6 +25,7 @@ const (
 	EVENT
 	DEBUG
 	UNKNOWN
+	TEST
 )
 
 type Logger interface {
@@ -46,7 +48,7 @@ type DefaultLogger struct {
 }
 
 // Sets required information for our default logger and returns a new instance.
-func NewDefaultLogger() *DefaultLogger {
+func NewDefaultLogger() Logger {
 	path := strings.Split(os.Args[0], "/")
 	name := path[len(path)-1]
 	application := os.Getenv("MON_APP")
@@ -84,6 +86,7 @@ func NewDefaultLogger() *DefaultLogger {
 			EVENT:   {os.Stderr, "EVENT"},
 			DEBUG:   {os.Stdout, "DEBUG"},
 			UNKNOWN: {os.Stdout, "UNKNOWN"},
+			TEST:    {ioutil.Discard, "TEST"},
 		},
 	}
 
