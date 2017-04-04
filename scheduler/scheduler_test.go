@@ -302,3 +302,19 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our subscribe call to Mesos.
+func BenchmarkDefaultScheduler_Subscribe(b *testing.B) {
+	ch := make(chan *mesos_v1_scheduler.Event)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	c := client.NewClient(srv.URL, l)
+	s := NewDefaultScheduler(c, i, l)
+	c.Request(nil)
+
+	for n := 0; n < b.N; n++ {
+		s.Subscribe(ch)
+	}
+}
