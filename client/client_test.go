@@ -24,6 +24,13 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
+// Measures performance of creating a new client.
+func BenchmarkNewClient(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		NewClient("test", l)
+	}
+}
+
 // Ensure that our stream ID gets set correctly.
 func TestDefaultClient_SetStreamID(t *testing.T) {
 	t.Parallel()
@@ -33,6 +40,16 @@ func TestDefaultClient_SetStreamID(t *testing.T) {
 	c.SetStreamID(id)
 	if c.StreamID() != id {
 		t.Fatal("Stream ID was not set correctly")
+	}
+}
+
+// Measures performance of setting our stream ID.
+func BenchmarkDefaultClient_StreamID(b *testing.B) {
+	c := NewClient("test", l)
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		c.SetStreamID("id")
 	}
 }
 
@@ -49,5 +66,20 @@ func TestDefaultClient_Request(t *testing.T) {
 	_, err := c.Request(nil)
 	if err != nil {
 		t.Fatal("Request could not be made successfully")
+	}
+}
+
+// Measures performance of creating and sending HTTP requests.
+func BenchmarkDefaultClient_Request(b *testing.B) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	c := NewClient(ts.URL, l)
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		c.Request(nil)
 	}
 }
