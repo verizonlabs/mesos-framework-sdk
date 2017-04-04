@@ -28,15 +28,22 @@ func (m *mockLogger) Emit(severity uint8, template string, args ...interface{}) 
 }
 
 var c = new(mockClient)
+var i = &mesos_v1.FrameworkInfo{}
 var l = new(mockLogger)
 
 // Checks the internal state of a new scheduler.
 func TestNewDefaultScheduler(t *testing.T) {
 	t.Parallel()
 
-	fwInfo := &mesos_v1.FrameworkInfo{}
-	s := NewDefaultScheduler(c, fwInfo, l)
-	if s.Client != c || s.logger != l || s.Info != fwInfo {
+	s := NewDefaultScheduler(c, i, l)
+	if s.Client != c || s.logger != l || s.Info != i {
 		t.Fatal("Scheduler does not have the right internal state")
+	}
+}
+
+// Measures performance of creating a new scheduler.
+func BenchmarkNewDefaultScheduler(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		NewDefaultScheduler(c, i, l)
 	}
 }
