@@ -29,9 +29,11 @@ func (m *mockLogger) Emit(severity uint8, template string, args ...interface{}) 
 
 }
 
-var c = new(mockClient)
-var i = &mesos_v1.FrameworkInfo{}
-var l = new(mockLogger)
+var (
+	c = new(mockClient)
+	i = &mesos_v1.FrameworkInfo{}
+	l = new(mockLogger)
+)
 
 // Checks the internal state of a new scheduler.
 func TestNewDefaultScheduler(t *testing.T) {
