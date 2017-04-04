@@ -196,3 +196,14 @@ func TestDefaultScheduler_Reconcile(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our reconcile call to Mesos.
+func BenchmarkDefaultScheduler_Reconcile(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	tasks := []*mesos_v1.TaskInfo{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Reconcile(tasks)
+	}
+}
