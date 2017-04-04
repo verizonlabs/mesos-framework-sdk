@@ -170,3 +170,16 @@ func TestDefaultScheduler_Message(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our message call to Mesos.
+func BenchmarkDefaultScheduler_Message(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	agentId := &mesos_v1.AgentID{}
+	execId := &mesos_v1.ExecutorID{}
+	data := []byte{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Message(agentId, execId, data)
+	}
+}
