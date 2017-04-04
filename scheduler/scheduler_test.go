@@ -60,3 +60,16 @@ func TestDefaultScheduler_Accept(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our accept call to Mesos.
+func BenchmarkDefaultScheduler_Accept(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	offerIds := []*mesos_v1.OfferID{}
+	tasks := []*mesos_v1.Offer_Operation{}
+	filters := &mesos_v1.Filters{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Accept(offerIds, tasks, filters)
+	}
+}
