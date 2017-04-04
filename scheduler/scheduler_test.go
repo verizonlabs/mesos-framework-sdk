@@ -267,3 +267,15 @@ func TestDefaultScheduler_Shutdown(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our shutdown call to Mesos.
+func BenchmarkDefaultScheduler_Shutdown(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	execId := &mesos_v1.ExecutorID{}
+	agentId := &mesos_v1.AgentID{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Shutdown(execId, agentId)
+	}
+}
