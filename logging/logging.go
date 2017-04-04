@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -24,6 +25,7 @@ const (
 	EVENT
 	DEBUG
 	UNKNOWN
+	TEST
 )
 
 type Logger interface {
@@ -84,6 +86,7 @@ func NewDefaultLogger() Logger {
 			EVENT:   {os.Stderr, "EVENT"},
 			DEBUG:   {os.Stdout, "DEBUG"},
 			UNKNOWN: {os.Stdout, "UNKNOWN"},
+			TEST:    {ioutil.Discard, "TEST"},
 		},
 	}
 

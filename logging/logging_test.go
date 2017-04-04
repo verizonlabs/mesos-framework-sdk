@@ -12,6 +12,13 @@ func TestNewDefaultLogger(t *testing.T) {
 	}
 }
 
+// Measures performance of creating a new logger.
+func BenchmarkNewDefaultLogger(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		NewDefaultLogger()
+	}
+}
+
 // Tests if there are any issues with emitting messages.
 func TestDefaultLogger_Emit(t *testing.T) {
 	t.Parallel()
@@ -19,5 +26,15 @@ func TestDefaultLogger_Emit(t *testing.T) {
 	l := NewDefaultLogger()
 
 	// Test code path.
-	l.Emit(EVENT, "TEST %s", "VALUE")
+	l.Emit(TEST, "TEST %s", "VALUE")
+}
+
+// Measures performance of emitting messages.
+func BenchmarkDefaultLogger_Emit(b *testing.B) {
+	l := NewDefaultLogger()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		l.Emit(TEST, "TEST %s", "VALUE")
+	}
 }
