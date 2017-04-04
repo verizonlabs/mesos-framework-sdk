@@ -17,6 +17,7 @@ func TestDefaultLogger_Emit(t *testing.T) {
 	t.Parallel()
 
 	l := NewDefaultLogger()
+
 	// Test code path.
 	l.Emit(EVENT, "TEST %s", "VALUE")
 }
