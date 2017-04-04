@@ -220,7 +220,7 @@ func TestDefaultScheduler_Revive(t *testing.T) {
 	}
 }
 
-// Measures performance of our revive call.
+// Measures performance of our revive call to Mesos.
 func BenchmarkDefaultScheduler_Revive(b *testing.B) {
 	s := NewDefaultScheduler(c, i, l)
 	b.ResetTimer()
@@ -240,5 +240,16 @@ func TestDefaultScheduler_SchedRequest(t *testing.T) {
 	_, err := s.SchedRequest(res)
 	if err != nil {
 		t.Fatal(err.Error())
+	}
+}
+
+// Measures performance of our request call to Mesos.
+func BenchmarkDefaultScheduler_SchedRequest(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	res := []*mesos_v1.Request{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.SchedRequest(res)
 	}
 }
