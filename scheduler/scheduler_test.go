@@ -90,3 +90,16 @@ func TestDefaultScheduler_Acknowledge(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our acknowledge call to Mesos.
+func BenchmarkDefaultScheduler_Acknowledge(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	agentId := &mesos_v1.AgentID{}
+	taskId := &mesos_v1.TaskID{}
+	uuid := []byte{}
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Acknowledge(agentId, taskId, uuid)
+	}
+}
