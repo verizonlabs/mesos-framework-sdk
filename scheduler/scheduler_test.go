@@ -357,3 +357,13 @@ func TestDefaultScheduler_Teardown(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 }
+
+// Measures performance of our teardown call to Mesos.
+func BenchmarkDefaultScheduler_Teardown(b *testing.B) {
+	s := NewDefaultScheduler(c, i, l)
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		s.Teardown()
+	}
+}
