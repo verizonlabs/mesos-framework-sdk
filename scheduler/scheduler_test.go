@@ -213,6 +213,7 @@ func TestDefaultScheduler_Revive(t *testing.T) {
 	t.Parallel()
 
 	s := NewDefaultScheduler(c, i, l)
+
 	_, err := s.Revive()
 	if err != nil {
 		t.Fatal(err.Error())
@@ -226,5 +227,18 @@ func BenchmarkDefaultScheduler_Revive(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		s.Revive()
+	}
+}
+
+// Tests our request call to Mesos.
+func TestDefaultScheduler_SchedRequest(t *testing.T) {
+	t.Parallel()
+
+	s := NewDefaultScheduler(c, i, l)
+	res := []*mesos_v1.Request{}
+
+	_, err := s.SchedRequest(res)
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 }
