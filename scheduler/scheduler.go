@@ -128,6 +128,10 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
 func (c *DefaultScheduler) Revive() (*http.Response, error) {
+	if !c.IsSuppressed {
+		return nil, nil
+	}
+
 	revive := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_REVIVE.Enum(),
@@ -137,6 +141,7 @@ func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
+
 	c.IsSuppressed = false
 	c.logger.Emit(logging.INFO, "Reviving offers")
 	return resp, err
@@ -264,6 +269,10 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Re
 }
 
 func (c *DefaultScheduler) Suppress() (*http.Response, error) {
+	if c.IsSuppressed {
+		return nil, nil
+	}
+
 	suppress := &sched.Call{
 		FrameworkId: c.Info.GetId(),
 		Type:        sched.Call_SUPPRESS.Enum(),
