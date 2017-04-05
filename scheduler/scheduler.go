@@ -47,10 +47,10 @@ type DefaultScheduler struct {
 
 func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
-		Client:       c,
-		FrameworkInfo:         info,
-		logger:       logger,
-		IsSuppressed: false,
+		Client:        c,
+		FrameworkInfo: info,
+		logger:        logger,
+		IsSuppressed:  false,
 	}
 }
 
