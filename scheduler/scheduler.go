@@ -106,7 +106,8 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v
 		c.logger.Emit(logging.ERROR, err.Error())
 		return nil, err
 	}
-	c.logger.Emit(logging.INFO, "Accepting %d offers with %d tasks", len(offerIds), len(tasks))
+
+	c.logger.Emit(logging.INFO, "Accepting %d offers for %d tasks", len(offerIds), len(tasks))
 	return resp, err
 }
 
@@ -122,7 +123,12 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
+
+	l := len(offerIds)
+	if l > 0 {
+		c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
+	}
+
 	return resp, err
 }
 
