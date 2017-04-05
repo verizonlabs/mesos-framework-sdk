@@ -203,7 +203,10 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 			}
 		}
 		if isValid {
-			d.popOffer(i)
+			if offer.Mem <= 0 || offer.Cpu <= 0 {
+				d.popOffer(i)
+			}
+
 			return offer.Offer, nil
 		}
 	}
