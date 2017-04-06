@@ -57,10 +57,10 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 	} else {
 		// Mesos-container with no image.
 		ret = &mesos_v1.ContainerInfo{
-			Type: mesos_v1.ContainerInfo_MESOS.Enum(),
-			Mesos: &mesos_v1.ContainerInfo_MesosInfo{},
+			Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
+			Mesos:        &mesos_v1.ContainerInfo_MesosInfo{},
 			NetworkInfos: networks,
-			Volumes: vol,
+			Volumes:      vol,
 		}
 
 	}
