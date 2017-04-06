@@ -20,6 +20,15 @@ type ResourceManager interface {
 	Offers() []*mesos_v1.Offer
 }
 
+// This cleans up the logic for the offer->resource matching.
+type MesosOfferResources struct {
+	Offer    *mesos_v1.Offer
+	Cpu      float64
+	Mem      float64
+	Disk     *mesos_v1.Resource_DiskInfo
+	Accepted bool
+}
+
 type DefaultResourceManager struct {
 	offers   []*MesosOfferResources
 	filterOn map[string][]task.Filter
@@ -32,14 +41,6 @@ const (
 	RANGES = mesos_v1.Value_RANGES
 	SET    = mesos_v1.Value_SET
 )
-
-// This cleans up the logic for the offer->resource matching.
-type MesosOfferResources struct {
-	Offer *mesos_v1.Offer
-	Cpu   float64
-	Mem   float64
-	Disk  *mesos_v1.Resource_DiskInfo
-}
 
 func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
@@ -207,6 +208,9 @@ L:
 			}
 		}
 
+		// If we've reached here
+		d.offers[i].Accepted = true
+
 		// Remove the offer if it has no resources for other tasks to eat.
 		if offer.Mem == 0 || offer.Cpu == 0 {
 			d.popOffer(i)
@@ -218,9 +222,12 @@ L:
 	return nil, errors.New("Cannot find a suitable offer for task " + task.GetName())
 }
 
+// Returns a list of offers that have not been altered and returned to the client for accept calls.
 func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
 	for _, o := range d.offers {
-		offers = append(offers, o.Offer)
+		if !o.Accepted {
+			offers = append(offers, o.Offer)
+		}
 	}
 	return offers
 }
