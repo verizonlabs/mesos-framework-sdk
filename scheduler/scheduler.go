@@ -146,10 +146,11 @@ func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	resp, err := c.Client.Request(revive)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+	} else {
+		c.IsSuppressed = false
+		c.logger.Emit(logging.INFO, "Reviving offers")
 	}
 
-	c.IsSuppressed = false
-	c.logger.Emit(logging.INFO, "Reviving offers")
 	return resp, err
 }
 
