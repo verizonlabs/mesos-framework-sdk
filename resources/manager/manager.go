@@ -16,6 +16,7 @@ type ResourceManager interface {
 	AddOffers(offers []*mesos_v1.Offer)
 	HasResources() bool
 	AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error
+	ClearFilters(t *mesos_v1.TaskInfo)
 	Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
 	Offers() []*mesos_v1.Offer
 }
@@ -101,6 +102,9 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 	return nil
 }
 
+func (d *DefaultResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
+	delete(d.filterOn, t.GetName()) // Deletes all filters on a task.
+}
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
 // Faster than taking two slices around the element and re-combining them since no resizing occurs
 // and we don't care about order.
@@ -112,7 +116,8 @@ func (d *DefaultResourceManager) popOffer(i int) {
 // Check if filter applies to a single Text attribute.
 func (d *DefaultResourceManager) filterOnAttrText(f []string, a *mesos_v1.Attribute) bool {
 	for _, term := range f {
-		if strings.Contains(a.Text.GetValue(), term) {
+		// Case insensitive
+		if strings.ToLower(term) == strings.ToLower(a.GetText().GetValue()) {
 			// The term we're looking for exists.
 			return true
 		} else {
@@ -139,21 +144,14 @@ func (d *DefaultResourceManager) filterOnAttrScalar(f []string, a *mesos_v1.Attr
 }
 
 func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) bool {
-	// Range over all of our filters.
 	for _, filter := range f {
 		// Range over all of our attributes.
 		for _, attr := range offer.Attributes {
-			valType := mesos_v1.Value_Type(mesos_v1.Value_Type_value[strings.ToUpper(filter.Type)])
-			switch valType {
+			switch attr.GetType() {
 			case SCALAR:
-				// Filter on Scalar value
-				if !d.filterOnAttrScalar(filter.Value, attr) {
-					return false
-				}
 			case TEXT:
-				// Filter on Text Attr.
-				if !d.filterOnAttrText(filter.Value, attr) {
-					return false
+				if d.filterOnAttrText(filter.Value, attr) {
+					return true
 				}
 			case SET:
 			case RANGES:
@@ -161,7 +159,7 @@ func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) 
 		}
 	}
 
-	return true
+	return false
 }
 
 // Assign an offer to a task.
@@ -172,7 +170,6 @@ func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offe
 		if filter, ok := d.filterOn[task.GetName()]; ok {
 			validOffer := d.filter(filter, offer.Offer)
 			if !validOffer {
-				// We don't care about this offer since it does't match our params.
 				continue
 			}
 		}
