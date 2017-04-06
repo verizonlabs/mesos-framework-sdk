@@ -208,7 +208,7 @@ L:
 			}
 		}
 
-		// If we've reached here
+		// Mark this offer as accepted so that it's not returned as part of the remaining offers.
 		d.offers[i].Accepted = true
 
 		// Remove the offer if it has no resources for other tasks to eat.
