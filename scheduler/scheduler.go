@@ -274,6 +274,7 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Re
 	return resp, err
 }
 
+// Makes a call to Mesos to suppress any further offers.
 func (c *DefaultScheduler) Suppress() (*http.Response, error) {
 	if c.IsSuppressed {
 		return nil, nil
@@ -286,8 +287,10 @@ func (c *DefaultScheduler) Suppress() (*http.Response, error) {
 	resp, err := c.Client.Request(suppress)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+	} else {
+		c.IsSuppressed = true
+		c.logger.Emit(logging.INFO, "Suppressing offers")
 	}
-	c.IsSuppressed = true
-	c.logger.Emit(logging.INFO, "Suppressing offers")
+
 	return resp, err
 }
