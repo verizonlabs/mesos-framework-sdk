@@ -166,51 +166,56 @@ func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) 
 
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
+L:
 	for i, offer := range d.offers {
-		isValid := false
+
 		// If this task has filters, make sure to filter on them.
 		if filter, ok := d.filterOn[task.GetName()]; ok {
 			validOffer := d.filter(filter, offer.Offer)
 			if !validOffer {
+
 				// We don't care about this offer since it does't match our params.
-				continue
+				continue L
 			}
 		}
 
-		// If we don't have any resources, it will never be valid.
+		// Eat up this offer's resources with the task's needs.
 		for _, resource := range task.Resources {
+			res := resource.GetScalar().GetValue()
+
 			switch resource.GetName() {
 			case "cpus":
-				if offer.Cpu > resource.GetScalar().GetValue() {
-					isValid = true
-					offer.Cpu = offer.Cpu - resource.GetScalar().GetValue()
-				} else {
-					isValid = false
+				if offer.Cpu-res >= 0 {
+					offer.Cpu = offer.Cpu - res
 					break
 				}
+
+				// We can't use this offer if it has no CPUs, move on to the next offer.
+				continue L
 			case "mem":
-				if offer.Mem > resource.GetScalar().GetValue() {
-					isValid = true
-					offer.Mem = offer.Mem - resource.GetScalar().GetValue()
-				} else {
-					isValid = false
+				if offer.Mem-res >= 0 {
+					offer.Mem = offer.Mem - res
 					break
 				}
+
+				// We can't use this offer if it has no memory, move on to the next offer.
+				continue L
 			case "disk":
 				if resource.Disk != nil {
 					offer.Disk = resource.Disk
 				}
 			}
 		}
-		if isValid {
-			if offer.Mem <= 0 || offer.Cpu <= 0 {
-				d.popOffer(i)
-			}
 
-			return offer.Offer, nil
+		// Remove the offer if it has no resources for other tasks to eat.
+		if offer.Mem == 0 || offer.Cpu == 0 {
+			d.popOffer(i)
 		}
+
+		return offer.Offer, nil
 	}
-	return nil, errors.New("Cannot find a suitable offer for task.")
+
+	return nil, errors.New("Cannot find a suitable offer for task " + task.GetName())
 }
 
 func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
