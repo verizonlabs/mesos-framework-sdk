@@ -169,6 +169,33 @@ func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) 
 	return false
 }
 
+func (d *DefaultResourceManager) allocateMemResource(mem float64, offer *MesosOfferResources) bool {
+	if offer.Mem-mem >= 0 {
+		offer.Mem = offer.Mem - mem
+		return true
+	}
+
+	return false
+}
+
+func (d *DefaultResourceManager) allocateCpuResource(cpu float64, offer *MesosOfferResources) bool {
+	if offer.Cpu-cpu >= 0 {
+		offer.Cpu = offer.Cpu - cpu
+		return true
+	}
+
+	return false
+}
+
+func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resource, offer *MesosOfferResources) bool {
+	if resource.Disk != nil {
+		offer.Disk = resource.Disk
+		return true
+	}
+
+	return false
+}
+
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
 L:
@@ -190,25 +217,21 @@ L:
 
 			switch resource.GetName() {
 			case "cpus":
-				if offer.Cpu-res >= 0 {
-					offer.Cpu = offer.Cpu - res
+				if d.allocateCpuResource(res, offer) {
 					break
 				}
 
 				// We can't use this offer if it has no CPUs, move on to the next offer.
 				continue L
 			case "mem":
-				if offer.Mem-res >= 0 {
-					offer.Mem = offer.Mem - res
+				if d.allocateMemResource(res, offer) {
 					break
 				}
 
 				// We can't use this offer if it has no memory, move on to the next offer.
 				continue L
 			case "disk":
-				if resource.Disk != nil {
-					offer.Disk = resource.Disk
-				}
+				d.allocateDiskResource(resource, offer)
 			}
 		}
 
