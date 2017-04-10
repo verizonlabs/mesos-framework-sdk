@@ -216,7 +216,7 @@ L:
 		d.offers[i].Accepted = true
 
 		// Remove the offer if it has no resources for other tasks to eat.
-		if d.strategy != "mux" {
+		if !strings.EqualFold(d.strategy, "mux") {
 			d.popOffer(i)
 		} else {
 			if offer.Mem == 0 || offer.Cpu == 0 {
