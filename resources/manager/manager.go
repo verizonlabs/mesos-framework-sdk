@@ -218,10 +218,8 @@ L:
 		// Remove the offer if it has no resources for other tasks to eat.
 		if !strings.EqualFold(d.strategy, "mux") {
 			d.popOffer(i)
-		} else {
-			if offer.Mem == 0 || offer.Cpu == 0 {
-				d.popOffer(i)
-			}
+		} else if offer.Mem == 0 || offer.Cpu == 0 {
+			d.popOffer(i)
 		}
 
 		return offer.Offer, nil
