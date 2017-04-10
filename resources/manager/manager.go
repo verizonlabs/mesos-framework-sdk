@@ -33,6 +33,7 @@ type MesosOfferResources struct {
 type DefaultResourceManager struct {
 	offers   []*MesosOfferResources
 	filterOn map[string][]task.Filter
+	strategy string
 }
 
 // NOTE (tim): Filter types follow VALUE_TYPE's defined in mesos
@@ -47,6 +48,7 @@ func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
 		offers:   make([]*MesosOfferResources, 0),
 		filterOn: make(map[string][]task.Filter),
+		strategy: "mux",
 	}
 }
 
@@ -95,13 +97,14 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 		case "set":
 			fallthrough
 		case "ranges":
-			fallthrough
-		case "strategy":
 			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: f.Type, Value: f.Value})
+		case "strategy":
+			d.strategy = f.Value[0]
 		default:
 			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES, and STRATEGY.")
 		}
 	}
+
 	return nil
 }
 
@@ -213,8 +216,12 @@ L:
 		d.offers[i].Accepted = true
 
 		// Remove the offer if it has no resources for other tasks to eat.
-		if offer.Mem == 0 || offer.Cpu == 0 {
+		if d.strategy != "mux" {
 			d.popOffer(i)
+		} else {
+			if offer.Mem == 0 || offer.Cpu == 0 {
+				d.popOffer(i)
+			}
 		}
 
 		return offer.Offer, nil
