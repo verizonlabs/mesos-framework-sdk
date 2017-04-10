@@ -89,15 +89,17 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 	for _, f := range filters { // Check all filters
 		switch strings.ToLower(f.Type) {
 		case "scalar":
-			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "scalar", Value: f.Value})
+			fallthrough
 		case "text":
-			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "text", Value: f.Value})
+			fallthrough
 		case "set":
-			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "set", Value: f.Value})
+			fallthrough
 		case "ranges":
-			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: "ranges", Value: f.Value})
+			fallthrough
+		case "strategy":
+			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: f.Type, Value: f.Value})
 		default:
-			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES.")
+			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES, and STRATEGY.")
 		}
 	}
 	return nil
