@@ -1,6 +1,9 @@
 package client
 
 import (
+	"mesos-framework-sdk/include/executor"
+	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/scheduler"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -65,7 +68,25 @@ func TestDefaultClient_Request(t *testing.T) {
 	c := NewClient(ts.URL, l)
 	_, err := c.Request(nil)
 	if err != nil {
-		t.Fatal("Request could not be made successfully")
+		t.Fatal("General requests could not be made successfully:" + err.Error())
+	}
+
+	_, err = c.Request(&mesos_v1_scheduler.Call{})
+	if err != nil {
+		t.Fatal("Scheduler request could not be made successfully: " + err.Error())
+	}
+
+	val := "test"
+	_, err = c.Request(&mesos_v1_executor.Call{
+		ExecutorId: &mesos_v1.ExecutorID{
+			Value: &val,
+		},
+		FrameworkId: &mesos_v1.FrameworkID{
+			Value: &val,
+		},
+	})
+	if err != nil {
+		t.Fatal("Executor request could not be made successfully: " + err.Error())
 	}
 }
 
