@@ -3,6 +3,7 @@ package testTaskManager
 import (
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/structures"
+	"mesos-framework-sdk/structures/test"
 )
 
 type MockTaskManager struct{}
@@ -42,7 +43,7 @@ func (m *MockTaskManager) TotalTasks() int {
 }
 
 func (m *MockTaskManager) Tasks() structures.DistributedMap {
-	return structures.NewConcurrentMap()
+	return test.MockDistributedMap{}
 }
 
 //
@@ -83,5 +84,5 @@ func (m *MockBrokenTaskManager) TotalTasks() int {
 }
 
 func (m *MockBrokenTaskManager) Tasks() structures.DistributedMap {
-	return structures.NewConcurrentMap()
+	return test.MockBrokenDistributedMap{}
 }
