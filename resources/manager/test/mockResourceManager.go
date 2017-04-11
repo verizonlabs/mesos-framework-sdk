@@ -1,9 +1,9 @@
 package mockResourceManager
 
 import (
+	"errors"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/task"
-	"errors"
 )
 
 type MockResourceManager struct{}
@@ -61,4 +61,3 @@ func (m *MockBrokenResourceManager) Offers() []*mesos_v1.Offer {
 		{},
 	}
 }
-
