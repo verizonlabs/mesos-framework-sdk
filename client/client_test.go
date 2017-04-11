@@ -60,15 +60,23 @@ func BenchmarkDefaultClient_StreamID(b *testing.B) {
 func TestDefaultClient_Request(t *testing.T) {
 	t.Parallel()
 
+	val := "test"
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Mesos-Stream-Id", val)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
 
 	c := NewClient(ts.URL, l)
+
 	_, err := c.Request(nil)
 	if err != nil {
-		t.Fatal("General requests could not be made successfully:" + err.Error())
+		t.Fatal("Generic request could not be made successfully:" + err.Error())
+	}
+
+	if c.StreamID() == "" {
+		t.Fatal("Mesos-Stream-Id header should have been set but it wasn't")
 	}
 
 	_, err = c.Request(&mesos_v1_scheduler.Call{})
@@ -76,7 +84,6 @@ func TestDefaultClient_Request(t *testing.T) {
 		t.Fatal("Scheduler request could not be made successfully: " + err.Error())
 	}
 
-	val := "test"
 	_, err = c.Request(&mesos_v1_executor.Call{
 		ExecutorId: &mesos_v1.ExecutorID{
 			Value: &val,
@@ -85,8 +92,40 @@ func TestDefaultClient_Request(t *testing.T) {
 			Value: &val,
 		},
 	})
+
 	if err != nil {
 		t.Fatal("Executor request could not be made successfully: " + err.Error())
+	}
+
+	c = NewClient("", l)
+	_, err = c.Request(nil)
+
+	if err == nil {
+		t.Fatal("Generic request should have failed but it didn't: " + err.Error())
+	}
+
+	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer ts2.Close()
+
+	c = NewClient(ts2.URL, l)
+	_, err = c.Request(&mesos_v1_scheduler.Call{})
+
+	if err == nil {
+		t.Fatal("Response should have thrown a 400: " + err.Error())
+	}
+
+	ts3 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusPermanentRedirect)
+	}))
+	defer ts3.Close()
+
+	c = NewClient(ts3.URL, l)
+	_, err = c.Request(&mesos_v1_scheduler.Call{})
+
+	if err == nil {
+		t.Fatal("Redirect should have been encountered but it wasn't: " + err.Error())
 	}
 }
 
