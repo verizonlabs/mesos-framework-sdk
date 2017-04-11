@@ -4,6 +4,7 @@ import (
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/structures/test"
+	"errors"
 )
 
 type MockTaskManager struct{}
@@ -52,7 +53,7 @@ func (m *MockTaskManager) Tasks() structures.DistributedMap {
 type MockBrokenTaskManager struct{}
 
 func (m *MockBrokenTaskManager) Add(*mesos_v1.TaskInfo) error {
-	return nil
+	return errors.New("Broken.")
 }
 
 func (m *MockBrokenTaskManager) Delete(*mesos_v1.TaskInfo) {
@@ -60,11 +61,11 @@ func (m *MockBrokenTaskManager) Delete(*mesos_v1.TaskInfo) {
 }
 
 func (m *MockBrokenTaskManager) Get(*string) (*mesos_v1.TaskInfo, error) {
-	return nil, nil
+	return nil, errors.New("Broken.")
 }
 
 func (m *MockBrokenTaskManager) GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error) {
-	return nil, nil
+	return nil, errors.New("Broken.")
 }
 
 func (m *MockBrokenTaskManager) HasTask(*mesos_v1.TaskInfo) bool {
@@ -76,7 +77,7 @@ func (m *MockBrokenTaskManager) Set(mesos_v1.TaskState, *mesos_v1.TaskInfo) {
 }
 
 func (m *MockBrokenTaskManager) GetState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error) {
-	return nil, nil
+	return nil, errors.New("Broken.")
 }
 
 func (m *MockBrokenTaskManager) TotalTasks() int {
