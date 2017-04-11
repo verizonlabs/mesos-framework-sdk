@@ -1,7 +1,7 @@
 package mockLogging
 
-type mockLogger struct{}
+type MockLogger struct{}
 
-func (m *mockLogger) Emit(severity uint8, template string, args ...interface{}) {
+func (m *MockLogger) Emit(severity uint8, template string, args ...interface{}) {
 
 }

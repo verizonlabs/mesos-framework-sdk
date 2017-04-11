@@ -5,7 +5,7 @@ import (
 )
 
 type DistributedMap interface {
-	Set(key, value interface{}) *ConcurrentMap
+	Set(key, value interface{}) DistributedMap
 	Get(key interface{}) interface{}
 	Delete(key interface{})
 	Iterate() <-chan Item
