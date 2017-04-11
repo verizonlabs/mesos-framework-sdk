@@ -43,7 +43,7 @@ func (m *MockTaskManager) TotalTasks() int {
 }
 
 func (m *MockTaskManager) Tasks() structures.DistributedMap {
-	return test.MockDistributedMap{}
+	return &test.MockDistributedMap{}
 }
 
 //
@@ -84,5 +84,5 @@ func (m *MockBrokenTaskManager) TotalTasks() int {
 }
 
 func (m *MockBrokenTaskManager) Tasks() structures.DistributedMap {
-	return test.MockBrokenDistributedMap{}
+	return &test.MockBrokenDistributedMap{}
 }

@@ -1,6 +1,9 @@
 package test
 
-import "mesos-framework-sdk/structures"
+import (
+	"mesos-framework-sdk/structures"
+	"mesos-framework-sdk/task/manager"
+)
 
 type MockDistributedMap struct{}
 
@@ -8,7 +11,7 @@ func (m *MockDistributedMap) Set(key, value interface{}) structures.DistributedM
 	return &MockDistributedMap{}
 }
 func (m *MockDistributedMap) Get(key interface{}) interface{} {
-	return &structures.Item{}
+	return manager.Task{}
 }
 func (m *MockDistributedMap) Delete(key interface{}) {}
 func (m *MockDistributedMap) Iterate() <-chan structures.Item {
