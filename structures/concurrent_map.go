@@ -4,6 +4,14 @@ import (
 	"sync"
 )
 
+type DistributedMap interface {
+	Set(key, value interface{}) *ConcurrentMap
+	Get(key interface{}) interface{}
+	Delete(key interface{})
+	Iterate() <-chan Item
+	Length() int
+}
+
 type ConcurrentMap struct {
 	data map[interface{}]interface{}
 	sync.RWMutex

@@ -40,7 +40,7 @@ func TestNewDefaultScheduler(t *testing.T) {
 	t.Parallel()
 
 	s := NewDefaultScheduler(c, i, l)
-	if s.Client != c || s.logger != l || s.Info != i {
+	if s.Client != c || s.logger != l || s.FrameworkInfo != i {
 		t.Fatal("Scheduler does not have the right internal state")
 	}
 }

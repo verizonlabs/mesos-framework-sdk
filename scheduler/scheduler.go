@@ -47,10 +47,10 @@ type DefaultScheduler struct {
 
 func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
-		Client:       c,
-		FrameworkInfo:         info,
-		logger:       logger,
-		IsSuppressed: false,
+		Client:        c,
+		FrameworkInfo: info,
+		logger:        logger,
+		IsSuppressed:  false,
 	}
 }
 
@@ -106,7 +106,8 @@ func (c *DefaultScheduler) Accept(offerIds []*mesos_v1.OfferID, tasks []*mesos_v
 		c.logger.Emit(logging.ERROR, err.Error())
 		return nil, err
 	}
-	c.logger.Emit(logging.INFO, "Accepting %d offers with %d tasks", len(offerIds), len(tasks))
+
+	c.logger.Emit(logging.INFO, "Accepting %d offers for %d tasks", len(offerIds), len(tasks))
 	return resp, err
 }
 
@@ -122,12 +123,21 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
+
+	l := len(offerIds)
+	if l > 0 {
+		c.logger.Emit(logging.INFO, "Declining %d offers", len(offerIds))
+	}
+
 	return resp, err
 }
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
 func (c *DefaultScheduler) Revive() (*http.Response, error) {
+	if !c.IsSuppressed {
+		return nil, nil
+	}
+
 	revive := &sched.Call{
 		FrameworkId: c.FrameworkInfo.GetId(),
 		Type:        sched.Call_REVIVE.Enum(),
@@ -136,9 +146,11 @@ func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	resp, err := c.Client.Request(revive)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+	} else {
+		c.IsSuppressed = false
+		c.logger.Emit(logging.INFO, "Reviving offers")
 	}
-	c.IsSuppressed = false
-	c.logger.Emit(logging.INFO, "Reviving offers")
+
 	return resp, err
 }
 
@@ -263,7 +275,12 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Re
 	return resp, err
 }
 
+// Makes a call to Mesos to suppress any further offers.
 func (c *DefaultScheduler) Suppress() (*http.Response, error) {
+	if c.IsSuppressed {
+		return nil, nil
+	}
+
 	suppress := &sched.Call{
 		FrameworkId: c.FrameworkInfo.GetId(),
 		Type:        sched.Call_SUPPRESS.Enum(),
@@ -271,8 +288,10 @@ func (c *DefaultScheduler) Suppress() (*http.Response, error) {
 	resp, err := c.Client.Request(suppress)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+	} else {
+		c.IsSuppressed = true
+		c.logger.Emit(logging.INFO, "Suppressing offers")
 	}
-	c.IsSuppressed = true
-	c.logger.Emit(logging.INFO, "Suppressing offers")
+
 	return resp, err
 }
