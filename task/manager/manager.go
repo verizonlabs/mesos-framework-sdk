@@ -35,7 +35,7 @@ type TaskManager interface {
 	Set(mesos_v1.TaskState, *mesos_v1.TaskInfo)
 	GetState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
-	Tasks() *structures.ConcurrentMap
+	Tasks() structures.DistributedMap
 }
 
 // Used to hold information about task states in the task manager.

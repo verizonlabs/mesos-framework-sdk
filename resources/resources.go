@@ -16,8 +16,8 @@ func CreateTaskInfo(
 	return &mesos_v1.TaskInfo{
 		Name:      name,
 		TaskId:    uuid,
-		Command:   cmd,
 		Resources: res,
+		Command: cmd,
 		Container: con,
 		Labels:    labels,
 	}
