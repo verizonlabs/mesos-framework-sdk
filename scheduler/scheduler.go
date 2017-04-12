@@ -14,14 +14,11 @@ End users should only create their own scheduler if they wish to change the beha
 import (
 	"errors"
 	"mesos-framework-sdk/client"
-	"mesos-framework-sdk/ha"
 	"mesos-framework-sdk/include/mesos"
 	sched "mesos-framework-sdk/include/scheduler"
 	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
-	"mesos-framework-sdk/utils"
 	"net/http"
-	"sprint/scheduler"
 )
 
 type Scheduler interface {
@@ -42,18 +39,14 @@ type Scheduler interface {
 
 // Default Scheduler can be used as a higher-level construct.
 type DefaultScheduler struct {
-	name          string
 	FrameworkInfo *mesos_v1.FrameworkInfo
 	Client        client.Client
 	logger        logging.Logger
 	IsSuppressed  bool
-	cfg           *scheduler.Configuration
-	status 		  *ha.Status
 }
 
 func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
 	return &DefaultScheduler{
-		name:          utils.UuidAsString(),
 		Client:        c,
 		FrameworkInfo: info,
 		logger:        logger,
