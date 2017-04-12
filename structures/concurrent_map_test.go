@@ -15,9 +15,6 @@ func TestNewConcurrentMap(t *testing.T) {
 	if reflect.TypeOf(m) != reflect.TypeOf(new(ConcurrentMap)) {
 		t.Fatal("Creating a new concurrent map without a size gives the wrong type")
 	}
-	if m.data == nil {
-		t.Fatal("Internal map data not initialized")
-	}
 
 	m = NewConcurrentMap(100)
 
