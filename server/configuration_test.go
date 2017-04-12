@@ -153,6 +153,11 @@ func TestServerConfiguration_TLS(t *testing.T) {
 	if !cfg.TLS() {
 		t.Fatal("TLS was not enabled correctly")
 	}
+
+	cfg.tls = true
+	if cfg.Protocol() != "https" {
+		t.Fatal("Using TLS but protocol is incorrect")
+	}
 }
 
 // Measure performance of determining if TLS is enabled or not.
