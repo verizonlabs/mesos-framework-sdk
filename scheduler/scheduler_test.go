@@ -307,7 +307,6 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 		User: &val,
 		Name: &val,
 	}
-	c.Request(nil)
 
 	_, err := s.Subscribe(ch)
 
@@ -316,9 +315,15 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 		t.Fatal("Subscribe should have failed but it didn't")
 	}
 
-	_, err = s.Subscribe(make(chan *mesos_v1_scheduler.Event))
+	_, err = s.Subscribe(ch)
 	if err != io.EOF {
 		t.Fatal("Expected EOF but encountered another error: " + err.Error())
+	}
+
+	s.FrameworkInfo = &mesos_v1.FrameworkInfo{}
+	_, err = s.Subscribe(ch)
+	if err == nil {
+		t.Fatal("Subscribe call should have failed due to missing data: " + err.Error())
 	}
 }
 
