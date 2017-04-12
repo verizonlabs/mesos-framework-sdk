@@ -94,6 +94,11 @@ func TestDefaultScheduler_Acknowledge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
+	_, err = s.Acknowledge(agentId, taskId, nil)
+	if err == nil {
+		t.Fatal("UUID should be required: " + err.Error())
+	}
 }
 
 // Measures performance of our acknowledge call to Mesos.
