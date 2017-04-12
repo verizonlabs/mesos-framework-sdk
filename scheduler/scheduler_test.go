@@ -139,9 +139,15 @@ func BenchmarkDefaultScheduler_Decline(b *testing.B) {
 func TestDefaultScheduler_Kill(t *testing.T) {
 	t.Parallel()
 
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
-	taskId := &mesos_v1.TaskID{}
-	agentId := &mesos_v1.AgentID{}
+	val := "test"
+	taskId := &mesos_v1.TaskID{Value: &val}
+	agentId := &mesos_v1.AgentID{Value: &val}
 
 	_, err := s.Kill(taskId, agentId)
 	if err != nil {
