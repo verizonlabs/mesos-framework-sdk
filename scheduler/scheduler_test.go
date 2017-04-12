@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"io"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
@@ -301,6 +302,11 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 	defer srv.Close()
 	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
+	val := "test"
+	s.FrameworkInfo = &mesos_v1.FrameworkInfo{
+		User: &val,
+		Name: &val,
+	}
 	c.Request(nil)
 
 	_, err := s.Subscribe(ch)
@@ -308,6 +314,11 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 	// We SHOULD get an error in this case; make sure that's true.
 	if err == nil {
 		t.Fatal("Subscribe should have failed but it didn't")
+	}
+
+	_, err = s.Subscribe(make(chan *mesos_v1_scheduler.Event))
+	if err != io.EOF {
+		t.Fatal("Expected EOF but encountered another error: " + err.Error())
 	}
 }
 
