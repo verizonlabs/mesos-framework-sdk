@@ -222,6 +222,12 @@ func TestDefaultScheduler_Revive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
+	s.Suppress()
+	_, err = s.Revive()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 // Measures performance of our revive call to Mesos.
