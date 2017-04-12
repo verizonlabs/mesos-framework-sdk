@@ -369,6 +369,11 @@ func TestDefaultScheduler_Suppress(t *testing.T) {
 	if !s.IsSuppressed {
 		t.Fatal("Offers were suppressed but the scheduler state does not show as suppressed")
 	}
+
+	resp, err := s.Suppress()
+	if resp != nil && err != nil {
+		t.Fatal("Suppressed state not set correctly")
+	}
 }
 
 // Measures performance of our suppress call to Mesos.
