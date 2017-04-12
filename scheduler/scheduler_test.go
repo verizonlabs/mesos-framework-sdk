@@ -193,7 +193,7 @@ func TestDefaultScheduler_Reconcile(t *testing.T) {
 	t.Parallel()
 
 	s := NewDefaultScheduler(c, i, l)
-	tasks := []*mesos_v1.TaskInfo{}
+	tasks := []*mesos_v1.TaskInfo{{}}
 
 	_, err := s.Reconcile(tasks)
 	if err != nil {
