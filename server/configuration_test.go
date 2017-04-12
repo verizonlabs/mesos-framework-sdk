@@ -79,6 +79,27 @@ func BenchmarkServerConfiguration_Protocol(b *testing.B) {
 	}
 }
 
+func TestNewConfiguration(t *testing.T) {
+	t.Parallel()
+
+	cfg := NewConfiguration("", "", "", 0)
+	tlsCfg := cfg.Server().TLSConfig
+	if tlsCfg.MinVersion != tls.VersionTLS12 {
+		t.Fatal("Supported TLS version is weak")
+	}
+
+	ciphers := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, // Required for HTTP/2 support.
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+	}
+	if !reflect.DeepEqual(tlsCfg.CipherSuites, ciphers) {
+		t.Fatal("Incorrect TLS cipher suites")
+	}
+}
+
 // Check setting the internal HTTP server.
 func TestServerConfiguration_Server(t *testing.T) {
 	t.Parallel()
