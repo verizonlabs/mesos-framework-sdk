@@ -23,7 +23,7 @@ type Item struct {
 }
 
 // Returns a new ConcurrentMap.
-func NewConcurrentMap(size ...int) *ConcurrentMap {
+func NewConcurrentMap(size ...int) DistributedMap {
 	if len(size) == 1 {
 		return &ConcurrentMap{
 			data: make(map[interface{}]interface{}, size[0]),
@@ -36,7 +36,7 @@ func NewConcurrentMap(size ...int) *ConcurrentMap {
 }
 
 // Sets a value with an associated key.
-func (c *ConcurrentMap) Set(key, value interface{}) *ConcurrentMap {
+func (c *ConcurrentMap) Set(key, value interface{}) DistributedMap {
 	c.Lock()
 	defer c.Unlock()
 

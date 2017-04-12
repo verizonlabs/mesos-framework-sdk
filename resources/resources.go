@@ -17,7 +17,7 @@ func CreateTaskInfo(
 		Name:      name,
 		TaskId:    uuid,
 		Resources: res,
-		Command: cmd,
+		Command:   cmd,
 		Container: con,
 		Labels:    labels,
 	}

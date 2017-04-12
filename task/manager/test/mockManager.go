@@ -1,10 +1,10 @@
 package testTaskManager
 
 import (
+	"errors"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/structures/test"
-	"errors"
 )
 
 type MockTaskManager struct{}

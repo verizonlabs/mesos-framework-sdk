@@ -1,10 +1,10 @@
 package scheduler
 
 import (
-	"mesos-framework-sdk/include/mesos"
-	"net/http"
-	"mesos-framework-sdk/include/scheduler"
 	"errors"
+	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/scheduler"
+	"net/http"
 )
 
 type MockScheduler struct{}
@@ -56,8 +56,6 @@ func (m *MockScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Respo
 func (m *MockScheduler) Suppress() (*http.Response, error) {
 	return new(http.Response), nil
 }
-
-
 
 type MockBrokenScheduler struct{}
 
