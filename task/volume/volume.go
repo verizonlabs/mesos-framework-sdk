@@ -12,12 +12,14 @@ func ParseVolumeJSON(volumes []task.VolumesJSON) ([]*mesos_v1.Volume, error) {
 	mesosVolumes := []*mesos_v1.Volume{}
 	for _, volume := range volumes {
 		v := mesos_v1.Volume{}
-		if strings.ToLower(*volume.Mode) == "RO" {
-			v.Mode = mesos_v1.Volume_RO.Enum()
-		} else if strings.ToLower(*volume.Mode) == "RW" {
+		if volume.Mode == nil {
 			v.Mode = mesos_v1.Volume_RW.Enum()
 		} else {
-			v.Mode = mesos_v1.Volume_RW.Enum()
+			if strings.ToLower(*volume.Mode) == "RO" {
+				v.Mode = mesos_v1.Volume_RO.Enum()
+			} else if strings.ToLower(*volume.Mode) == "RW" {
+				v.Mode = mesos_v1.Volume_RW.Enum()
+			}
 		}
 		// Logical XOR to tell if both are set or not.
 		if (volume.ContainerPath == nil) != (volume.HostPath == nil) {

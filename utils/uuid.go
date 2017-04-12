@@ -32,3 +32,19 @@ func UuidToString(uuid []byte) (string, error) {
 	}
 	return id, err
 }
+
+func UuidAsString() (string) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic("Failed to generate UUID")
+	}
+
+	// Generate a v4 UUID.
+	b[6] = (b[6] | 0x40) & 0x4F
+	b[8] = (b[8] | 0x80) & 0xBF
+
+	uuid := b
+
+	return fmt.Sprintf("%X-%X-%X-%X-%X", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+}
