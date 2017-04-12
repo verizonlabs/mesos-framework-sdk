@@ -27,6 +27,7 @@ func BenchmarkServerConfiguration_Cert(b *testing.B) {
 	cfg := ServerConfiguration{
 		cert: cert,
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Cert()
@@ -53,6 +54,7 @@ func BenchmarkServerConfiguration_Key(b *testing.B) {
 	cfg := ServerConfiguration{
 		key: key,
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Key()
@@ -73,12 +75,14 @@ func TestServerConfiguration_Protocol(t *testing.T) {
 // Measure performance of determining the protocol to be used.
 func BenchmarkServerConfiguration_Protocol(b *testing.B) {
 	cfg := ServerConfiguration{}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Protocol()
 	}
 }
 
+// Makes sure that important values are set correctly in our new configuration.
 func TestNewConfiguration(t *testing.T) {
 	t.Parallel()
 
@@ -97,6 +101,13 @@ func TestNewConfiguration(t *testing.T) {
 	}
 	if !reflect.DeepEqual(tlsCfg.CipherSuites, ciphers) {
 		t.Fatal("Incorrect TLS cipher suites")
+	}
+}
+
+// Measure performance of creating a new configuration.
+func BenchmarkNewConfiguration(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		NewConfiguration("", "", "", 0)
 	}
 }
 
@@ -135,6 +146,7 @@ func BenchmarkServerConfiguration_Server(b *testing.B) {
 	cfg := ServerConfiguration{
 		server: &http.Server{},
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Server()
@@ -166,6 +178,7 @@ func BenchmarkServerConfiguration_TLS(b *testing.B) {
 		cert: "server.cert",
 		key:  "server.key",
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.TLS()
