@@ -3,6 +3,7 @@ package labels
 import (
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
+	"errors"
 )
 
 func ParseLabels(lbs []map[string]string) (*mesos_v1.Labels, error) {
@@ -10,11 +11,15 @@ func ParseLabels(lbs []map[string]string) (*mesos_v1.Labels, error) {
 	if lbs != nil {
 		for _, labelList := range lbs {
 			for k, v := range labelList {
-				label := &mesos_v1.Label{
-					Key:   proto.String(k),
-					Value: proto.String(v),
+				if k != "" || v != "" {
+					label := &mesos_v1.Label{
+						Key:   proto.String(k),
+						Value: proto.String(v),
+					}
+					labels = append(labels, label)
+				} else {
+					return nil, errors.New("Empty key or value passed in.")
 				}
-				labels = append(labels, label)
 			}
 		}
 	}
