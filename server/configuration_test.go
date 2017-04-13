@@ -27,6 +27,7 @@ func BenchmarkServerConfiguration_Cert(b *testing.B) {
 	cfg := ServerConfiguration{
 		cert: cert,
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Cert()
@@ -53,6 +54,7 @@ func BenchmarkServerConfiguration_Key(b *testing.B) {
 	cfg := ServerConfiguration{
 		key: key,
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Key()
@@ -73,9 +75,39 @@ func TestServerConfiguration_Protocol(t *testing.T) {
 // Measure performance of determining the protocol to be used.
 func BenchmarkServerConfiguration_Protocol(b *testing.B) {
 	cfg := ServerConfiguration{}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Protocol()
+	}
+}
+
+// Makes sure that important values are set correctly in our new configuration.
+func TestNewConfiguration(t *testing.T) {
+	t.Parallel()
+
+	cfg := NewConfiguration("", "", "", 0)
+	tlsCfg := cfg.Server().TLSConfig
+	if tlsCfg.MinVersion != tls.VersionTLS12 {
+		t.Fatal("Supported TLS version is weak")
+	}
+
+	ciphers := []uint16{
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, // Required for HTTP/2 support.
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+	}
+	if !reflect.DeepEqual(tlsCfg.CipherSuites, ciphers) {
+		t.Fatal("Incorrect TLS cipher suites")
+	}
+}
+
+// Measure performance of creating a new configuration.
+func BenchmarkNewConfiguration(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		NewConfiguration("", "", "", 0)
 	}
 }
 
@@ -114,6 +146,7 @@ func BenchmarkServerConfiguration_Server(b *testing.B) {
 	cfg := ServerConfiguration{
 		server: &http.Server{},
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.Server()
@@ -132,6 +165,11 @@ func TestServerConfiguration_TLS(t *testing.T) {
 	if !cfg.TLS() {
 		t.Fatal("TLS was not enabled correctly")
 	}
+
+	cfg.tls = true
+	if cfg.Protocol() != "https" {
+		t.Fatal("Using TLS but protocol is incorrect")
+	}
 }
 
 // Measure performance of determining if TLS is enabled or not.
@@ -140,6 +178,7 @@ func BenchmarkServerConfiguration_TLS(b *testing.B) {
 		cert: "server.cert",
 		key:  "server.key",
 	}
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		cfg.TLS()
