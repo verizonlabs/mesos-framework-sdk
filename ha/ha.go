@@ -10,12 +10,11 @@ package ha
 type Status string
 
 const (
-	Election Status = "Election"
-	Leading Status = "Leading"
-	Talking Status = "Talking"
+	Election  Status = "Election"
+	Leading   Status = "Leading"
+	Talking   Status = "Talking"
 	Listening Status = "Listening"
 )
-
 
 // Any node in the structure.
 // All participants in the structure will satisfy the node interface
@@ -37,8 +36,8 @@ const (
 
 // Once nodes are connected, they search for other nodes.
 type Node interface {
-	Name() (string, error)       // How do we uniquely identify this node.
-	Status() (Status, error)    // What is the status of this node?
-	Communicate()  // Our communication channel
-	Election() // Kick off an election.
+	Name() (string, error)   // How do we uniquely identify this node.
+	Status() (Status, error) // What is the status of this node?
+	Communicate()            // Our communication channel
+	Election()               // Kick off an election.
 }

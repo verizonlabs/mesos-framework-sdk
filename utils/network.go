@@ -1,15 +1,14 @@
 package utils
 
 import (
-	"net"
 	"errors"
+	"net"
 )
 
-var (
-	IPv4Bits = 32
-	Subnet   = 24
+const (
+	IPV4FIRSTBIT = 10
+	IPv4Bits     = 32
 )
-
 
 // Gathers the internal network as defined.
 // This will not work if there are multiple
@@ -17,7 +16,7 @@ var (
 // NOTE (tim): Talk to mike c about how the new
 // /25 networks will work, as well as overlay
 // networks.
-func GetInternalNetworkInterface() (net.IP, error) {
+func GetInternalNetworkInterface(subnet int) (net.IP, error) {
 	interfaces, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, err
@@ -32,7 +31,7 @@ func GetInternalNetworkInterface() (net.IP, error) {
 		// If it's v4
 		if bits <= IPv4Bits {
 			// Is this a /24 network?
-			if ones == Subnet {
+			if ones == subnet {
 				// IP is padded to the left for ipv6.
 				// First bit for ipv4 starts at 12th index.
 				// NOTE (tim): This magic 10 number will
