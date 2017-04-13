@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"io"
 	"mesos-framework-sdk/client"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/include/scheduler"
@@ -93,6 +94,11 @@ func TestDefaultScheduler_Acknowledge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
+	_, err = s.Acknowledge(agentId, taskId, nil)
+	if err == nil {
+		t.Fatal("UUID should be required: " + err.Error())
+	}
 }
 
 // Measures performance of our acknowledge call to Mesos.
@@ -138,9 +144,15 @@ func BenchmarkDefaultScheduler_Decline(b *testing.B) {
 func TestDefaultScheduler_Kill(t *testing.T) {
 	t.Parallel()
 
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
-	taskId := &mesos_v1.TaskID{}
-	agentId := &mesos_v1.AgentID{}
+	val := "test"
+	taskId := &mesos_v1.TaskID{Value: &val}
+	agentId := &mesos_v1.AgentID{Value: &val}
 
 	_, err := s.Kill(taskId, agentId)
 	if err != nil {
@@ -193,7 +205,7 @@ func TestDefaultScheduler_Reconcile(t *testing.T) {
 	t.Parallel()
 
 	s := NewDefaultScheduler(c, i, l)
-	tasks := []*mesos_v1.TaskInfo{}
+	tasks := []*mesos_v1.TaskInfo{{}}
 
 	_, err := s.Reconcile(tasks)
 	if err != nil {
@@ -219,6 +231,12 @@ func TestDefaultScheduler_Revive(t *testing.T) {
 	s := NewDefaultScheduler(c, i, l)
 
 	_, err := s.Revive()
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	s.Suppress()
+	_, err = s.Revive()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -295,13 +313,28 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 	defer srv.Close()
 	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
-	c.Request(nil)
+	val := "test"
+	s.FrameworkInfo = &mesos_v1.FrameworkInfo{
+		User: &val,
+		Name: &val,
+	}
 
 	_, err := s.Subscribe(ch)
 
 	// We SHOULD get an error in this case; make sure that's true.
 	if err == nil {
 		t.Fatal("Subscribe should have failed but it didn't")
+	}
+
+	_, err = s.Subscribe(ch)
+	if err != io.EOF {
+		t.Fatal("Expected EOF but encountered another error: " + err.Error())
+	}
+
+	s.FrameworkInfo = &mesos_v1.FrameworkInfo{}
+	_, err = s.Subscribe(ch)
+	if err == nil {
+		t.Fatal("Subscribe call should have failed due to missing data: " + err.Error())
 	}
 }
 
@@ -335,6 +368,11 @@ func TestDefaultScheduler_Suppress(t *testing.T) {
 
 	if !s.IsSuppressed {
 		t.Fatal("Offers were suppressed but the scheduler state does not show as suppressed")
+	}
+
+	resp, err := s.Suppress()
+	if resp != nil && err != nil {
+		t.Fatal("Suppressed state not set correctly")
 	}
 }
 

@@ -18,7 +18,7 @@ func Decode(data io.ReadCloser, events interface{}) error {
 	for {
 		lengthStr, err := reader.ReadString('\n')
 		if err != nil {
-			return errors.New("Failed to read RecordIO message length: " + err.Error())
+			return err
 		}
 
 		lengthInt, err := strconv.Atoi(strings.TrimRight(lengthStr, "\n"))
