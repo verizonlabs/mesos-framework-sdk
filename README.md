@@ -14,7 +14,7 @@ The SDK has two levels of API's, a low-level API and a higher-level API.
 ### Low-Level API ###
 The Low-level API gives maximum flexibility to the developer.
 
-In this case, the low-level API is simply the generate protobufs that are generated
+In this case, the low-level API is simply the protobufs that are generated
 by protoc, along with the defined interfaces per component.
 
 We use the standard protoc implementation and pull directly from the mesos git repos to keep versioning simple.
