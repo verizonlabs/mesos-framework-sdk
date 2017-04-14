@@ -9,6 +9,17 @@ import (
 	"time"
 )
 
+
+type KeyValueStore interface {
+	Create(key, value string) error
+	CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error)
+	Read(key string) (string, error)
+	ReadAll(key string) (map[string]string, error)
+	Update(key, value string) error
+	RefreshLease(id *etcd.LeaseID) error
+	Delete(key string) error
+}
+
 type Etcd struct {
 	client     *etcd.Client
 	ctxTimeout time.Duration
