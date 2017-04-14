@@ -13,7 +13,7 @@ func (m MockResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 }
 
 func (m MockResourceManager) HasResources() bool {
-	return false
+	return true
 }
 
 func (m MockResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error {

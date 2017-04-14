@@ -7,13 +7,22 @@ import (
 	"net/http"
 )
 
-type MockScheduler struct{}
+type MockScheduler struct{
+	events chan mesos_v1_scheduler.Event
+}
+
+func NewMockScheduler() *MockScheduler {
+	return &MockScheduler{
+		events: make(chan mesos_v1_scheduler.Event),
+	}
+}
 
 func (m MockScheduler) FrameworkInfo() *mesos_v1.FrameworkInfo {
 	return &mesos_v1.FrameworkInfo{}
 }
 
 func (m MockScheduler) Subscribe(chan *mesos_v1_scheduler.Event) (*http.Response, error) {
+
 	return new(http.Response), nil
 }
 

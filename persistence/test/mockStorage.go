@@ -2,6 +2,7 @@ package mockStorage
 
 import (
 	"errors"
+	"mesos-framework-sdk/persistence/drivers/etcd/test"
 )
 
 var BrokenStorageErr = errors.New("Broken Storage.")
@@ -24,7 +25,7 @@ func (m MockStorage)Driver() string {
 	return "driver"
 }
 func (m MockStorage)Engine() interface{} {
-	return nil
+	return &test.MockEtcd{}
 }
 
 type MockBrokenStorage struct {}
@@ -45,5 +46,5 @@ func (m MockBrokenStorage)Driver() string {
 	return "driver"
 }
 func (m MockBrokenStorage)Engine() interface{} {
-	return nil
+	return &test.MockEtcd{}
 }
