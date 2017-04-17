@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type MockScheduler struct{
+type MockScheduler struct {
 	events chan mesos_v1_scheduler.Event
 }
 

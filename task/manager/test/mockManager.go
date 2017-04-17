@@ -2,10 +2,10 @@ package testTaskManager
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/structures/test"
-	"github.com/golang/protobuf/proto"
 )
 
 type MockTaskManager struct{}
@@ -89,8 +89,6 @@ func (m MockBrokenTaskManager) Tasks() structures.DistributedMap {
 	return &test.MockBrokenDistributedMap{}
 }
 
-
-
 type MockTaskManagerQueued struct{}
 
 func (m MockTaskManagerQueued) Add(*mesos_v1.TaskInfo) error {
@@ -120,8 +118,8 @@ func (m MockTaskManagerQueued) Set(mesos_v1.TaskState, *mesos_v1.TaskInfo) {
 func (m MockTaskManagerQueued) GetState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error) {
 	return []*mesos_v1.TaskInfo{
 		{
-			Name: proto.String("Name"),
-			TaskId: &mesos_v1.TaskID{Value: proto.String("1")},
+			Name:    proto.String("Name"),
+			TaskId:  &mesos_v1.TaskID{Value: proto.String("1")},
 			AgentId: &mesos_v1.AgentID{Value: proto.String("agent")},
 		},
 	}, nil

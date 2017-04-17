@@ -56,9 +56,10 @@ func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger l
 	}
 }
 
-func (c *DefaultScheduler) 	FrameworkInfo() *mesos_v1.FrameworkInfo{
+func (c *DefaultScheduler) FrameworkInfo() *mesos_v1.FrameworkInfo {
 	return c.frameworkInfo
 }
+
 // Make a subscription call to mesos.
 // Channel passed is the channel for Event Controller.
 func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) (*http.Response, error) {
