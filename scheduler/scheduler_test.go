@@ -41,7 +41,7 @@ func TestNewDefaultScheduler(t *testing.T) {
 	t.Parallel()
 
 	s := NewDefaultScheduler(c, i, l)
-	if s.Client != c || s.logger != l || s.FrameworkInfo != i {
+	if s.Client != c || s.logger != l || s.frameworkInfo != i {
 		t.Fatal("Scheduler does not have the right internal state")
 	}
 }
@@ -314,7 +314,7 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 	c := client.NewClient(srv.URL, l)
 	s := NewDefaultScheduler(c, i, l)
 	val := "test"
-	s.FrameworkInfo = &mesos_v1.FrameworkInfo{
+	s.frameworkInfo = &mesos_v1.FrameworkInfo{
 		User: &val,
 		Name: &val,
 	}
@@ -331,7 +331,7 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 		t.Fatal("Expected EOF but encountered another error: " + err.Error())
 	}
 
-	s.FrameworkInfo = &mesos_v1.FrameworkInfo{}
+	s.frameworkInfo = &mesos_v1.FrameworkInfo{}
 	_, err = s.Subscribe(ch)
 	if err == nil {
 		t.Fatal("Subscribe call should have failed due to missing data: " + err.Error())
