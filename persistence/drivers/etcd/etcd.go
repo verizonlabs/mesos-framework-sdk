@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"context"
+	"errors"
 	etcd "github.com/coreos/etcd/clientv3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -18,6 +19,54 @@ type KeyValueStore interface {
 	Update(key, value string) error
 	RefreshLease(id *etcd.LeaseID) error
 	Delete(key string) error
+}
+
+type MockKVStore struct {}
+
+func (m MockKVStore)Create(key, value string) error{ return nil }
+func (m MockKVStore)CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error){
+	p := new(etcd.LeaseID)
+	return p, nil
+}
+func (m MockKVStore)Read(key string) (string, error){
+	return "", nil
+}
+func (m MockKVStore)ReadAll(key string) (map[string]string, error){
+	return map[string]string{"key": "value"}, nil
+}
+func (m MockKVStore)Update(key, value string) error{
+	return nil
+}
+func (m MockKVStore)RefreshLease(id *etcd.LeaseID) error{
+	return nil
+}
+func (m MockKVStore)Delete(key string) error{
+	return nil
+}
+
+type MockBrokenKVStore struct {}
+
+var brokenStorage = errors.New("broken storage")
+
+func (m MockBrokenKVStore)Create(key, value string) error{ return brokenStorage }
+func (m MockBrokenKVStore)CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error){
+	p := new(etcd.LeaseID)
+	return p, brokenStorage
+}
+func (m MockBrokenKVStore)Read(key string) (string, error){
+	return "", brokenStorage
+}
+func (m MockBrokenKVStore)ReadAll(key string) (map[string]string, error){
+	return map[string]string{"key": "value"}, brokenStorage
+}
+func (m MockBrokenKVStore)Update(key, value string) error{
+	return brokenStorage
+}
+func (m MockBrokenKVStore)RefreshLease(id *etcd.LeaseID) error{
+	return brokenStorage
+}
+func (m MockBrokenKVStore)Delete(key string) error{
+	return brokenStorage
 }
 
 type Etcd struct {
