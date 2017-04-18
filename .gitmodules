@@ -1,0 +1,42 @@
+[submodule "vendor/github.com/coreos/etcd"]
+	path = vendor/github.com/coreos/etcd
+	url = https://github.com/coreos/etcd.git
+[submodule "vendor/github.com/golang/protobuf"]
+	path = vendor/github.com/golang/protobuf
+	url = https://github.com/golang/protobuf.git
+[submodule "vendor/github.com/ghodss/yaml"]
+	path = vendor/github.com/ghodss/yaml
+	url = https://github.com/ghodss/yaml.git
+[submodule "vendor/github.com/grpc-ecosystem/go-grpc-prometheus"]
+	path = vendor/github.com/grpc-ecosystem/go-grpc-prometheus
+	url = https://github.com/grpc-ecosystem/go-grpc-prometheus.git
+[submodule "vendor/github.com/prometheus/client_golang"]
+	path = vendor/github.com/prometheus/client_golang
+	url = https://github.com/prometheus/client_golang.git
+[submodule "vendor/github.com/beorn7/perks"]
+	path = vendor/github.com/beorn7/perks
+	url = https://github.com/beorn7/perks.git
+[submodule "vendor/github.com/prometheus/client_model"]
+	path = vendor/github.com/prometheus/client_model
+	url = https://github.com/prometheus/client_model.git
+[submodule "vendor/github.com/prometheus/common"]
+	path = vendor/github.com/prometheus/common
+	url = https://github.com/prometheus/common.git
+[submodule "vendor/github.com/matttproud/golang_protobuf_extensions"]
+	path = vendor/github.com/matttproud/golang_protobuf_extensions
+	url = https://github.com/matttproud/golang_protobuf_extensions.git
+[submodule "vendor/github.com/prometheus/procfs"]
+	path = vendor/github.com/prometheus/procfs
+	url = https://github.com/prometheus/procfs.git
+[submodule "vendor/gopkg.in/yaml.v2"]
+	path = vendor/gopkg.in/yaml.v2
+	url = https://gopkg.in/yaml.v2.git
+[submodule "vendor/github.com/grpc-ecosystem/grpc-gateway"]
+	path = vendor/github.com/grpc-ecosystem/grpc-gateway
+	url = https://github.com/grpc-ecosystem/grpc-gateway.git
+[submodule "vendor/google.golang.org/grpc"]
+	path = vendor/google.golang.org/grpc
+	url = https://github.com/grpc/grpc-go.git
+[submodule "vendor/google.golang.org/genproto"]
+	path = vendor/google.golang.org/genproto
+	url = https://github.com/google/go-genproto.git
