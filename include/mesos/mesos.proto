@@ -17,10 +17,6 @@ syntax = "proto2";
 
 package mesos.v1;
 
-option java_package = "org.apache.mesos.v1";
-option java_outer_classname = "Protos";
-
-
 /**
  * Status is used to indicate the state of the scheduler and executor
  * driver after function calls.

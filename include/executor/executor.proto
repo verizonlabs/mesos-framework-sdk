@@ -19,9 +19,6 @@ import "mesos-framework-sdk/include/mesos/mesos.proto";
 
 package mesos.v1.executor;
 
-option java_package = "org.apache.mesos.v1.executor";
-option java_outer_classname = "Protos";
-
 
 /**
  * Executor event API.
