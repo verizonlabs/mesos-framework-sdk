@@ -12,20 +12,19 @@ import (
 
 type KeyValueStore interface {
 	Create(key, value string) error
-	CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error)
+	CreateWithLease(key, value string, ttl int64) (int64, error)
 	Read(key string) (string, error)
 	ReadAll(key string) (map[string]string, error)
 	Update(key, value string) error
-	RefreshLease(id *etcd.LeaseID) error
+	RefreshLease(int64) error
 	Delete(key string) error
 }
 
 type MockKVStore struct{}
 
 func (m MockKVStore) Create(key, value string) error { return nil }
-func (m MockKVStore) CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error) {
-	p := new(etcd.LeaseID)
-	return p, nil
+func (m MockKVStore) CreateWithLease(key, value string, ttl int64) (int64, error) {
+	return 0, nil
 }
 func (m MockKVStore) Read(key string) (string, error) {
 	return "", nil
@@ -36,7 +35,7 @@ func (m MockKVStore) ReadAll(key string) (map[string]string, error) {
 func (m MockKVStore) Update(key, value string) error {
 	return nil
 }
-func (m MockKVStore) RefreshLease(id *etcd.LeaseID) error {
+func (m MockKVStore) RefreshLease(id int64) error {
 	return nil
 }
 func (m MockKVStore) Delete(key string) error {
@@ -48,9 +47,8 @@ type MockBrokenKVStore struct{}
 var brokenStorage = errors.New("broken storage")
 
 func (m MockBrokenKVStore) Create(key, value string) error { return brokenStorage }
-func (m MockBrokenKVStore) CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error) {
-	p := new(etcd.LeaseID)
-	return p, brokenStorage
+func (m MockBrokenKVStore) CreateWithLease(key, value string, ttl int64) (int64, error) {
+	return 0, brokenStorage
 }
 func (m MockBrokenKVStore) Read(key string) (string, error) {
 	return "", brokenStorage
@@ -61,7 +59,7 @@ func (m MockBrokenKVStore) ReadAll(key string) (map[string]string, error) {
 func (m MockBrokenKVStore) Update(key, value string) error {
 	return brokenStorage
 }
-func (m MockBrokenKVStore) RefreshLease(id *etcd.LeaseID) error {
+func (m MockBrokenKVStore) RefreshLease(id int64) error {
 	return brokenStorage
 }
 func (m MockBrokenKVStore) Delete(key string) error {
@@ -122,13 +120,13 @@ func (e *Etcd) Create(key, value string) error {
 
 // Creates a key with a specified TTL.
 // This will not overwrite an already existing key.
-func (e *Etcd) CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, error) {
+func (e *Etcd) CreateWithLease(key, value string, ttl int64) (int64, error) {
 	grantCtx, grantCancel := context.WithTimeout(context.Background(), e.ctxTimeout)
 	defer grantCancel()
 
 	resp, err := e.client.Grant(grantCtx, ttl)
 	if err != nil {
-		return nil, err
+		return -1, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
@@ -141,7 +139,7 @@ func (e *Etcd) CreateWithLease(key, value string, ttl int64) (*etcd.LeaseID, err
 	)
 	_, err = txn.Commit()
 
-	return &resp.ID, err
+	return int64(resp.ID), err
 }
 
 // Reads a key's value.
@@ -195,11 +193,11 @@ func (e *Etcd) Update(key, value string) error {
 }
 
 // Refreshes a lease once.
-func (e *Etcd) RefreshLease(id *etcd.LeaseID) error {
+func (e *Etcd) RefreshLease(id int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
 	defer cancel()
 
-	_, err := e.client.KeepAliveOnce(ctx, *id)
+	_, err := e.client.KeepAliveOnce(ctx, etcd.LeaseID(id))
 
 	return err
 }

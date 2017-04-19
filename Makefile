@@ -3,13 +3,13 @@
 PROTO_PATH := ${GOPATH}/src
 
 test:
-	@go test -cover ./...
+	@go test -cover $(shell go list ./... | grep -v /vendor/)
 
 test-race:
-	@go test -race ./...
+	@go test -race $(shell go list ./... | grep -v /vendor/)
 
 bench:
-	@go test -bench . ./...
+	@go test -bench . $(shell go list ./... | grep -v /vendor/)
 
 protos:
 	@protoc --go_out=. --proto_path=.:${PROTO_PATH} ./include/scheduler/scheduler.proto
