@@ -8,6 +8,12 @@ type ApplicationJSON struct {
 	HealthCheck *HealthCheckJSON    `json:"healthcheck"`
 	Labels      []map[string]string `json:"labels"`
 	Filters     []Filter            `json:"filters"`
+	Retry       *TimeRetry          `json:"retry"`
+}
+
+type TimeRetry struct {
+	Time    string `json:"time"`
+	Backoff bool   `json:"exp_backoff"`
 }
 
 type HealthCheckJSON struct {
@@ -58,7 +64,7 @@ type VolumeSourceJSON struct {
 type DockerVolumeJSON struct {
 	Driver        *string             `json:"driver"`
 	Name          *string             `'json:"name"`
-	DriverOptions []map[string]string `'json:"driveropts"`
+	DriverOptions []map[string]string `'json:"driver_opts"`
 }
 
 type NetworkJSON struct {
@@ -66,12 +72,12 @@ type NetworkJSON struct {
 	Name        *string             `json:"name"`
 	Groups      []string            `json:"group"`
 	Labels      []map[string]string `json:"labels"`
-	PortMapping []*PortMapping      `json:"portmapping"`
+	PortMapping []*PortMapping      `json:"port_mapping"`
 }
 
 type PortMapping struct {
-	HostPort      *uint32 `json:"hostport"`
-	ContainerPort *uint32 `json:"containerport"`
+	HostPort      *uint32 `json:"host_port"`
+	ContainerPort *uint32 `json:"container_port"`
 	Protocol      *string `json:"protocol"`
 }
 
