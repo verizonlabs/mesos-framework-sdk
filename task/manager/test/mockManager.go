@@ -6,9 +6,24 @@ import (
 	"mesos-framework-sdk/include/mesos"
 	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/structures/test"
+	"mesos-framework-sdk/task"
+	"sprint/task/retry"
 )
 
 type MockTaskManager struct{}
+
+func (m MockTaskManager) AddPolicy(*task.TimeRetry, *mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockTaskManager) CheckPolicy(*mesos_v1.TaskInfo) (*retry.TaskRetry, error) {
+	return &retry.TaskRetry{}, nil
+}
+func (m MockTaskManager) ClearPolicy(*mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockTaskManager) RunPolicy(*retry.TaskRetry, func()) error {
+	return nil
+}
 
 func (m MockTaskManager) Add(*mesos_v1.TaskInfo) error {
 	return nil
@@ -53,6 +68,19 @@ func (m MockTaskManager) Tasks() structures.DistributedMap {
 //
 type MockBrokenTaskManager struct{}
 
+func (m MockBrokenTaskManager) AddPolicy(*task.TimeRetry, *mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockBrokenTaskManager) CheckPolicy(*mesos_v1.TaskInfo) (*retry.TaskRetry, error) {
+	return &retry.TaskRetry{}, nil
+}
+func (m MockBrokenTaskManager) ClearPolicy(*mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockBrokenTaskManager) RunPolicy(*retry.TaskRetry, func()) error {
+	return nil
+}
+
 func (m MockBrokenTaskManager) Add(*mesos_v1.TaskInfo) error {
 	return errors.New("Broken.")
 }
@@ -90,6 +118,19 @@ func (m MockBrokenTaskManager) Tasks() structures.DistributedMap {
 }
 
 type MockTaskManagerQueued struct{}
+
+func (m MockTaskManagerQueued) AddPolicy(*task.TimeRetry, *mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockTaskManagerQueued) CheckPolicy(*mesos_v1.TaskInfo) (*retry.TaskRetry, error) {
+	return &retry.TaskRetry{}, nil
+}
+func (m MockTaskManagerQueued) ClearPolicy(*mesos_v1.TaskInfo) error {
+	return nil
+}
+func (m MockTaskManagerQueued) RunPolicy(*retry.TaskRetry, func()) error {
+	return nil
+}
 
 func (m MockTaskManagerQueued) Add(*mesos_v1.TaskInfo) error {
 	return nil
