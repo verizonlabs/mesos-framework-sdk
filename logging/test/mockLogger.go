@@ -1,4 +1,4 @@
-package MockLogging
+package test
 
 type MockLogger struct{}
 

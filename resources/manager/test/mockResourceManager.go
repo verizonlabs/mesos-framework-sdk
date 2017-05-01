@@ -1,4 +1,4 @@
-package MockResourceManager
+package test
 
 import (
 	"errors"

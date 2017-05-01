@@ -1,4 +1,4 @@
-package mockStorage
+package test
 
 import (
 	"errors"
