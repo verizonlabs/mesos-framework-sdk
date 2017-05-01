@@ -3,7 +3,7 @@ package container
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/resources"
 	"mesos-framework-sdk/task"
 	"mesos-framework-sdk/task/network"

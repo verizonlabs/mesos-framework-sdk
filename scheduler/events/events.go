@@ -1,6 +1,6 @@
 package events
 
-import "mesos-framework-sdk/include/scheduler"
+import "mesos-framework-sdk/include/mesos_v1_scheduler"
 
 /*
 The events package will hook in how an end user wants to deal with events received by the scheduler.

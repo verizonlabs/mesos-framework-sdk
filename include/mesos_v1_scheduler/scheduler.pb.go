@@ -17,7 +17,7 @@ package mesos_v1_scheduler
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import mesos_v1 "mesos-framework-sdk/include/mesos"
+import mesos_v1 "mesos-framework-sdk/include/mesos_v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

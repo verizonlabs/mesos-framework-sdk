@@ -2,7 +2,7 @@ package command
 
 import (
 	"errors"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 )
 

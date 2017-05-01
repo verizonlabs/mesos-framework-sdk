@@ -3,8 +3,8 @@ package scheduler
 import (
 	"io"
 	"mesos-framework-sdk/client"
-	"mesos-framework-sdk/include/mesos"
-	"mesos-framework-sdk/include/scheduler"
+	"mesos-framework-sdk/include/mesos_v1"
+	"mesos-framework-sdk/include/mesos_v1_scheduler"
 	"net/http"
 	"net/http/httptest"
 	"testing"
