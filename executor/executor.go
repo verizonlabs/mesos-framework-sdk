@@ -2,8 +2,8 @@ package executor
 
 import (
 	"mesos-framework-sdk/client"
-	exec "mesos-framework-sdk/include/executor"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos_v1"
+	exec "mesos-framework-sdk/include/mesos_v1_executor"
 	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
 )

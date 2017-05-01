@@ -2,7 +2,7 @@ package resources
 
 import (
 	"github.com/golang/protobuf/proto"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos_v1"
 )
 
 // Creates a taskInfo

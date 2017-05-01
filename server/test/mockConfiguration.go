@@ -1,4 +1,4 @@
-package mockConfiguration
+package test
 
 import "net/http"
 

@@ -3,7 +3,7 @@ package labels
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
-	"mesos-framework-sdk/include/mesos"
+	"mesos-framework-sdk/include/mesos_v1"
 )
 
 func ParseLabels(lbs []map[string]string) (*mesos_v1.Labels, error) {

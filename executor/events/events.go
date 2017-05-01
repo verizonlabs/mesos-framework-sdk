@@ -1,7 +1,7 @@
 package events
 
 import (
-	"mesos-framework-sdk/include/executor"
+	"mesos-framework-sdk/include/mesos_v1_executor"
 )
 
 /*
