@@ -12,8 +12,9 @@ type ApplicationJSON struct {
 }
 
 type TimeRetry struct {
-	Time    string `json:"time"`
-	Backoff bool   `json:"exp_backoff"`
+	Time       string `json:"time"`
+	Backoff    bool   `json:"exp_backoff"`
+	MaxRetries int    `json:"total_retries"`
 }
 
 type HealthCheckJSON struct {
