@@ -28,11 +28,11 @@ const (
 // is up to the end user.
 type TaskManager interface {
 	Add(*mesos_v1.TaskInfo) error
-	Delete(*mesos_v1.TaskInfo)
+	Delete(*mesos_v1.TaskInfo) error
 	Get(*string) (*mesos_v1.TaskInfo, error)
 	GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error)
 	HasTask(*mesos_v1.TaskInfo) bool
-	Set(mesos_v1.TaskState, *mesos_v1.TaskInfo)
+	Set(mesos_v1.TaskState, *mesos_v1.TaskInfo) error
 	GetState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
 	Tasks() structures.DistributedMap
