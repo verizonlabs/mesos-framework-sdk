@@ -40,6 +40,6 @@ type Node interface {
 	Status() (Status, error) // What is the status of this node?
 	Communicate()            // Our communication channel
 	Election()               // Kick off an election.
-	CreateLeader()
-	GetLeader() string
+	CreateLeader() error
+	GetLeader() (string, error)
 }
