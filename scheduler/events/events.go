@@ -8,7 +8,7 @@ The events package will hook in how an end user wants to deal with events receiv
 
 // Define the behavior of how an end user will deal with events.
 type SchedulerEvent interface {
-	Subscribe(*mesos_v1_scheduler.Event_Subscribed)
+	Subscribed(*mesos_v1_scheduler.Event_Subscribed)
 	Offers(*mesos_v1_scheduler.Event_Offers)
 	Rescind(*mesos_v1_scheduler.Event_Rescind)
 	Update(*mesos_v1_scheduler.Event_Update)
