@@ -33,10 +33,11 @@ type TaskManager interface {
 	GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error)
 	HasTask(*mesos_v1.TaskInfo) bool
 	Set(mesos_v1.TaskState, *mesos_v1.TaskInfo) error
-	GetState(*string) (*mesos_v1.TaskState, error)
-	GetAllState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
+	State(*string) (*mesos_v1.TaskState, error)
+	AllByState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
 	Tasks() structures.DistributedMap
+	All() ([]Task, error)
 }
 
 // Used to hold information about task states in the task manager.
