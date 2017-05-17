@@ -19,6 +19,7 @@ import (
 	"mesos-framework-sdk/logging"
 	"mesos-framework-sdk/recordio"
 	"net/http"
+	"sync"
 )
 
 type Scheduler interface {
@@ -45,6 +46,7 @@ type DefaultScheduler struct {
 	Client        client.Client
 	logger        logging.Logger
 	IsSuppressed  bool
+	sync.RWMutex
 }
 
 func NewDefaultScheduler(c client.Client, info *mesos_v1.FrameworkInfo, logger logging.Logger) *DefaultScheduler {
@@ -140,9 +142,12 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 
 // Sent by the scheduler to remove any/all filters that it has previously set via ACCEPT or DECLINE calls.
 func (c *DefaultScheduler) Revive() (*http.Response, error) {
+	c.RLock()
 	if !c.IsSuppressed {
+		c.RUnlock()
 		return nil, nil
 	}
+	c.RUnlock()
 
 	revive := &sched.Call{
 		FrameworkId: c.frameworkInfo.GetId(),
@@ -153,7 +158,10 @@ func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	} else {
+		c.Lock()
 		c.IsSuppressed = false
+		c.Unlock()
+
 		c.logger.Emit(logging.INFO, "Reviving offers")
 	}
 
@@ -283,9 +291,12 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Re
 
 // Makes a call to Mesos to suppress any further offers.
 func (c *DefaultScheduler) Suppress() (*http.Response, error) {
+	c.RLock()
 	if c.IsSuppressed {
+		c.RUnlock()
 		return nil, nil
 	}
+	c.RUnlock()
 
 	suppress := &sched.Call{
 		FrameworkId: c.frameworkInfo.GetId(),
@@ -295,7 +306,10 @@ func (c *DefaultScheduler) Suppress() (*http.Response, error) {
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	} else {
+		c.Lock()
 		c.IsSuppressed = true
+		c.Unlock()
+
 		c.logger.Emit(logging.INFO, "Suppressing offers")
 	}
 
