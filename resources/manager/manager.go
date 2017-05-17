@@ -6,6 +6,7 @@ import (
 	"mesos-framework-sdk/task"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 /*
@@ -31,7 +32,8 @@ type MesosOfferResources struct {
 }
 
 type DefaultResourceManager struct {
-	offers   []*MesosOfferResources
+	offers []*MesosOfferResources
+	sync.RWMutex
 	filterOn map[string][]task.Filter
 	strategy string
 }
@@ -72,13 +74,11 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 		mesosOffer.Offer = offer
 		d.offers = append(d.offers, mesosOffer)
 	}
-
 }
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
 	d.offers = nil // Release memory to the GC.
-
 }
 
 // Do we have any resources left?
@@ -97,9 +97,13 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 		case "set":
 			fallthrough
 		case "ranges":
+			d.Lock()
 			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: f.Type, Value: f.Value})
+			d.Unlock()
 		case "strategy":
+			d.Lock()
 			d.strategy = f.Value[0]
+			d.Unlock()
 		default:
 			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES, and STRATEGY.")
 		}
@@ -109,7 +113,9 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 }
 
 func (d *DefaultResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
+	d.Lock()
 	delete(d.filterOn, t.GetName()) // Deletes all filters on a task.
+	d.Unlock()
 }
 
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
@@ -202,7 +208,9 @@ L:
 	for i, offer := range d.offers {
 
 		// If this task has filters, make sure to filter on them.
+		d.RLock()
 		if filter, ok := d.filterOn[task.GetName()]; ok {
+			d.RUnlock()
 			validOffer := d.filter(filter, offer.Offer)
 			if !validOffer {
 
@@ -210,6 +218,7 @@ L:
 				continue L
 			}
 		}
+		d.RUnlock()
 
 		// Eat up this offer's resources with the task's needs.
 		for _, resource := range task.Resources {
@@ -239,11 +248,14 @@ L:
 		d.offers[i].Accepted = true
 
 		// Remove the offer if it has no resources for other tasks to eat.
+		d.RLock()
 		if !strings.EqualFold(d.strategy, "mux") {
+			d.RUnlock()
 			d.popOffer(i)
 		} else if offer.Mem == 0 || offer.Cpu == 0 {
 			d.popOffer(i)
 		}
+		d.RUnlock()
 
 		return offer.Offer, nil
 	}
