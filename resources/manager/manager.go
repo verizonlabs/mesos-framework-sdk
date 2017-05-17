@@ -111,6 +111,7 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 
 func (d *DefaultResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
 	d.filterOn.Delete(t.GetName()) // Deletes all filters on a task.
+	d.strategy.Delete(t.GetName()) // Deletes the strategy.
 }
 
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
