@@ -17,7 +17,7 @@ func ParseResources(res *task.ResourceJSON) ([]*mesos_v1.Resource, error) {
 
 	var cpu = resources.CreateCpu(res.Cpu, res.Role)
 	var mem = resources.CreateMem(res.Mem, res.Role)
-	// TODO (tim): Disk info should be handled.
-	r = append(r, cpu, mem)
+	var disk = resources.CreateDisk(res.Disk, res.Role)
+	r = append(r, cpu, mem, disk)
 	return r, nil
 }
