@@ -3,6 +3,7 @@ package manager
 import (
 	"errors"
 	"mesos-framework-sdk/include/mesos_v1"
+	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/task"
 	"strconv"
 	"strings"
@@ -32,8 +33,8 @@ type MesosOfferResources struct {
 
 type DefaultResourceManager struct {
 	offers   []*MesosOfferResources
-	filterOn map[string][]task.Filter
-	strategy string
+	filterOn structures.DistributedMap
+	strategy structures.DistributedMap
 }
 
 // NOTE (tim): Filter types follow VALUE_TYPE's defined in mesos
@@ -47,8 +48,8 @@ const (
 func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
 		offers:   make([]*MesosOfferResources, 0),
-		filterOn: make(map[string][]task.Filter),
-		strategy: "mux",
+		filterOn: structures.NewConcurrentMap(0),
+		strategy: structures.NewConcurrentMap(0),
 	}
 }
 
@@ -72,13 +73,11 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 		mesosOffer.Offer = offer
 		d.offers = append(d.offers, mesosOffer)
 	}
-
 }
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
 	d.offers = nil // Release memory to the GC.
-
 }
 
 // Do we have any resources left?
@@ -90,16 +89,18 @@ func (d *DefaultResourceManager) HasResources() bool {
 func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error {
 	for _, f := range filters { // Check all filters
 		switch strings.ToLower(f.Type) {
-		case "scalar":
-			fallthrough
-		case "text":
-			fallthrough
-		case "set":
-			fallthrough
-		case "ranges":
-			d.filterOn[t.GetName()] = append(d.filterOn[t.GetName()], task.Filter{Type: f.Type, Value: f.Value})
+		case "ranges", "set", "text", "scalar":
+			val := d.filterOn.Get(t.GetName())
+			// Initial set, append set
+			if val == nil {
+				d.filterOn.Set(t.GetName(), []task.Filter{{Type: f.Type, Value: f.Value}})
+			} else {
+				list := val.([]task.Filter)
+				list = append(list, task.Filter{Type: f.Type, Value: f.Value})
+				d.filterOn.Set(t.GetName(), list)
+			}
 		case "strategy":
-			d.strategy = f.Value[0]
+			d.strategy.Set(t.GetName(), f.Value[0])
 		default:
 			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES, and STRATEGY.")
 		}
@@ -109,7 +110,8 @@ func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.
 }
 
 func (d *DefaultResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
-	delete(d.filterOn, t.GetName()) // Deletes all filters on a task.
+	d.filterOn.Delete(t.GetName()) // Deletes all filters on a task.
+	d.strategy.Delete(t.GetName()) // Deletes the strategy.
 }
 
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
@@ -197,13 +199,13 @@ func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resourc
 }
 
 // Assign an offer to a task.
-func (d *DefaultResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
+func (d *DefaultResourceManager) Assign(mesosTask *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
 L:
 	for i, offer := range d.offers {
 
 		// If this task has filters, make sure to filter on them.
-		if filter, ok := d.filterOn[task.GetName()]; ok {
-			validOffer := d.filter(filter, offer.Offer)
+		if filter := d.filterOn.Get(mesosTask.GetName()); filter != nil {
+			validOffer := d.filter(filter.([]task.Filter), offer.Offer)
 			if !validOffer {
 
 				// We don't care about this offer since it does't match our params.
@@ -212,7 +214,7 @@ L:
 		}
 
 		// Eat up this offer's resources with the task's needs.
-		for _, resource := range task.Resources {
+		for _, resource := range mesosTask.Resources {
 			res := resource.GetScalar().GetValue()
 
 			switch resource.GetName() {
@@ -239,7 +241,14 @@ L:
 		d.offers[i].Accepted = true
 
 		// Remove the offer if it has no resources for other tasks to eat.
-		if !strings.EqualFold(d.strategy, "mux") {
+		exists := d.strategy.Get(mesosTask.GetName())
+		var strategy string
+		if exists == nil {
+			strategy = "non-mux"
+		} else {
+			strategy = exists.(string)
+		}
+		if !strings.EqualFold(strategy, "mux") {
 			d.popOffer(i)
 		} else if offer.Mem == 0 || offer.Cpu == 0 {
 			d.popOffer(i)
@@ -248,7 +257,7 @@ L:
 		return offer.Offer, nil
 	}
 
-	return nil, errors.New("Cannot find a suitable offer for task " + task.GetName())
+	return nil, errors.New("Cannot find a suitable offer for task " + mesosTask.GetName())
 }
 
 // Returns a list of offers that have not been altered and returned to the client for accept calls.
