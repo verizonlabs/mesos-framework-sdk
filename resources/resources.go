@@ -105,11 +105,19 @@ func CreateMem(memShare float64, role string) *mesos_v1.Resource {
 	return resource
 }
 
-func CreateDisk(vol *mesos_v1.Volume, source *mesos_v1.Resource_DiskInfo_Source) *mesos_v1.Resource_DiskInfo {
-	return &mesos_v1.Resource_DiskInfo{
-		Volume: vol,
-		Source: source,
+// Creates a basic ROOT disk.
+func CreateDisk(size float64, role string) *mesos_v1.Resource {
+	resource := &mesos_v1.Resource{
+		Name: proto.String("disk"),
+		Type: mesos_v1.Value_SCALAR.Enum(),
+		Scalar: &mesos_v1.Value_Scalar{
+			Value: proto.Float64(size),
+		},
 	}
+	if role != "" {
+		resource.Role = proto.String(role)
+	}
+	return resource
 }
 
 func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source *mesos_v1.Volume_Source) *mesos_v1.Volume {

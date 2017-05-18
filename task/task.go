@@ -37,6 +37,23 @@ type ResourceJSON struct {
 	Role string  `json:"role"`
 }
 
+type Disk struct {
+	Persistence *DiskPersistence `json:"persistence"`
+	Volume      *VolumesJSON     `json:"volume"`
+	Source      *DiskSource      `json:"source"`
+}
+
+type DiskSource struct {
+	Type  *string `json:"type"`
+	Path  *string `json:"path"`
+	Mount *string `json:"mount"`
+}
+
+type DiskPersistence struct {
+	Id        *string `json:"id"`
+	Principle *string `json:"principle"`
+}
+
 type CommandJSON struct {
 	Cmd  *string   `json:"cmd"`
 	Uris []UriJSON `json:"uris"`
