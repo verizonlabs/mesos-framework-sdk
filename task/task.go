@@ -33,11 +33,12 @@ type KillJson struct {
 type ResourceJSON struct {
 	Mem  float64 `json:"mem"`
 	Cpu  float64 `json:"cpu"`
-	Disk float64 `json:"disk"`
+	Disk Disk    `json:"disk"`
 	Role string  `json:"role"`
 }
 
 type Disk struct {
+	Size        float64          `json:"size"`
 	Persistence *DiskPersistence `json:"persistence"`
 	Volume      *VolumesJSON     `json:"volume"`
 	Source      *DiskSource      `json:"source"`

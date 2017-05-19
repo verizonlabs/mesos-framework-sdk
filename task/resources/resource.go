@@ -17,7 +17,10 @@ func ParseResources(res *task.ResourceJSON) ([]*mesos_v1.Resource, error) {
 
 	var cpu = resources.CreateCpu(res.Cpu, res.Role)
 	var mem = resources.CreateMem(res.Mem, res.Role)
-	var disk = resources.CreateDisk(res.Disk, res.Role)
+	var disk, err = resources.CreateDisk(res.Disk, res.Role)
+	if err != nil {
+		return nil, err
+	}
 	r = append(r, cpu, mem, disk)
 	return r, nil
 }
