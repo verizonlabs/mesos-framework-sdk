@@ -1,8 +1,11 @@
 package resources
 
 import (
+	"errors"
 	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
+	"mesos-framework-sdk/task"
+	"strings"
 )
 
 // Creates a taskInfo
@@ -105,19 +108,73 @@ func CreateMem(memShare float64, role string) *mesos_v1.Resource {
 	return resource
 }
 
-// Creates a basic ROOT disk.
-func CreateDisk(size float64, role string) *mesos_v1.Resource {
+// Creates a disk based on given task.Disk struct.
+func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
+	// Create a diskinfo resource if required.
+	d := &mesos_v1.Resource_DiskInfo{}
+
+	// Disk must have a size.
+	if disk.Size <= 0.0 {
+		return nil, errors.New("Disk allocation size is 0 or less than 0.  Must be a positive float value.")
+	}
+	// If disk source is not nil, we have a PATH or MOUNT style disk.
+	if disk.Source != nil {
+		// It's either PATH or MOUNT, it cannot be mixed.
+		if disk.Source.Type != nil {
+			// Check if we have a PATH or MOUNT type disk source.
+			if strings.ToLower(*disk.Source.Type) == "path" {
+				d.Source.Type = mesos_v1.Resource_DiskInfo_Source_PATH.Enum()
+				if disk.Source.Path != nil {
+					d.Source.Path.Root = disk.Source.Path
+				} else if disk.Source.Mount != nil {
+					// Specified PATH but gave mount.
+					return nil, errors.New("Disk source set to Path type, but set mount field. Please set path field instead.")
+				} else {
+					// Specified PATH but no fields set.
+					return nil, errors.New("Disk source set to Path type but field path not set.")
+				}
+			} else if strings.ToLower(*disk.Source.Type) == "mount" {
+				d.Source.Type = mesos_v1.Resource_DiskInfo_Source_MOUNT.Enum()
+				if disk.Source.Mount != nil {
+					d.Source.Mount.Root = disk.Source.Mount
+				} else if disk.Source.Path != nil {
+					// Specified MOUNT but gave path.
+					return nil, errors.New("Mount type given, but path field set. Please set mount instead.")
+				} else {
+					// Mount path type given, must have Mount field set.
+					return nil, errors.New("Mount type given, but no mount path set.")
+				}
+			} else {
+				return nil, errors.New("Invalid Disk source passed in, must be MOUNT or PATH if specified.")
+			}
+		} else {
+			// User specified a source field but not the type (required).
+			return nil, errors.New("Disk source set but no type given. Valid types are MOUNT or PATH.")
+		}
+	} // End checking DISK SOURCE fields.
+
+	// TODO (tim): Add in external volume capabilities.
+	// disk.Volume is for external volumes.
+
+	// Create the resource to return.
 	resource := &mesos_v1.Resource{
 		Name: proto.String("disk"),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
-			Value: proto.Float64(size),
+			Value: proto.Float64(disk.Size),
 		},
 	}
+
+	// If we set our source to something, add DISK field to resource.
+	if d.Source != nil {
+		resource.Disk = d
+	}
+
+	// Set a role if one was passed in.
 	if role != "" {
 		resource.Role = proto.String(role)
 	}
-	return resource
+	return resource, nil
 }
 
 func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source *mesos_v1.Volume_Source) *mesos_v1.Volume {
