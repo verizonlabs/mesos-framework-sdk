@@ -2,6 +2,7 @@ package command
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 )
@@ -16,6 +17,21 @@ func ParseCommandInfo(cmd *task.CommandJSON) (*mesos_v1.CommandInfo, error) {
 		// NOTE (tim): Should we split on white space and use first arg as "value" and the remainder as args?
 		// A command value isn't required since the commandInfo can be used just to fetch URI's
 		mesosCmd.Value = cmd.Cmd
+	}
+
+	if cmd.Environment != nil {
+		vars := []*mesos_v1.Environment_Variable{}
+		for _, env := range cmd.Environment.Variables {
+			for k, v := range env {
+				vars = append(vars, &mesos_v1.Environment_Variable{
+					Name:  proto.String(k),
+					Value: proto.String(v),
+				})
+			}
+		}
+		mesosCmd.Environment = &mesos_v1.Environment{
+			Variables: vars,
+		}
 	}
 
 	if len(cmd.Uris) > 0 {
