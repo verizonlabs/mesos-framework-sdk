@@ -2,9 +2,9 @@ package command
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
-	"src/github.com/golang/protobuf/proto"
 )
 
 func ParseCommandInfo(cmd *task.CommandJSON) (*mesos_v1.CommandInfo, error) {
