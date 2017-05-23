@@ -13,31 +13,33 @@ import (
 The resource manager will handle offers and allocate it to a task.
 */
 
-type ResourceManager interface {
-	AddOffers(offers []*mesos_v1.Offer)
-	HasResources() bool
-	AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error
-	ClearFilters(t *mesos_v1.TaskInfo)
-	Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
-	Offers() []*mesos_v1.Offer
-}
+type (
+	ResourceManager interface {
+		AddOffers(offers []*mesos_v1.Offer)
+		HasResources() bool
+		AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error
+		ClearFilters(t *mesos_v1.TaskInfo)
+		Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
+		Offers() []*mesos_v1.Offer
+	}
 
-// This cleans up the logic for the offer->resource matching.
-type MesosOfferResources struct {
-	Offer    *mesos_v1.Offer
-	Cpu      float64
-	Mem      float64
-	Disk     *mesos_v1.Resource_DiskInfo
-	Accepted bool
-}
+	// A resource manager implementation.
+	DefaultResourceManager struct {
+		offers   []*MesosOfferResources
+		filterOn structures.DistributedMap
+		strategy structures.DistributedMap
+	}
 
-type DefaultResourceManager struct {
-	offers   []*MesosOfferResources
-	filterOn structures.DistributedMap
-	strategy structures.DistributedMap
-}
+	// Holds offer data
+	MesosOfferResources struct {
+		Offer    *mesos_v1.Offer
+		Cpu      float64
+		Mem      float64
+		Disk     *mesos_v1.Resource_DiskInfo
+		Accepted bool
+	}
+)
 
-// NOTE (tim): Filter types follow VALUE_TYPE's defined in mesos
 const (
 	SCALAR = mesos_v1.Value_SCALAR
 	TEXT   = mesos_v1.Value_TEXT
@@ -45,6 +47,7 @@ const (
 	SET    = mesos_v1.Value_SET
 )
 
+// Creates a default resource manager implementation.
 func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
 		offers:   make([]*MesosOfferResources, 0),
@@ -77,7 +80,7 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 
 // Clear out existing offers if any exist.
 func (d *DefaultResourceManager) clearOffers() {
-	d.offers = nil // Release memory to the GC.
+	d.offers = nil
 }
 
 // Do we have any resources left?
@@ -87,7 +90,7 @@ func (d *DefaultResourceManager) HasResources() bool {
 
 // Tells our resource manager to apply filters to this task.
 func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error {
-	for _, f := range filters { // Check all filters
+	for _, f := range filters {
 		switch strings.ToLower(f.Type) {
 		case "ranges", "set", "text", "scalar":
 			val := d.filterOn.Get(t.GetName())
@@ -198,63 +201,75 @@ func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resourc
 	return false
 }
 
+// If a task has offer filters but the offer doesn't satisfy them, return false, otherwise true.
+func (d *DefaultResourceManager) filterOnOffer(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
+	// If this task has filters, make sure to filter on them.
+	if filter := d.filterOn.Get(mesosTask.GetName()); filter != nil {
+		validOffer := d.filter(filter.([]task.Filter), offer.Offer)
+		if !validOffer {
+			// We don't care about this offer since it does't match our params.
+			return false
+		}
+	}
+	return true
+}
+
+// Check if an offer has enough resources for a task's request.
+func (d *DefaultResourceManager) hasSufficentResources(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
+	// Eat up this offer's resources with the task's needs.
+	for _, resource := range mesosTask.Resources {
+		res := resource.GetScalar().GetValue()
+
+		switch resource.GetName() {
+		case "cpus":
+			if d.allocateCpuResource(res, offer) {
+				break
+			}
+
+			// We can't use this offer if it has no CPUs, move on to the next offer.
+			return false
+		case "mem":
+			if d.allocateMemResource(res, offer) {
+				break
+			}
+
+			// We can't use this offer if it has no memory, move on to the next offer.
+			return false
+		case "disk":
+			d.allocateDiskResource(resource, offer)
+		}
+	}
+	return true
+}
+
+// Check if we have a deployment strategy, if so, return it, otherwise return the default.
+func (d *DefaultResourceManager) checkStrategy(mesosTask *mesos_v1.TaskInfo) string {
+	var strategy string
+	// Remove the offer if it has no resources for other tasks to eat.
+	exists := d.strategy.Get(mesosTask.GetName())
+	if exists == nil {
+		strategy = "non-mux"
+	} else {
+		strategy = exists.(string)
+	}
+	return strategy
+}
+
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(mesosTask *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
-L:
 	for i, offer := range d.offers {
+		if d.filterOnOffer(mesosTask, offer) && d.hasSufficentResources(mesosTask, offer) {
+			// Mark this offer as accepted so that it's not returned as part of the remaining offers.
+			d.offers[i].Accepted = true
 
-		// If this task has filters, make sure to filter on them.
-		if filter := d.filterOn.Get(mesosTask.GetName()); filter != nil {
-			validOffer := d.filter(filter.([]task.Filter), offer.Offer)
-			if !validOffer {
-
-				// We don't care about this offer since it does't match our params.
-				continue L
+			if !strings.EqualFold(d.checkStrategy(mesosTask), "mux") {
+				d.popOffer(i)
+			} else if offer.Mem == 0 || offer.Cpu == 0 {
+				d.popOffer(i)
 			}
+
+			return offer.Offer, nil
 		}
-
-		// Eat up this offer's resources with the task's needs.
-		for _, resource := range mesosTask.Resources {
-			res := resource.GetScalar().GetValue()
-
-			switch resource.GetName() {
-			case "cpus":
-				if d.allocateCpuResource(res, offer) {
-					break
-				}
-
-				// We can't use this offer if it has no CPUs, move on to the next offer.
-				continue L
-			case "mem":
-				if d.allocateMemResource(res, offer) {
-					break
-				}
-
-				// We can't use this offer if it has no memory, move on to the next offer.
-				continue L
-			case "disk":
-				d.allocateDiskResource(resource, offer)
-			}
-		}
-
-		// Mark this offer as accepted so that it's not returned as part of the remaining offers.
-		d.offers[i].Accepted = true
-
-		// Remove the offer if it has no resources for other tasks to eat.
-		exists := d.strategy.Get(mesosTask.GetName())
-		var strategy string
-		if exists == nil {
-			strategy = "non-mux"
-		} else {
-			strategy = exists.(string)
-		}
-		if !strings.EqualFold(strategy, "mux") {
-			d.popOffer(i)
-		} else if offer.Mem == 0 || offer.Cpu == 0 {
-			d.popOffer(i)
-		}
-
-		return offer.Offer, nil
 	}
 
 	return nil, errors.New("Cannot find a suitable offer for task " + mesosTask.GetName())
