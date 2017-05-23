@@ -215,7 +215,7 @@ func (d *DefaultResourceManager) filterOnOffer(mesosTask *mesos_v1.TaskInfo, off
 }
 
 // Check if an offer has enough resources for a task's request.
-func (d *DefaultResourceManager) hasSufficentResources(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
+func (d *DefaultResourceManager) hasSufficientResources(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
 	// Eat up this offer's resources with the task's needs.
 	for _, resource := range mesosTask.Resources {
 		res := resource.GetScalar().GetValue()
@@ -258,7 +258,7 @@ func (d *DefaultResourceManager) checkStrategy(mesosTask *mesos_v1.TaskInfo) str
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(mesosTask *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
 	for i, offer := range d.offers {
-		if d.filterOnOffer(mesosTask, offer) && d.hasSufficentResources(mesosTask, offer) {
+		if d.filterOnOffer(mesosTask, offer) && d.hasSufficientResources(mesosTask, offer) {
 			// Mark this offer as accepted so that it's not returned as part of the remaining offers.
 			d.offers[i].Accepted = true
 
