@@ -1,5 +1,6 @@
 package resources
 
+// This package contains helper methods for creating mesos types.
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
@@ -8,7 +9,6 @@ import (
 	"strings"
 )
 
-// Creates a taskInfo
 func CreateTaskInfo(
 	name *string,
 	uuid *mesos_v1.TaskID,
