@@ -33,9 +33,10 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 	}
 
 	if c.ImageName != nil {
+		// Is container type explicitly set?
 		if c.ContainerType != nil {
-			var dockerContainer *mesos_v1.ContainerInfo_DockerInfo
 			if strings.ToLower(*c.ContainerType) == "docker" {
+				var dockerContainer *mesos_v1.ContainerInfo_DockerInfo
 				dockerContainer = resources.CreateContainerInfoForDocker(
 					c.ImageName,
 					mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
@@ -43,9 +44,18 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 					[]*mesos_v1.Parameter{},
 					proto.String(""), // volume driver
 				)
+
+				ret = resources.CreateDockerContainerInfo(dockerContainer, networks, vol, nil)
+			} else if strings.ToLower(*c.ContainerType) == "mesos" {
+				var container *mesos_v1.ContainerInfo_MesosInfo
+				container = resources.CreateContainerInfoForMesos(
+					resources.CreateImage(
+						*c.ImageName, "", mesos_v1.Image_DOCKER.Enum(),
+					),
+				)
+				ret = resources.CreateMesosContainerInfo(container, networks, vol, nil)
 			}
-			ret = resources.CreateDockerContainerInfo(dockerContainer, networks, vol, nil)
-		} else {
+		} else { // Default is MESOS
 			var container *mesos_v1.ContainerInfo_MesosInfo
 			container = resources.CreateContainerInfoForMesos(
 				resources.CreateImage(
@@ -54,7 +64,7 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 			)
 			ret = resources.CreateMesosContainerInfo(container, networks, vol, nil)
 		}
-	} else {
+	} else { // No image name was provided, commandinfo only.
 		// Mesos-container with no image.
 		ret = &mesos_v1.ContainerInfo{
 			Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
@@ -62,7 +72,6 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 			NetworkInfos: networks,
 			Volumes:      vol,
 		}
-
 	}
 
 	return ret, nil
