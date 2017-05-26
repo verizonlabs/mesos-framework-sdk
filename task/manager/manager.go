@@ -2,7 +2,6 @@ package manager
 
 import (
 	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/structures"
 )
 
 // Consts for mesos states.
@@ -36,7 +35,6 @@ type TaskManager interface {
 	State(*string) (*mesos_v1.TaskState, error)
 	AllByState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
 	TotalTasks() int
-	Tasks() structures.DistributedMap
 	All() ([]Task, error)
 }
 

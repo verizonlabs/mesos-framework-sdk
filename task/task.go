@@ -2,6 +2,7 @@ package task
 
 type ApplicationJSON struct {
 	Name        string              `json:"name"`
+	Instances   int                 `json:"instances"`
 	Resources   *ResourceJSON       `json:"resources"`
 	Command     *CommandJSON        `json:"command"`
 	Container   *ContainerJSON      `json:"container"`
