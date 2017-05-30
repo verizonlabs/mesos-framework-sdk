@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+const mapSize = 10000
+
 // Ensure we return the correct type and have initialized our internal data.
 func TestNewConcurrentMap(t *testing.T) {
 	t.Parallel()
@@ -16,7 +18,7 @@ func TestNewConcurrentMap(t *testing.T) {
 		t.Fatal("Creating a new concurrent map without a size gives the wrong type")
 	}
 
-	m = NewConcurrentMap(100)
+	m = NewConcurrentMap(mapSize)
 
 	if reflect.TypeOf(m) != reflect.TypeOf(new(ConcurrentMap)) {
 		t.Fatal("Creating a new concurrent map with a size gives the wrong type")
@@ -54,7 +56,7 @@ func TestConcurrentMap_Set(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			for k := 0; k < 10000; k++ {
+			for k := 0; k < mapSize; k++ {
 				m.Set(k*i, k*i)
 				if m.Get(k*i) != k*i {
 					t.Fatal("Could not set data in a thread-safe way")
@@ -102,7 +104,7 @@ func TestConcurrentMap_Get(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			for k := 10000; k >= 0; k-- {
+			for k := mapSize; k >= 0; k-- {
 				m.Set(k*i, k*i)
 				if m.Get(k*i) != k*i {
 					t.Fatal("Could not get data in a thread-safe way")
@@ -144,7 +146,7 @@ func TestConcurrentMap_Delete(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			for k := 0; k < 10000; k++ {
+			for k := 0; k < mapSize; k++ {
 				m.Set(k*i, k*i).Delete(k * i)
 			}
 		}(i)
@@ -194,7 +196,7 @@ func TestConcurrentMap_Iterate(t *testing.T) {
 	threads := 50
 	wg.Add(threads * 2)
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < mapSize; i++ {
 		m.Set(i, i)
 	}
 
@@ -205,7 +207,7 @@ func TestConcurrentMap_Iterate(t *testing.T) {
 			for item := range m.Iterate() {
 
 				// Maps have no ordering.
-				if item.Key.(int) >= 10000 || item.Value.(int) >= 10000 {
+				if item.Key.(int) >= mapSize || item.Value.(int) >= mapSize {
 					t.Fatal("Failed to iterate over the map concurrently")
 				}
 			}
@@ -231,4 +233,88 @@ func TestConcurrentMap_Iterate(t *testing.T) {
 	if reflect.TypeOf(m.Iterate()) != reflect.TypeOf(make(<-chan Item)) {
 		t.Fatal("Iterator is of the wrong type")
 	}
+}
+
+// Measures performance of iterating through a map.
+func BenchmarkConcurrentMap_Iterate(b *testing.B) {
+	m := NewConcurrentMap()
+	for i := 0; i < mapSize; i++ {
+		m.Set(i, i)
+	}
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		m.Iterate()
+	}
+}
+
+// Measures performance of many threads setting and reading values at the same time.
+// Gives a good indicator of performance with lots of contention using a mix of read and write locks.
+func BenchmarkConcurrentMap_SetRead(b *testing.B) {
+	m := NewConcurrentMap()
+	var wg sync.WaitGroup
+
+	// Prime our map first.
+	for i := 0; i < b.N; i++ {
+		m.Set(i, i)
+	}
+
+	wg.Add(100)
+	b.ResetTimer()
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+
+			for i := b.N; i > 0; i-- {
+				m.Set(i, i)
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			for i := b.N; i > 0; i-- {
+				m.Get(i)
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
+// Measures performance of many threads setting and deleting values at the same time.
+// Gives a good indicator of performance with lots of contention using write locks.
+func BenchmarkConcurrentMap_SetDelete(b *testing.B) {
+	m := NewConcurrentMap()
+	var wg sync.WaitGroup
+
+	// Prime our map first.
+	for i := 0; i < b.N; i++ {
+		m.Set(i, i)
+	}
+
+	wg.Add(100)
+	b.ResetTimer()
+
+	for i := 0; i < 50; i++ {
+		go func() {
+			defer wg.Done()
+
+			for i := b.N; i > 0; i-- {
+				m.Set(i, i)
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			for i := b.N; i > 0; i-- {
+				m.Delete(i)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
