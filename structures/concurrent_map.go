@@ -64,20 +64,20 @@ func (c *ConcurrentMap) Delete(key interface{}) {
 // Safely iterates over the map.
 // Provides the key/values to a channel that is returned for use by the client.
 func (c *ConcurrentMap) Iterate() <-chan Item {
-	ch := make(chan Item, c.Length())
+	c.RLock()
+	ch := make(chan Item, len(c.data))
 
 	go func() {
-		c.RLock()
 		for key, value := range c.data {
 			ch <- Item{
 				Key:   key,
 				Value: value,
 			}
 		}
-		c.RUnlock()
 
 		close(ch)
 	}()
+	c.RUnlock()
 
 	return ch
 }
