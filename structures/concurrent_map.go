@@ -67,8 +67,8 @@ func (c *ConcurrentMap) Iterate() <-chan Item {
 	c.RLock()
 	ch := make(chan Item, len(c.data))
 
-	go func() {
-		for key, value := range c.data {
+	go func(data map[interface{}]interface{}) {
+		for key, value := range data {
 			ch <- Item{
 				Key:   key,
 				Value: value,
@@ -76,7 +76,7 @@ func (c *ConcurrentMap) Iterate() <-chan Item {
 		}
 
 		close(ch)
-	}()
+	}(c.data)
 	c.RUnlock()
 
 	return ch
