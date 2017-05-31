@@ -29,6 +29,10 @@ func (m *mockConfiguration) Server() *http.Server {
 	return m.cfg.Server()
 }
 
+func (m *mockConfiguration) Mux() *http.ServeMux {
+	return m.cfg.Mux()
+}
+
 func (m *mockConfiguration) Port() int {
 	return m.cfg.Port()
 }
