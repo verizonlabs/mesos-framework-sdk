@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"net/http"
+	"strconv"
 )
 
 type Configuration interface {
@@ -12,6 +13,7 @@ type Configuration interface {
 	Path() string
 	Protocol() string
 	Server() *http.Server
+	Mux() *http.ServeMux
 	TLS() bool
 }
 
@@ -27,29 +29,36 @@ type ServerConfiguration struct {
 
 // Creates a new configuration to be used in the server.
 func NewConfiguration(cert, key, path string, port int) Configuration {
-	return &ServerConfiguration{
+	cfg := &ServerConfiguration{
 		cert: cert,
 		key:  key,
 		path: path,
 		port: port,
 		server: &http.Server{
-			TLSConfig: &tls.Config{
-				// Use only the most secure protocol version.
-				MinVersion: tls.VersionTLS12,
-				// Use very strong crypto curves.
-				CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-				PreferServerCipherSuites: true,
-				// Use very strong cipher suites (order is important here!)
-				CipherSuites: []uint16{
-					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-					tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, // Required for HTTP/2 support.
-					tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-					tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-					tls.TLS_RSA_WITH_AES_256_CBC_SHA,
-				},
-			},
+			Handler: http.DefaultServeMux,
+			Addr:    ":" + strconv.Itoa(port),
 		},
 	}
+
+	if cfg.TLS() {
+		cfg.server.TLSConfig = &tls.Config{
+			// Use only the most secure protocol version.
+			MinVersion: tls.VersionTLS12,
+			// Use very strong crypto curves.
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			PreferServerCipherSuites: true,
+			// Use very strong cipher suites (order is important here!)
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, // Required for HTTP/2 support.
+				tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+				tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			},
+		}
+	}
+
+	return cfg
 }
 
 // Gets the path to the TLS certificate.
@@ -66,14 +75,19 @@ func (c *ServerConfiguration) Key() string {
 func (c *ServerConfiguration) Protocol() string {
 	if c.tls {
 		return "https"
-	} else {
-		return "http"
 	}
+
+	return "http"
 }
 
-// Returns the custom HTTP server with TLS configuration.
+// Returns the internal HTTP server.
 func (c *ServerConfiguration) Server() *http.Server {
 	return c.server
+}
+
+// Returns the internal HTTP server's handler that's used for routing.
+func (c *ServerConfiguration) Mux() *http.ServeMux {
+	return c.server.Handler.(*http.ServeMux)
 }
 
 // If a TLS certificate and key have been provided then TLS is enabled.
