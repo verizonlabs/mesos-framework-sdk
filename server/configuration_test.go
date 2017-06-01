@@ -86,7 +86,7 @@ func BenchmarkServerConfiguration_Protocol(b *testing.B) {
 func TestNewConfiguration(t *testing.T) {
 	t.Parallel()
 
-	cfg := NewConfiguration("", "", "", 0)
+	cfg := NewConfiguration("test", "test", "", 0)
 	tlsCfg := cfg.Server().TLSConfig
 	if tlsCfg.MinVersion != tls.VersionTLS12 {
 		t.Fatal("Supported TLS version is weak")
