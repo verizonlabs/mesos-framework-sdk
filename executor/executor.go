@@ -94,7 +94,7 @@ func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 }
 
 func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) error {
-	update := exec.Call{
+	update := &exec.Call{
 		FrameworkId: e.frameworkId,
 		ExecutorId:  e.executorId,
 		Type:        exec.Call_UPDATE.Enum(),
@@ -108,7 +108,7 @@ func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) error {
 }
 
 func (e *DefaultExecutor) Message(data []byte) error {
-	message := exec.Call{
+	message := &exec.Call{
 		FrameworkId: e.frameworkId,
 		ExecutorId:  e.executorId,
 		Type:        exec.Call_MESSAGE.Enum(),
