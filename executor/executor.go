@@ -81,10 +81,6 @@ func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 		},
 	}
 
-	// If we disconnect we need to reset the stream ID. For this reason always start with a fresh stream ID.
-	// Otherwise we'll never be able to reconnect.
-	e.client.SetStreamID("")
-
 	resp, err := e.client.Request(subscribe)
 	if err != nil {
 		return err
