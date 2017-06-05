@@ -15,10 +15,12 @@ type Executor interface {
 }
 
 type DefaultExecutor struct {
-	frameworkId *mesos_v1.FrameworkID
-	executorId  *mesos_v1.ExecutorID
-	client      client.Client
-	logger      logging.Logger
+	frameworkId    *mesos_v1.FrameworkID
+	executorId     *mesos_v1.ExecutorID
+	client         client.Client
+	logger         logging.Logger
+	unackedTasks   map[*mesos_v1.TaskID]mesos_v1.TaskInfo
+	unackedUpdates map[string]exec.Call_Update
 }
 
 // Creates a new default executor
@@ -29,11 +31,43 @@ func NewDefaultExecutor(
 	lgr logging.Logger) Executor {
 
 	return &DefaultExecutor{
-		frameworkId: f,
-		executorId:  e,
-		client:      c,
-		logger:      lgr,
+		frameworkId:    f,
+		executorId:     e,
+		client:         c,
+		logger:         lgr,
+		unackedTasks:   make(map[*mesos_v1.TaskID]mesos_v1.TaskInfo),
+		unackedUpdates: make(map[string]exec.Call_Update),
 	}
+}
+
+func (e *DefaultExecutor) unacknowledgedTasks() []*mesos_v1.TaskInfo {
+	numTasks := len(e.unackedTasks)
+	if numTasks == 0 {
+		return nil
+	}
+
+	tasks := make([]*mesos_v1.TaskInfo, 0, numTasks)
+	for task := range e.unackedTasks {
+		t := e.unackedTasks[task]
+		tasks = append(tasks, &t)
+	}
+
+	return tasks
+}
+
+func (e *DefaultExecutor) unacknowledgedUpdates() []*exec.Call_Update {
+	numUpdates := len(e.unackedUpdates)
+	if numUpdates == 0 {
+		return nil
+	}
+
+	updates := make([]*exec.Call_Update, 0, numUpdates)
+	for update := range e.unackedUpdates {
+		u := e.unackedUpdates[update]
+		updates = append(updates, &u)
+	}
+
+	return updates
 }
 
 func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
@@ -41,6 +75,10 @@ func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 		FrameworkId: e.frameworkId,
 		ExecutorId:  e.executorId,
 		Type:        exec.Call_SUBSCRIBE.Enum(),
+		Subscribe: &exec.Call_Subscribe{
+			UnacknowledgedTasks:   e.unacknowledgedTasks(),
+			UnacknowledgedUpdates: e.unacknowledgedUpdates(),
+		},
 	}
 
 	// If we disconnect we need to reset the stream ID. For this reason always start with a fresh stream ID.
