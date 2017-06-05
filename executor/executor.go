@@ -10,8 +10,8 @@ import (
 
 type Executor interface {
 	Subscribe(chan *exec.Event) error
-	Update(*mesos_v1.TaskStatus)
-	Message([]byte)
+	Update(*mesos_v1.TaskStatus) error
+	Message([]byte) error
 }
 
 type DefaultExecutor struct {
@@ -93,7 +93,7 @@ func (e *DefaultExecutor) Subscribe(eventChan chan *exec.Event) error {
 	}
 }
 
-func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
+func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) error {
 	update := exec.Call{
 		FrameworkId: e.frameworkId,
 		ExecutorId:  e.executorId,
@@ -102,10 +102,12 @@ func (e *DefaultExecutor) Update(taskStatus *mesos_v1.TaskStatus) {
 			Status: taskStatus,
 		},
 	}
-	e.client.Request(update)
+	_, err := e.client.Request(update)
+
+	return err
 }
 
-func (e *DefaultExecutor) Message(data []byte) {
+func (e *DefaultExecutor) Message(data []byte) error {
 	message := exec.Call{
 		FrameworkId: e.frameworkId,
 		ExecutorId:  e.executorId,
@@ -114,5 +116,7 @@ func (e *DefaultExecutor) Message(data []byte) {
 			Data: data,
 		},
 	}
-	e.client.Request(message)
+	_, err := e.client.Request(message)
+
+	return err
 }
