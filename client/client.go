@@ -48,12 +48,14 @@ func NewClient(master string, logger logging.Logger) Client {
 func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	var data []byte
 	var err error
+	var executorCall bool
 
 	switch call := call.(type) {
 	case *mesos_v1_scheduler.Call:
 		data, err = proto.Marshal(call)
 	case *mesos_v1_executor.Call:
 		data, err = proto.Marshal(call)
+		executorCall = true
 	}
 
 	if err != nil {
@@ -70,7 +72,9 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	req.Header.Set("Accept", "application/x-protobuf")
 	req.Header.Set("Accept-Encoding", "gzip")
 	req.Header.Set("User-Agent", "mesos-framework-sdk")
-	if c.streamID != "" {
+
+	// Executors do not use stream IDs.
+	if !executorCall && c.streamID != "" {
 		req.Header.Set("Mesos-Stream-Id", c.streamID)
 	}
 
@@ -84,25 +88,29 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 		return nil, errors.New(string(msg))
 	}
 
-	// We will only get the stream ID after a SUBSCRIBE call.
-	streamID := resp.Header.Get("Mesos-Stream-Id")
-	if streamID != "" {
-		c.streamID = streamID
-	}
+	// Our master detection only applies to the scheduler.
+	if !executorCall {
 
-	if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
-		c.logger.Emit(logging.INFO, "Old master: %s", c.master)
-
-		master := resp.Header.Get("Location")
-		if strings.Contains(master, "http") {
-			c.master = master
-		} else {
-			c.master = "http:" + master
+		// We will only get the stream ID after a SUBSCRIBE call.
+		streamID := resp.Header.Get("Mesos-Stream-Id")
+		if streamID != "" {
+			c.streamID = streamID
 		}
 
-		c.logger.Emit(logging.INFO, "New master: %s", c.master)
+		if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
+			c.logger.Emit(logging.INFO, "Old master: %s", c.master)
 
-		return nil, errors.New("Redirect encountered, new master found")
+			master := resp.Header.Get("Location")
+			if strings.Contains(master, "http") {
+				c.master = master
+			} else {
+				c.master = "http:" + master
+			}
+
+			c.logger.Emit(logging.INFO, "New master: %s", c.master)
+
+			return nil, errors.New("Redirect encountered, new master found")
+		}
 	}
 
 	return resp, nil
