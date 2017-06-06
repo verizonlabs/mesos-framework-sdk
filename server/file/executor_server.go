@@ -32,8 +32,9 @@ func (s *executorServer) executorHandlers() {
 func (s *executorServer) executorBinary(w http.ResponseWriter, r *http.Request) {
 	_, err := os.Stat(s.cfg.Path()) // check if the file exists first.
 	if err != nil {
-		s.logger.Emit(logging.ERROR, "%s does not exist: %s", s.cfg.Path(), err.Error())
-		os.Exit(1)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(err.Error()))
+		return
 	}
 
 	if s.cfg.TLS() {
