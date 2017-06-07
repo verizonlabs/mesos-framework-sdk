@@ -11,7 +11,7 @@ func (m MockKVStore) CreateWithLease(key, value string, ttl int64) (int64, error
 	return 0, nil
 }
 func (m MockKVStore) Read(key string) (string, error) {
-	return "", nil
+	return "1", nil
 }
 func (m MockKVStore) ReadAll(key string) (map[string]string, error) {
 	return map[string]string{"key": "value"}, nil
@@ -61,7 +61,7 @@ func (m MockEtcd) CreateWithLease(key, value string, ttl int64) (int64, error) {
 	return 0, nil
 }
 func (m MockEtcd) Read(key string) (string, error) {
-	return "", nil
+	return "1", nil
 }
 func (m MockEtcd) ReadAll(key string) (map[string]string, error) {
 	return map[string]string{"key": "value"}, nil
