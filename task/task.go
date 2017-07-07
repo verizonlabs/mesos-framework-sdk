@@ -19,7 +19,27 @@ type TimeRetry struct {
 }
 
 type HealthCheckJSON struct {
-	Endpoint *string `json:"endpoint"`
+	DelaySeconds        *float64         `json:"delay,omitempty"`
+	IntervalSeconds     *float64         `json:"interval,omitempty"`
+	TimeoutSeconds      *float64         `json:"timeout,omitempty"`
+	ConsecutiveFailures *uint32          `json:"fails,omitempty"`
+	GracePeriodSeconds  *float64         `json:"graceperiod,omitempty"`
+	Type                *string          `json:"type,omitempty"`
+	Command             *CommandJSON     `json:"command,omitempty"`
+	Http                *HTTPHealthCheck `json:"http,omitempty"`
+	Tcp                 *TCPHealthCheck  `json:"tcp,omitempty"`
+	Endpoint            *string          `json:"endpoint,omitempty"`
+}
+
+type HTTPHealthCheck struct {
+	Scheme   *string  `json:"scheme"`
+	Port     *int32   `json:"port"`
+	Path     *string  `json:"path"`
+	Statuses []uint32 `json:"statuses"`
+}
+
+type TCPHealthCheck struct {
+	Port int
 }
 
 type Filter struct {

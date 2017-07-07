@@ -179,7 +179,8 @@ func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.Agent
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
 	}
-	if resp.StatusCode == 200 {
+	// Kill returns a 202 accepted.
+	if resp.StatusCode == 202 {
 		c.logger.Emit(logging.INFO, "Killing task %s", taskId.GetValue())
 	}
 	return resp, err

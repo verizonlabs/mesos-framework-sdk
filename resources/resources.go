@@ -15,14 +15,16 @@ func CreateTaskInfo(
 	cmd *mesos_v1.CommandInfo,
 	res []*mesos_v1.Resource,
 	con *mesos_v1.ContainerInfo,
+	hc *mesos_v1.HealthCheck,
 	labels *mesos_v1.Labels) *mesos_v1.TaskInfo {
 	return &mesos_v1.TaskInfo{
-		Name:      name,
-		TaskId:    uuid,
-		Resources: res,
-		Command:   cmd,
-		Container: con,
-		Labels:    labels,
+		Name:        name,
+		TaskId:      uuid,
+		Resources:   res,
+		Command:     cmd,
+		Container:   con,
+		HealthCheck: hc,
+		Labels:      labels,
 	}
 
 }
