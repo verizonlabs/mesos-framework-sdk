@@ -6,7 +6,7 @@ import (
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 	"strings"
-	"github.com/golang/protobuf/proto"
+	"mesos-framework-sdk/utils"
 )
 
 var (
@@ -77,7 +77,7 @@ func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error)
 func parseTcpHealthCheck(json *task.TCPHealthCheck) (*mesos_v1.HealthCheck_TCPCheckInfo, error) {
 	tcp := &mesos_v1.HealthCheck_TCPCheckInfo{}
 	if json.Port > MIN_PORT && json.Port < MAX_PORT {
-		tcp.Port = proto.Uint32(uint32(json.Port))
+		tcp.Port = utils.ProtoUint32(uint32(json.Port))
 	} else {
 		return nil, InvalidPortRange
 	}
@@ -95,7 +95,7 @@ func parseHTTPHealthCheck(json *task.HTTPHealthCheck) (*mesos_v1.HealthCheck_HTT
 		}
 	} else {
 		// Assume HTTPS.
-		json.Scheme = proto.String("https")
+		json.Scheme = utils.ProtoString("https")
 	}
 
 	if json.Path != nil {
@@ -106,7 +106,7 @@ func parseHTTPHealthCheck(json *task.HTTPHealthCheck) (*mesos_v1.HealthCheck_HTT
 	}
 
 	if json.Port != nil {
-		http.Port = proto.Uint32(uint32(*json.Port))
+		http.Port = utils.ProtoUint32(uint32(*json.Port))
 	}
 	// What statuses are accepted.
 	if len(json.Statuses) > 0 {
@@ -142,8 +142,8 @@ func parseCommandHealthCheck(json *task.CommandJSON) (*mesos_v1.CommandInfo, err
 		for _, kv := range json.Environment.Variables {
 			for k, v := range kv {
 				env.Variables = append(env.Variables, &mesos_v1.Environment_Variable{
-					Name:  proto.String(k),
-					Value: proto.String(v),
+					Name:  utils.ProtoString(k),
+					Value: utils.ProtoString(v),
 				})
 			}
 		}
