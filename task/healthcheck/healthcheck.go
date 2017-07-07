@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
-	"src/github.com/golang/protobuf/proto"
 	"strings"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
