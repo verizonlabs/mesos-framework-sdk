@@ -27,11 +27,14 @@ const (
 )
 
 func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error) {
+	hc := &mesos_v1.HealthCheck{}
+	if json == nil {
+		return hc, nil
+	}
 	if json.Type == nil {
 		return nil, NoHealthCheckType
 	}
 
-	hc := &mesos_v1.HealthCheck{}
 	switch strings.ToLower(*json.Type) {
 	case "tcp":
 		hc.Type = mesos_v1.HealthCheck_TCP.Enum()
