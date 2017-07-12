@@ -27,6 +27,10 @@ const (
 )
 
 func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error) {
+	if json == nil {
+		return nil, nil
+	}
+
 	if json.Type == nil {
 		return nil, NoHealthCheckType
 	}
