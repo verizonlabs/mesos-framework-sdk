@@ -79,7 +79,7 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) (*http.Respons
 
 	resp, err := c.Client.Request(call)
 	if err != nil {
-		return nil, err
+		return resp, err
 	} else {
 		// recordio.Decode() returns an err struct
 		return resp, recordio.Decode(resp.Body, eventChan)
