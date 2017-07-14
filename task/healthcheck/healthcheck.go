@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
-	"strings"
 	"mesos-framework-sdk/utils"
+	"strings"
 )
 
 var (
