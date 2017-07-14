@@ -69,10 +69,7 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 		return nil, err
 	}
 
-	if c.auth != "" {
-		req.Header.Set("Authorization", "Basic "+c.auth)
-	}
-
+	req.Header.Set("Authorization", c.auth)
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("Accept", "application/x-protobuf")
