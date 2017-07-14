@@ -24,14 +24,16 @@ type Client interface {
 type DefaultClient struct {
 	streamID string
 	master   string
+	auth     string
 	client   *http.Client
 	logger   logging.Logger
 }
 
 // Return a new HTTP client.
-func NewClient(master string, logger logging.Logger) Client {
+func NewClient(master, auth string, logger logging.Logger) Client {
 	return &DefaultClient{
 		master: master,
+		auth:   auth,
 		client: &http.Client{
 			Transport: &http.Transport{
 				Dial: (&net.Dialer{
@@ -65,6 +67,10 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
+	}
+
+	if c.auth != "" {
+		req.Header.Set("Authorization", "Basic "+c.auth)
 	}
 
 	req.Header.Set("Connection", "keep-alive")
