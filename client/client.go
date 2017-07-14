@@ -87,15 +87,16 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	}
 
 	if resp.StatusCode >= 400 {
-		var msg string
 		if resp.StatusCode == 401 {
-			msg = "Unauthorized"
-		} else {
-			data, _ := ioutil.ReadAll(resp.Body)
-			msg = string(data)
+			return resp, errors.New("Unauthorized")
 		}
 
-		return resp, errors.New(msg)
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return resp, err
+		}
+
+		return resp, errors.New(string(data))
 	}
 
 	// Our master detection only applies to the scheduler.
