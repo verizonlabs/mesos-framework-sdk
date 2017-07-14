@@ -21,7 +21,7 @@ var l = new(mockLogger)
 func TestNewClient(t *testing.T) {
 	t.Parallel()
 
-	c := NewClient("test", l)
+	c := NewClient("test", "", l)
 	if c.StreamID() != "" {
 		t.Fatal("Stream ID should be empty")
 	}
@@ -30,7 +30,7 @@ func TestNewClient(t *testing.T) {
 // Measures performance of creating a new client.
 func BenchmarkNewClient(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		NewClient("test", l)
+		NewClient("test", "", l)
 	}
 }
 
@@ -39,7 +39,7 @@ func TestDefaultClient_SetStreamID(t *testing.T) {
 	t.Parallel()
 
 	id := "id"
-	c := NewClient("test", l)
+	c := NewClient("test", "", l)
 	c.SetStreamID(id)
 	if c.StreamID() != id {
 		t.Fatal("Stream ID was not set correctly")
@@ -48,7 +48,7 @@ func TestDefaultClient_SetStreamID(t *testing.T) {
 
 // Measures performance of setting our stream ID.
 func BenchmarkDefaultClient_StreamID(b *testing.B) {
-	c := NewClient("test", l)
+	c := NewClient("test", "", l)
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
@@ -68,7 +68,7 @@ func TestDefaultClient_Request(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(ts.URL, l)
+	c := NewClient(ts.URL, "", l)
 
 	_, err := c.Request(nil)
 	if err != nil {
@@ -97,7 +97,7 @@ func TestDefaultClient_Request(t *testing.T) {
 		t.Fatal("Executor request could not be made successfully: " + err.Error())
 	}
 
-	c = NewClient("", l)
+	c = NewClient("", "", l)
 	_, err = c.Request(nil)
 
 	if err == nil {
@@ -109,7 +109,7 @@ func TestDefaultClient_Request(t *testing.T) {
 	}))
 	defer ts2.Close()
 
-	c = NewClient(ts2.URL, l)
+	c = NewClient(ts2.URL, "", l)
 	_, err = c.Request(&mesos_v1_scheduler.Call{})
 
 	if err == nil {
@@ -121,7 +121,7 @@ func TestDefaultClient_Request(t *testing.T) {
 	}))
 	defer ts3.Close()
 
-	c = NewClient(ts3.URL, l)
+	c = NewClient(ts3.URL, "", l)
 	_, err = c.Request(&mesos_v1_scheduler.Call{})
 
 	if err == nil {
@@ -136,7 +136,7 @@ func BenchmarkDefaultClient_Request(b *testing.B) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(ts.URL, l)
+	c := NewClient(ts.URL, "", l)
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
