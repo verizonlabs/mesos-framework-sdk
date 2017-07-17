@@ -115,7 +115,7 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 			if strings.Contains(master, "http") {
 				c.master = master
 			} else {
-				c.master = "http:" + master
+				c.master = resp.Request.URL.Scheme + ":" + master
 			}
 
 			c.logger.Emit(logging.INFO, "New master: %s", c.master)
