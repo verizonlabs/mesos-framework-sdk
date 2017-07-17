@@ -43,7 +43,6 @@ type Scheduler interface {
 // Default Scheduler can be used as a higher-level construct.
 type DefaultScheduler struct {
 	frameworkInfo *mesos_v1.FrameworkInfo
-	secret        string
 	Client        client.Client
 	logger        logging.Logger
 	IsSuppressed  bool
