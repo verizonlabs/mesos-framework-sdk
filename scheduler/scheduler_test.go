@@ -148,7 +148,9 @@ func TestDefaultScheduler_Kill(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
-	c := client.NewClient(srv.URL, l)
+	c := client.NewClient(client.ClientData{
+		Endpoint: srv.URL,
+	}, l)
 	s := NewDefaultScheduler(c, i, l)
 	val := "test"
 	taskId := &mesos_v1.TaskID{Value: &val}
@@ -311,7 +313,9 @@ func TestDefaultScheduler_Subscribe(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
-	c := client.NewClient(srv.URL, l)
+	c := client.NewClient(client.ClientData{
+		Endpoint: srv.URL,
+	}, l)
 	s := NewDefaultScheduler(c, i, l)
 	val := "test"
 	s.frameworkInfo = &mesos_v1.FrameworkInfo{
@@ -345,7 +349,9 @@ func BenchmarkDefaultScheduler_Subscribe(b *testing.B) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
-	c := client.NewClient(srv.URL, l)
+	c := client.NewClient(client.ClientData{
+		Endpoint: srv.URL,
+	}, l)
 	s := NewDefaultScheduler(c, i, l)
 	c.Request(nil)
 	b.ResetTimer()

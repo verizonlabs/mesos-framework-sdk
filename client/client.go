@@ -20,18 +20,23 @@ type Client interface {
 	SetStreamID(string) Client
 }
 
+type ClientData struct {
+	Endpoint string
+	Auth     string
+}
+
 // HTTP client.
 type DefaultClient struct {
 	streamID string
-	master   string
+	data     ClientData
 	client   *http.Client
 	logger   logging.Logger
 }
 
 // Return a new HTTP client.
-func NewClient(master string, logger logging.Logger) Client {
+func NewClient(data ClientData, logger logging.Logger) Client {
 	return &DefaultClient{
-		master: master,
+		data: data,
 		client: &http.Client{
 			Transport: &http.Transport{
 				Dial: (&net.Dialer{
@@ -45,6 +50,7 @@ func NewClient(master string, logger logging.Logger) Client {
 }
 
 // Makes a new request with data and sends it to the server.
+// Determines whether the request/response should be handled for an executor or a scheduler.
 func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	var data []byte
 	var err error
@@ -62,11 +68,12 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.master, bytes.NewReader(data))
+	req, err := http.NewRequest("POST", c.data.Endpoint, bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
 
+	req.Header.Set("Authorization", c.data.Auth)
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Content-Type", "application/x-protobuf")
 	req.Header.Set("Accept", "application/x-protobuf")
@@ -84,8 +91,16 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 	}
 
 	if resp.StatusCode >= 400 {
-		msg, _ := ioutil.ReadAll(resp.Body)
-		return nil, errors.New(string(msg))
+		if resp.StatusCode == 401 {
+			return resp, errors.New("Unauthorized")
+		}
+
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return resp, err
+		}
+
+		return resp, errors.New(string(data))
 	}
 
 	// Our master detection only applies to the scheduler.
@@ -98,16 +113,16 @@ func (c *DefaultClient) Request(call interface{}) (*http.Response, error) {
 		}
 
 		if resp.StatusCode == http.StatusTemporaryRedirect || resp.StatusCode == http.StatusPermanentRedirect {
-			c.logger.Emit(logging.INFO, "Old master: %s", c.master)
+			c.logger.Emit(logging.INFO, "Old master: %s", c.data.Endpoint)
 
 			master := resp.Header.Get("Location")
 			if strings.Contains(master, "http") {
-				c.master = master
+				c.data.Endpoint = master
 			} else {
-				c.master = "http:" + master
+				c.data.Endpoint = resp.Request.URL.Scheme + ":" + master
 			}
 
-			c.logger.Emit(logging.INFO, "New master: %s", c.master)
+			c.logger.Emit(logging.INFO, "New master: %s", c.data.Endpoint)
 
 			return nil, errors.New("Redirect encountered, new master found")
 		}
