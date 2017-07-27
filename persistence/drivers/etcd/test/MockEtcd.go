@@ -5,12 +5,6 @@ import "errors"
 type MockKVStore struct{}
 
 func validateData(key, value string) error {
-
-	// Skip validating the leader since we want this to be empty to break out of our HA loop.
-	if key == "/leader" {
-		return nil
-	}
-
 	if key == "" {
 		return errors.New("No key was defined")
 	}
