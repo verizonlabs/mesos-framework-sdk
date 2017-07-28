@@ -67,29 +67,12 @@ func CreateMesosInfo(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
 	}
 }
 
-// Creates a cpu share that is not reserved.
-func CreateCpu(cpuShare float64, role string) *mesos_v1.Resource {
+func CreateResource(name, role string, value float64) *mesos_v1.Resource {
 	resource := &mesos_v1.Resource{
-		Name: utils.ProtoString("cpus"),
+		Name: utils.ProtoString(name),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
-			Value: utils.ProtoFloat64(cpuShare),
-		},
-	}
-	if role != "" {
-		resource.Role = utils.ProtoString(role)
-	}
-
-	return resource
-}
-
-// Creates a memory share that is not reserved.
-func CreateMem(memShare float64, role string) *mesos_v1.Resource {
-	resource := &mesos_v1.Resource{
-		Name: utils.ProtoString("mem"),
-		Type: mesos_v1.Value_SCALAR.Enum(),
-		Scalar: &mesos_v1.Value_Scalar{
-			Value: utils.ProtoFloat64(memShare),
+			Value: utils.ProtoFloat64(value),
 		},
 	}
 	if role != "" {

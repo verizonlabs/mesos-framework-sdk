@@ -15,8 +15,8 @@ func ParseResources(res *task.ResourceJSON) ([]*mesos_v1.Resource, error) {
 			"Please make sure you set cpu and mem properly.")
 	}
 
-	var cpu = resources.CreateCpu(res.Cpu, res.Role)
-	var mem = resources.CreateMem(res.Mem, res.Role)
+	var cpu = resources.CreateResource("cpus", res.Role, res.Cpu)
+	var mem = resources.CreateResource("mem", res.Role, res.Mem)
 	var disk, err = resources.CreateDisk(res.Disk, res.Role)
 	if err != nil {
 		return nil, err
