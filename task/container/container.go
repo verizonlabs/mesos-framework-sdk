@@ -43,7 +43,7 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		// Default to the UCR.
 		return resources.CreateContainerInfo(&mesos_v1.ContainerInfo{
 			Mesos: resources.CreateMesosInfo(resources.CreateImage(
-				mesos_v1.Image_APPC.Enum(), *c.ImageName),
+				mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
 			),
 		}, networks, vol, nil), nil
 	}
@@ -70,7 +70,7 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 	return resources.CreateContainerInfo(
 		&mesos_v1.ContainerInfo{
 			Mesos: resources.CreateMesosInfo(
-				resources.CreateImage(mesos_v1.Image_APPC.Enum(), *c.ImageName),
+				resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
 			),
 		}, networks, vol, nil), nil
 }
