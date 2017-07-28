@@ -5,6 +5,7 @@ import (
 	"errors"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
+	"mesos-framework-sdk/utils"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -46,7 +47,7 @@ func CreateContainerInfo(c *mesos_v1.ContainerInfo,
 	}
 }
 
-func CreateContainerInfoForDocker(
+func CreateDockerInfo(
 	img *string,
 	network *mesos_v1.ContainerInfo_DockerInfo_Network,
 	ports []*mesos_v1.ContainerInfo_DockerInfo_PortMapping,
@@ -62,7 +63,7 @@ func CreateContainerInfoForDocker(
 	}
 }
 
-func CreateContainerInfoForMesos(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
+func CreateMesosInfo(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
 	return &mesos_v1.ContainerInfo_MesosInfo{
 		Image: img,
 	}
@@ -195,20 +196,14 @@ func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source 
 }
 
 func CreateImage(name string, id string, imgType *mesos_v1.Image_Type) *mesos_v1.Image {
-	if *imgType == mesos_v1.Image_DOCKER {
-		return &mesos_v1.Image{
-			Type: imgType,
-			Docker: &mesos_v1.Image_Docker{
-				Name: proto.String(name),
-			},
-		}
-	}
-
 	return &mesos_v1.Image{
 		Type: imgType,
+		Docker: &mesos_v1.Image_Docker{
+			Name: utils.ProtoString(name),
+		},
 		Appc: &mesos_v1.Image_Appc{
-			Name: proto.String(name),
-			Id:   proto.String(id),
+			Name: utils.ProtoString(name),
+			Id:   utils.ProtoString(id),
 		},
 	}
 }
