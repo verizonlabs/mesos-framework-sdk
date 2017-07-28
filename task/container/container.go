@@ -11,7 +11,6 @@ import (
 )
 
 func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
-	var ret *mesos_v1.ContainerInfo
 	if c == nil {
 		return nil, nil
 	}
@@ -31,40 +30,47 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		}
 	}
 
-	if c.ImageName != nil {
-		// Is container type explicitly set?
-		var container *mesos_v1.ContainerInfo
-		if c.ContainerType != nil {
-			if strings.ToLower(*c.ContainerType) == "docker" {
-				container.Docker = resources.CreateDockerInfo(
-					resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
+	if c.ImageName == nil {
+		return &mesos_v1.ContainerInfo{
+			Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
+			NetworkInfos: networks,
+			Volumes:      vol,
+		}, nil
+	}
+
+	if c.ContainerType == nil {
+
+		// Default to the UCR.
+		return resources.CreateContainerInfo(&mesos_v1.ContainerInfo{
+			Mesos: resources.CreateMesosInfo(resources.CreateImage(
+				mesos_v1.Image_APPC.Enum(), *c.ImageName),
+			),
+		}, networks, vol, nil), nil
+	}
+
+	if strings.ToLower(*c.ContainerType) == "docker" {
+		return resources.CreateContainerInfo(
+			&mesos_v1.ContainerInfo{
+				Docker: resources.CreateDockerInfo(
+					resources.CreateImage(
+						mesos_v1.Image_DOCKER.Enum(),
+						*c.ImageName,
+					),
 					mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
 					nil,
 					nil,
-					nil, // volume driver
-				)
-
-				ret = resources.CreateContainerInfo(container, networks, vol, nil)
-			} else if strings.ToLower(*c.ContainerType) == "mesos" {
-				container.Mesos = resources.CreateMesosInfo(
-					resources.CreateImage(mesos_v1.Image_APPC.Enum(), *c.ImageName),
-				)
-				ret = resources.CreateContainerInfo(container, networks, vol, nil)
-			}
-		} else { // Default is MESOS
-			container.Mesos = resources.CreateMesosInfo(resources.CreateImage(
-				mesos_v1.Image_DOCKER.Enum(), *c.ImageName))
-			ret = resources.CreateContainerInfo(container, networks, vol, nil)
-		}
-	} else { // No image name was provided, commandinfo only.
-		// Mesos-container with no image.
-		ret = &mesos_v1.ContainerInfo{
-			Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
-			Mesos:        &mesos_v1.ContainerInfo_MesosInfo{},
-			NetworkInfos: networks,
-			Volumes:      vol,
-		}
+					nil,
+				),
+			},
+			networks,
+			vol,
+			nil), nil
 	}
 
-	return ret, nil
+	return resources.CreateContainerInfo(
+		&mesos_v1.ContainerInfo{
+			Mesos: resources.CreateMesosInfo(
+				resources.CreateImage(mesos_v1.Image_APPC.Enum(), *c.ImageName),
+			),
+		}, networks, vol, nil), nil
 }
