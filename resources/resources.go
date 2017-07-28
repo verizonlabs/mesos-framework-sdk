@@ -90,17 +90,7 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 		return nil, errors.New("Disk allocation size is 0 or less than 0.  Must be a positive float value.")
 	}
 
-	resource := &mesos_v1.Resource{
-		Name: utils.ProtoString("disk"),
-		Type: mesos_v1.Value_SCALAR.Enum(),
-		Scalar: &mesos_v1.Value_Scalar{
-			Value: utils.ProtoFloat64(disk.Size),
-		},
-	}
-	if role != "" {
-		resource.Role = utils.ProtoString(role)
-	}
-
+	resource := CreateResource("disk", role, disk.Size)
 	if disk.Source == nil {
 
 		// This is a root disk.
