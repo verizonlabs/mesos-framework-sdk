@@ -132,11 +132,12 @@ func (d *DefaultResourceManager) filterOnAttrText(f []string, a *mesos_v1.Attrib
 		if strings.ToLower(term) == strings.ToLower(a.GetText().GetValue()) {
 			// The term we're looking for exists.
 			return true
-		} else {
-			// Immediately return false if not all match.
-			return false
 		}
+
+		// Immediately return false if not all match.
+		return false
 	}
+
 	return false
 }
 
@@ -244,15 +245,14 @@ func (d *DefaultResourceManager) hasSufficientResources(mesosTask *mesos_v1.Task
 
 // Check if we have a deployment strategy, if so, return it, otherwise return the default.
 func (d *DefaultResourceManager) checkStrategy(mesosTask *mesos_v1.TaskInfo) string {
-	var strategy string
+
 	// Remove the offer if it has no resources for other tasks to eat.
 	exists := d.strategy.Get(mesosTask.GetName())
 	if exists == nil {
-		strategy = "non-mux"
-	} else {
-		strategy = exists.(string)
+		return "non-mux"
 	}
-	return strategy
+
+	return exists.(string)
 }
 
 // Assign an offer to a task.
