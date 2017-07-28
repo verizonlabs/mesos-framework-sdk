@@ -2,11 +2,12 @@ package etcd
 
 import (
 	"context"
+	"runtime"
+	"time"
+
 	etcd "github.com/coreos/etcd/clientv3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"runtime"
-	"time"
 )
 
 type Etcd struct {
@@ -150,7 +151,7 @@ func (e *Etcd) Delete(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), e.ctxTimeout)
 	defer cancel()
 
-	_, err := e.client.Delete(ctx, key)
+	_, err := e.client.Delete(ctx, key, etcd.WithPrefix())
 
 	return err
 }
