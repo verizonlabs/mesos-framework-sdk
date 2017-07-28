@@ -117,8 +117,6 @@ func CreateMem(memShare float64, role string) *mesos_v1.Resource {
 
 // Creates a disk based on given task.Disk struct.
 func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
-	// Create a diskinfo resource if required.
-	d := &mesos_v1.Resource_DiskInfo{}
 
 	// Disk must have a size.
 	if disk.Size <= 0.0 {
@@ -143,6 +141,7 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 		return nil, errors.New("Invalid Disk source passed in, must be MOUNT or PATH if specified.")
 	}
 
+	d := &mesos_v1.Resource_DiskInfo{}
 	if strings.ToLower(*disk.Source.Type) == "path" {
 		if disk.Source.Path == nil {
 
