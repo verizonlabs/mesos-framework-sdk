@@ -48,14 +48,14 @@ func CreateContainerInfo(c *mesos_v1.ContainerInfo,
 }
 
 func CreateDockerInfo(
-	img *string,
+	img *mesos_v1.Image,
 	network *mesos_v1.ContainerInfo_DockerInfo_Network,
 	ports []*mesos_v1.ContainerInfo_DockerInfo_PortMapping,
 	params []*mesos_v1.Parameter,
 	volDriver *string) *mesos_v1.ContainerInfo_DockerInfo {
 
 	return &mesos_v1.ContainerInfo_DockerInfo{
-		Image:        img,
+		Image:        img.Docker.Name,
 		Network:      network,
 		PortMappings: ports,
 		Parameters:   params,
@@ -195,7 +195,7 @@ func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source 
 	}
 }
 
-func CreateImage(name string, id string, imgType *mesos_v1.Image_Type) *mesos_v1.Image {
+func CreateImage(imgType *mesos_v1.Image_Type, name string) *mesos_v1.Image {
 	return &mesos_v1.Image{
 		Type: imgType,
 		Docker: &mesos_v1.Image_Docker{
@@ -203,7 +203,6 @@ func CreateImage(name string, id string, imgType *mesos_v1.Image_Type) *mesos_v1
 		},
 		Appc: &mesos_v1.Image_Appc{
 			Name: utils.ProtoString(name),
-			Id:   utils.ProtoString(id),
 		},
 	}
 }
