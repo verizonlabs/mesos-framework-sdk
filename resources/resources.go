@@ -3,10 +3,11 @@ package resources
 // This package contains helper methods for creating mesos types.
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 	"strings"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func CreateTaskInfo(
@@ -17,6 +18,7 @@ func CreateTaskInfo(
 	con *mesos_v1.ContainerInfo,
 	hc *mesos_v1.HealthCheck,
 	labels *mesos_v1.Labels) *mesos_v1.TaskInfo {
+
 	return &mesos_v1.TaskInfo{
 		Name:        name,
 		TaskId:      uuid,
@@ -34,6 +36,7 @@ func CreateDockerContainerInfo(
 	n []*mesos_v1.NetworkInfo,
 	v []*mesos_v1.Volume,
 	h *string) *mesos_v1.ContainerInfo {
+
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_DOCKER.Enum(),
 		Hostname:     h,
@@ -48,6 +51,7 @@ func CreateMesosContainerInfo(
 	n []*mesos_v1.NetworkInfo,
 	v []*mesos_v1.Volume,
 	h *string) *mesos_v1.ContainerInfo {
+
 	return &mesos_v1.ContainerInfo{
 		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
 		Hostname:     h,
@@ -63,6 +67,7 @@ func CreateContainerInfoForDocker(
 	ports []*mesos_v1.ContainerInfo_DockerInfo_PortMapping,
 	params []*mesos_v1.Parameter,
 	volDriver *string) *mesos_v1.ContainerInfo_DockerInfo {
+
 	return &mesos_v1.ContainerInfo_DockerInfo{
 		Image:        img,
 		Network:      network,
@@ -119,41 +124,56 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 	if disk.Size <= 0.0 {
 		return nil, errors.New("Disk allocation size is 0 or less than 0.  Must be a positive float value.")
 	}
-	// If disk source is not nil, we have a PATH or MOUNT style disk.
-	if disk.Source != nil {
-		// It's either PATH or MOUNT, it cannot be mixed.
-		if disk.Source.Type != nil {
-			// Check if we have a PATH or MOUNT type disk source.
-			if strings.ToLower(*disk.Source.Type) == "path" {
-				d.Source.Type = mesos_v1.Resource_DiskInfo_Source_PATH.Enum()
-				if disk.Source.Path != nil {
-					d.Source.Path.Root = disk.Source.Path
-				} else if disk.Source.Mount != nil {
-					// Specified PATH but gave mount.
-					return nil, errors.New("Disk source set to Path type, but set mount field. Please set path field instead.")
-				} else {
-					// Specified PATH but no fields set.
-					return nil, errors.New("Disk source set to Path type but field path not set.")
-				}
-			} else if strings.ToLower(*disk.Source.Type) == "mount" {
-				d.Source.Type = mesos_v1.Resource_DiskInfo_Source_MOUNT.Enum()
-				if disk.Source.Mount != nil {
-					d.Source.Mount.Root = disk.Source.Mount
-				} else if disk.Source.Path != nil {
-					// Specified MOUNT but gave path.
-					return nil, errors.New("Mount type given, but path field set. Please set mount instead.")
-				} else {
-					// Mount path type given, must have Mount field set.
-					return nil, errors.New("Mount type given, but no mount path set.")
-				}
-			} else {
-				return nil, errors.New("Invalid Disk source passed in, must be MOUNT or PATH if specified.")
-			}
-		} else {
-			// User specified a source field but not the type (required).
-			return nil, errors.New("Disk source set but no type given. Valid types are MOUNT or PATH.")
+
+	if disk.Source == nil {
+		return nil, errors.New("Disk source not set")
+	}
+
+	// It's either PATH or MOUNT, it cannot be mixed.
+	if disk.Source.Type == nil {
+
+		// User specified a source field but not the type (required).
+		return nil, errors.New("Disk source set but no type given. Valid types are MOUNT or PATH.")
+	}
+
+	sourceType := strings.ToLower(*disk.Source.Type)
+
+	// Check if we have a PATH or MOUNT type disk source.
+	if sourceType != "path" && sourceType != "mount" {
+		return nil, errors.New("Invalid Disk source passed in, must be MOUNT or PATH if specified.")
+	}
+
+	if strings.ToLower(*disk.Source.Type) == "path" {
+		if disk.Source.Path == nil {
+
+			// Specified PATH but no fields set.
+			return nil, errors.New("Disk source set to Path type but field path not set.")
 		}
-	} // End checking DISK SOURCE fields.
+
+		if disk.Source.Mount != nil {
+
+			// Specified PATH but gave mount.
+			return nil, errors.New("Disk source set to Path type, but set mount field. Please set path field instead.")
+		}
+
+		d.Source.Type = mesos_v1.Resource_DiskInfo_Source_PATH.Enum()
+		d.Source.Path.Root = disk.Source.Path
+	} else if strings.ToLower(*disk.Source.Type) == "mount" {
+		if disk.Source.Mount == nil {
+
+			// Mount path type given, must have Mount field set.
+			return nil, errors.New("Mount type given, but no mount path set.")
+		}
+
+		if disk.Source.Path != nil {
+
+			// Specified MOUNT but gave path.
+			return nil, errors.New("Mount type given, but path field set. Please set mount instead.")
+		}
+
+		d.Source.Type = mesos_v1.Resource_DiskInfo_Source_MOUNT.Enum()
+		d.Source.Mount.Root = disk.Source.Mount
+	}
 
 	// TODO (tim): Add in external volume capabilities.
 	// disk.Volume is for external volumes.
@@ -176,6 +196,7 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 	if role != "" {
 		resource.Role = proto.String(role)
 	}
+
 	return resource, nil
 }
 
@@ -190,24 +211,22 @@ func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source 
 }
 
 func CreateImage(name string, id string, imgType *mesos_v1.Image_Type) *mesos_v1.Image {
-	var img *mesos_v1.Image
 	if *imgType == mesos_v1.Image_DOCKER {
-		img = &mesos_v1.Image{
+		return &mesos_v1.Image{
 			Type: imgType,
 			Docker: &mesos_v1.Image_Docker{
 				Name: proto.String(name),
 			},
 		}
-	} else {
-		img = &mesos_v1.Image{
-			Type: imgType,
-			Appc: &mesos_v1.Image_Appc{
-				Name: proto.String(name),
-				Id:   proto.String(id),
-			},
-		}
 	}
-	return img
+
+	return &mesos_v1.Image{
+		Type: imgType,
+		Appc: &mesos_v1.Image_Appc{
+			Name: proto.String(name),
+			Id:   proto.String(id),
+		},
+	}
 }
 
 func CreateVolumeSource(source *mesos_v1.Volume_Source_Type,
@@ -219,13 +238,12 @@ func CreateVolumeSource(source *mesos_v1.Volume_Source_Type,
 			Type:         source,
 			DockerVolume: dockerVol,
 		}
-	} else {
-		return &mesos_v1.Volume_Source{
-			Type:        source,
-			SandboxPath: sourcePath,
-		}
 	}
 
+	return &mesos_v1.Volume_Source{
+		Type:        source,
+		SandboxPath: sourcePath,
+	}
 }
 
 func CreateCommandInfo(
