@@ -7,8 +7,6 @@ import (
 	"mesos-framework-sdk/task"
 	"mesos-framework-sdk/utils"
 	"strings"
-
-	"github.com/golang/protobuf/proto"
 )
 
 func CreateTaskInfo(
@@ -72,14 +70,14 @@ func CreateMesosInfo(img *mesos_v1.Image) *mesos_v1.ContainerInfo_MesosInfo {
 // Creates a cpu share that is not reserved.
 func CreateCpu(cpuShare float64, role string) *mesos_v1.Resource {
 	resource := &mesos_v1.Resource{
-		Name: proto.String("cpus"),
+		Name: utils.ProtoString("cpus"),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
-			Value: proto.Float64(cpuShare),
+			Value: utils.ProtoFloat64(cpuShare),
 		},
 	}
 	if role != "" {
-		resource.Role = proto.String(role)
+		resource.Role = utils.ProtoString(role)
 	}
 
 	return resource
@@ -88,14 +86,14 @@ func CreateCpu(cpuShare float64, role string) *mesos_v1.Resource {
 // Creates a memory share that is not reserved.
 func CreateMem(memShare float64, role string) *mesos_v1.Resource {
 	resource := &mesos_v1.Resource{
-		Name: proto.String("mem"),
+		Name: utils.ProtoString("mem"),
 		Type: mesos_v1.Value_SCALAR.Enum(),
 		Scalar: &mesos_v1.Value_Scalar{
-			Value: proto.Float64(memShare),
+			Value: utils.ProtoFloat64(memShare),
 		},
 	}
 	if role != "" {
-		resource.Role = proto.String(role)
+		resource.Role = utils.ProtoString(role)
 	}
 
 	return resource
@@ -184,8 +182,8 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 func CreateVolume(hostPath, containerPath string, image *mesos_v1.Image, source *mesos_v1.Volume_Source) *mesos_v1.Volume {
 	return &mesos_v1.Volume{
 		Mode:          mesos_v1.Volume_RW.Enum(),
-		HostPath:      proto.String(hostPath),
-		ContainerPath: proto.String(containerPath),
+		HostPath:      utils.ProtoString(hostPath),
+		ContainerPath: utils.ProtoString(containerPath),
 		Image:         image,
 		Source:        source,
 	}
@@ -241,7 +239,7 @@ func CreateSimpleCommandInfo(cmd *string, uris []*mesos_v1.CommandInfo_URI) *mes
 	return &mesos_v1.CommandInfo{
 		Value: cmd,
 		Uris:  uris,
-		Shell: proto.Bool(true),
+		Shell: utils.ProtoBool(true),
 	}
 }
 
