@@ -109,8 +109,23 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 		return nil, errors.New("Disk allocation size is 0 or less than 0.  Must be a positive float value.")
 	}
 
+	resource := &mesos_v1.Resource{
+		Name: utils.ProtoString("disk"),
+		Type: mesos_v1.Value_SCALAR.Enum(),
+		Scalar: &mesos_v1.Value_Scalar{
+			Value: utils.ProtoFloat64(disk.Size),
+		},
+	}
+	if role != "" {
+		resource.Role = utils.ProtoString(role)
+	}
+
 	if disk.Source == nil {
-		return nil, errors.New("Disk source not set")
+
+		// This is a root disk.
+		// Root disks map to the storage on the main operating system drive that the operator has presented to the agent.
+		// Data is mapped into the work_dir of the agent.
+		return resource, nil
 	}
 
 	// It's either PATH or MOUNT, it cannot be mixed.
@@ -162,26 +177,7 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 
 	// TODO (tim): Add in external volume capabilities.
 	// disk.Volume is for external volumes.
-
-	// Create the resource to return.
-	resource := &mesos_v1.Resource{
-		Name: proto.String("disk"),
-		Type: mesos_v1.Value_SCALAR.Enum(),
-		Scalar: &mesos_v1.Value_Scalar{
-			Value: proto.Float64(disk.Size),
-		},
-	}
-
-	// If we set our source to something, add DISK field to resource.
-	if d.Source != nil {
-		resource.Disk = d
-	}
-
-	// Set a role if one was passed in.
-	if role != "" {
-		resource.Role = proto.String(role)
-	}
-
+	resource.Disk = d
 	return resource, nil
 }
 
