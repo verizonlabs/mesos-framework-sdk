@@ -2,6 +2,9 @@ package manager
 
 import (
 	"mesos-framework-sdk/include/mesos_v1"
+	"mesos-framework-sdk/task"
+	"time"
+	"sprint/task/retry"
 )
 
 // Consts for mesos states.
@@ -26,14 +29,13 @@ const (
 // It can set the state of a task.  How the implementation holds/handles those tasks
 // is up to the end user.
 type TaskManager interface {
-	Add(*mesos_v1.TaskInfo) error
-	Delete(*mesos_v1.TaskInfo) error
-	Get(*string) (*mesos_v1.TaskInfo, error)
-	GetById(id *mesos_v1.TaskID) (*mesos_v1.TaskInfo, error)
+	Add(...*Task) error
+	Delete(...*Task) error
+	Get(*string) (*Task, error)
+	GetById(id *mesos_v1.TaskID) (*Task, error)
 	HasTask(*mesos_v1.TaskInfo) bool
-	Set(mesos_v1.TaskState, *mesos_v1.TaskInfo) error
-	State(*string) (*mesos_v1.TaskState, error)
-	AllByState(state mesos_v1.TaskState) ([]*mesos_v1.TaskInfo, error)
+	Update(...*Task) error
+	AllByState(state mesos_v1.TaskState) ([]*Task, error)
 	TotalTasks() int
 	All() ([]Task, error)
 }
@@ -41,6 +43,39 @@ type TaskManager interface {
 // Used to hold information about task states in the task manager.
 // Task and its fields should be public so that we can encode/decode this.
 type Task struct {
-	Info  *mesos_v1.TaskInfo
-	State mesos_v1.TaskState
+	Info      *mesos_v1.TaskInfo
+	State     mesos_v1.TaskState
+	Filters   []task.Filter
+	Retry     *retry.TaskRetry
+	Instances int
+	Retries   int
+	GroupInfo GroupInfo
+}
+
+type GroupInfo struct {
+	GroupName string
+	InGroup bool
+}
+
+// TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding.
+
+func (t *Task) Reschedule() {
+	t.Retry.TotalRetries += 1 // Increment retry counter.
+
+	// Minimum is 1 seconds, max is 60.
+	if t.Retry.RetryTime < 1*time.Second {
+		t.Retry.RetryTime = 1 * time.Second
+	} else if t.Retry.RetryTime  > time.Minute {
+		t.Retry.RetryTime  = time.Minute
+	}
+
+	delay := t.Retry.RetryTime  + t.Retry.RetryTime
+
+	// Total backoff can't be greater than 5 minutes.
+	if delay > 5*time.Minute {
+		delay = 5 * time.Minute
+	}
+
+	t.Retry.RetryTime  = delay // update with new time.
+	t.State = mesos_v1.TaskState_TASK_UNKNOWN
 }
