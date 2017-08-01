@@ -4,7 +4,7 @@ import (
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 	"time"
-	"sprint/task/retry"
+	"mesos-framework-sdk/task/retry"
 )
 
 // Consts for mesos states.
@@ -54,7 +54,7 @@ type Task struct {
 
 type GroupInfo struct {
 	GroupName string
-	InGroup bool
+	InGroup   bool
 }
 
 // TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding.
@@ -65,17 +65,17 @@ func (t *Task) Reschedule() {
 	// Minimum is 1 seconds, max is 60.
 	if t.Retry.RetryTime < 1*time.Second {
 		t.Retry.RetryTime = 1 * time.Second
-	} else if t.Retry.RetryTime  > time.Minute {
-		t.Retry.RetryTime  = time.Minute
+	} else if t.Retry.RetryTime > time.Minute {
+		t.Retry.RetryTime = time.Minute
 	}
 
-	delay := t.Retry.RetryTime  + t.Retry.RetryTime
+	delay := t.Retry.RetryTime + t.Retry.RetryTime
 
 	// Total backoff can't be greater than 5 minutes.
 	if delay > 5*time.Minute {
 		delay = 5 * time.Minute
 	}
 
-	t.Retry.RetryTime  = delay // update with new time.
+	t.Retry.RetryTime = delay // update with new time.
 	t.State = mesos_v1.TaskState_TASK_UNKNOWN
 }
