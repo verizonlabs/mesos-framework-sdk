@@ -30,47 +30,34 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		}
 	}
 
+	// Default to the UCR.
+	container := &mesos_v1.ContainerInfo{
+		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
+		NetworkInfos: networks,
+		Volumes:      vol,
+	}
+
 	if c.ImageName == nil {
-		return &mesos_v1.ContainerInfo{
-			Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
-			NetworkInfos: networks,
-			Volumes:      vol,
-		}, nil
+		return container, nil
 	}
 
-	if c.ContainerType == nil {
+	container.Mesos = resources.CreateMesosInfo(
+		resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
+	)
+	container.Docker = resources.CreateDockerInfo(
+		resources.CreateImage(
+			mesos_v1.Image_DOCKER.Enum(),
+			*c.ImageName,
+		),
+		mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
+		nil,
+		nil,
+		nil,
+	)
 
-		// Default to the UCR.
-		return resources.CreateContainerInfo(&mesos_v1.ContainerInfo{
-			Mesos: resources.CreateMesosInfo(resources.CreateImage(
-				mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
-			),
-		}, networks, vol, nil), nil
+	if c.ContainerType != nil && strings.ToLower(*c.ContainerType) == "docker" {
+		container.Type = mesos_v1.ContainerInfo_DOCKER.Enum()
 	}
 
-	if strings.ToLower(*c.ContainerType) == "docker" {
-		return resources.CreateContainerInfo(
-			&mesos_v1.ContainerInfo{
-				Docker: resources.CreateDockerInfo(
-					resources.CreateImage(
-						mesos_v1.Image_DOCKER.Enum(),
-						*c.ImageName,
-					),
-					mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
-					nil,
-					nil,
-					nil,
-				),
-			},
-			networks,
-			vol,
-			nil), nil
-	}
-
-	return resources.CreateContainerInfo(
-		&mesos_v1.ContainerInfo{
-			Mesos: resources.CreateMesosInfo(
-				resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
-			),
-		}, networks, vol, nil), nil
+	return container, nil
 }

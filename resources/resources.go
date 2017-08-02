@@ -30,21 +30,6 @@ func CreateTaskInfo(
 
 }
 
-func CreateContainerInfo(c *mesos_v1.ContainerInfo,
-	n []*mesos_v1.NetworkInfo,
-	v []*mesos_v1.Volume,
-	h *string) *mesos_v1.ContainerInfo {
-
-	return &mesos_v1.ContainerInfo{
-		Type:         c.Type,
-		Hostname:     h,
-		Docker:       c.Docker,
-		Mesos:        c.Mesos,
-		NetworkInfos: n,
-		Volumes:      v,
-	}
-}
-
 func CreateDockerInfo(
 	img *mesos_v1.Image,
 	network *mesos_v1.ContainerInfo_DockerInfo_Network,

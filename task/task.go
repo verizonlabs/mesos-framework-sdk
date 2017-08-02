@@ -77,13 +77,9 @@ type DiskPersistence struct {
 }
 
 type CommandJSON struct {
-	Cmd         *string      `json:"cmd"`
-	Uris        []UriJSON    `json:"uris"`
-	Environment *Environment `json:"environment"`
-}
-
-type Environment struct {
-	Variables []map[string]string `json:"vars"`
+	Cmd         *string           `json:"cmd"`
+	Uris        []UriJSON         `json:"uris"`
+	Environment map[string]string `json:"environment"`
 }
 
 type ContainerJSON struct {
