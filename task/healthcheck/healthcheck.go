@@ -53,11 +53,6 @@ func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error)
 		hc.Http = http
 	case "command":
 		hc.Type = mesos_v1.HealthCheck_COMMAND.Enum()
-		cmd, err := parseCommandHealthCheck(json.Command)
-		if err != nil {
-			return nil, err
-		}
-		hc.Command = cmd
 	default:
 		return nil, InvalidHealthCheckType
 	}
@@ -118,41 +113,4 @@ func parseHTTPHealthCheck(json *task.HTTPHealthCheck) (*mesos_v1.HealthCheck_HTT
 	}
 
 	return http, nil
-}
-
-func parseCommandHealthCheck(json *task.CommandJSON) (*mesos_v1.CommandInfo, error) {
-	cmd := &mesos_v1.CommandInfo{}
-
-	if json.Cmd != nil {
-		cmd.Value = json.Cmd
-	}
-
-	if len(json.Uris) > 0 {
-		uris := []*mesos_v1.CommandInfo_URI{}
-		for _, u := range json.Uris {
-			uris = append(uris, &mesos_v1.CommandInfo_URI{
-				Extract:    u.Extract,
-				Executable: u.Execute,
-				Value:      u.Uri,
-			})
-		}
-		cmd.Uris = uris
-	}
-
-	if json.Environment != nil {
-		env := &mesos_v1.Environment{
-			Variables: make([]*mesos_v1.Environment_Variable, 0),
-		}
-		for _, kv := range json.Environment.Variables {
-			for k, v := range kv {
-				env.Variables = append(env.Variables, &mesos_v1.Environment_Variable{
-					Name:  utils.ProtoString(k),
-					Value: utils.ProtoString(v),
-				})
-			}
-		}
-		cmd.Environment = env
-	}
-
-	return cmd, nil
 }
