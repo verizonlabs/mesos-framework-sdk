@@ -35,29 +35,28 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		Type:         mesos_v1.ContainerInfo_MESOS.Enum(),
 		NetworkInfos: networks,
 		Volumes:      vol,
-		Mesos: resources.CreateMesosInfo(
-			resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
-		),
 	}
 
 	if c.ImageName == nil {
-		container.Mesos = nil
-
 		return container, nil
 	}
 
+	container.Mesos = resources.CreateMesosInfo(
+		resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
+	)
+	container.Docker = resources.CreateDockerInfo(
+		resources.CreateImage(
+			mesos_v1.Image_DOCKER.Enum(),
+			*c.ImageName,
+		),
+		mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
+		nil,
+		nil,
+		nil,
+	)
+
 	if c.ContainerType != nil && strings.ToLower(*c.ContainerType) == "docker" {
 		container.Type = mesos_v1.ContainerInfo_DOCKER.Enum()
-		container.Docker = resources.CreateDockerInfo(
-			resources.CreateImage(
-				mesos_v1.Image_DOCKER.Enum(),
-				*c.ImageName,
-			),
-			mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
-			nil,
-			nil,
-			nil,
-		)
 	}
 
 	return container, nil
