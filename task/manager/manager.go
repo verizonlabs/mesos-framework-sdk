@@ -48,7 +48,7 @@ type Task struct {
 	Filters   []task.Filter
 	Retry     *retry.TaskRetry
 	Instances int
-	Retries   int
+	IsKill    bool
 	GroupInfo GroupInfo
 }
 
@@ -57,10 +57,10 @@ type GroupInfo struct {
 	InGroup   bool
 }
 
-// TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding.
+// TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding?
 
-func (t *Task) Reschedule() {
-	t.Retry.TotalRetries += 1 // Increment retry counter.
+func (t *Task) Reschedule(revive chan *Task) {
+	t.State = mesos_v1.TaskState_TASK_STAGING
 
 	// Minimum is 1 seconds, max is 60.
 	if t.Retry.RetryTime < 1*time.Second {
@@ -77,5 +77,17 @@ func (t *Task) Reschedule() {
 	}
 
 	t.Retry.RetryTime = delay // update with new time.
-	t.State = mesos_v1.TaskState_TASK_UNKNOWN
+
+	reschedule := time.NewTimer(t.Retry.RetryTime)
+	go func() {
+		<-reschedule.C
+		if t.Retry.TotalRetries >= t.Retry.MaxRetries {
+			// kill itself.
+			t.IsKill = true
+		}
+		t.State = mesos_v1.TaskState_TASK_UNKNOWN
+		revive <- t // Revive itself.
+		t.Retry.TotalRetries += 1 // Increment retry counter.
+	}()
+
 }
