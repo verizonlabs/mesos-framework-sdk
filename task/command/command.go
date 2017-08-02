@@ -2,35 +2,28 @@ package command
 
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
+	"mesos-framework-sdk/utils"
 )
 
 func ParseCommandInfo(cmd *task.CommandJSON) (*mesos_v1.CommandInfo, error) {
 	if cmd == nil {
 		return nil, errors.New("Empty commandInfo.")
 	}
-	mesosCmd := &mesos_v1.CommandInfo{}
-	uriList := []*mesos_v1.CommandInfo_URI{}
-	if cmd.Cmd != nil {
-		// NOTE (tim): Should we split on white space and use first arg as "value" and the remainder as args?
-		// A command value isn't required since the commandInfo can be used just to fetch URI's
-		mesosCmd.Value = cmd.Cmd
+
+	mesosCmd := &mesos_v1.CommandInfo{
+		Value:       cmd.Cmd,
+		Environment: &mesos_v1.Environment{},
 	}
+	uriList := []*mesos_v1.CommandInfo_URI{}
 
 	if cmd.Environment != nil {
-		vars := []*mesos_v1.Environment_Variable{}
-		for _, env := range cmd.Environment.Variables {
-			for k, v := range env {
-				vars = append(vars, &mesos_v1.Environment_Variable{
-					Name:  proto.String(k),
-					Value: proto.String(v),
-				})
-			}
-		}
-		mesosCmd.Environment = &mesos_v1.Environment{
-			Variables: vars,
+		for name, value := range cmd.Environment {
+			mesosCmd.Environment.Variables = append(mesosCmd.Environment.Variables, &mesos_v1.Environment_Variable{
+				Name:  utils.ProtoString(name),
+				Value: utils.ProtoString(value),
+			})
 		}
 	}
 
@@ -49,5 +42,6 @@ func ParseCommandInfo(cmd *task.CommandJSON) (*mesos_v1.CommandInfo, error) {
 	if len(mesosCmd.Uris) == 0 && cmd.Cmd == nil {
 		return nil, errors.New("CommandInfo is empty even though a command JSON param was passed in.")
 	}
+
 	return mesosCmd, nil
 }
