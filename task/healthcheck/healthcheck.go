@@ -26,7 +26,7 @@ const (
 	MAX_PORT                     int     = 65535
 )
 
-func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error) {
+func ParseHealthCheck(json *task.HealthCheckJSON, c *mesos_v1.CommandInfo) (*mesos_v1.HealthCheck, error) {
 	if json == nil {
 		return nil, nil
 	}
@@ -53,6 +53,7 @@ func ParseHealthCheck(json *task.HealthCheckJSON) (*mesos_v1.HealthCheck, error)
 		hc.Http = http
 	case "command":
 		hc.Type = mesos_v1.HealthCheck_COMMAND.Enum()
+		hc.Command = c
 	default:
 		return nil, InvalidHealthCheckType
 	}
