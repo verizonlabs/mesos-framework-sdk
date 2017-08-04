@@ -1,15 +1,15 @@
 package task
 
 type ApplicationJSON struct {
-	Name        string              `json:"name"`
-	Instances   int                 `json:"instances"`
-	Resources   *ResourceJSON       `json:"resources"`
-	Command     *CommandJSON        `json:"command"`
-	Container   *ContainerJSON      `json:"container"`
-	HealthCheck *HealthCheckJSON    `json:"healthcheck"`
-	Labels      []map[string]string `json:"labels"`
-	Filters     []Filter            `json:"filters"`
-	Retry       *TimeRetry          `json:"retry"`
+	Name        string            `json:"name"`
+	Instances   int               `json:"instances"`
+	Resources   *ResourceJSON     `json:"resources"`
+	Command     *CommandJSON      `json:"command"`
+	Container   *ContainerJSON    `json:"container"`
+	HealthCheck *HealthCheckJSON  `json:"healthcheck"`
+	Labels      map[string]string `json:"labels"`
+	Filters     []Filter          `json:"filters"`
+	Retry       *TimeRetry        `json:"retry"`
 }
 
 type TimeRetry struct {
