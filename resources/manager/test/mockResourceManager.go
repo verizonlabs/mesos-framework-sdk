@@ -4,6 +4,7 @@ import (
 	"errors"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
+	"mesos-framework-sdk/task/manager"
 )
 
 type MockResourceManager struct{}
@@ -24,7 +25,7 @@ func (m MockResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
 
 }
 
-func (m MockResourceManager) Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
+func (m MockResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, error) {
 	return &mesos_v1.Offer{}, nil
 }
 
