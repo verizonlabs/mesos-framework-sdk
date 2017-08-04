@@ -7,6 +7,9 @@ import (
 	"mesos-framework-sdk/task"
 	"strconv"
 	"strings"
+	"mesos-framework-sdk/task/manager"
+	"fmt"
+	"os"
 )
 
 /*
@@ -17,9 +20,7 @@ type (
 	ResourceManager interface {
 		AddOffers(offers []*mesos_v1.Offer)
 		HasResources() bool
-		AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error
-		ClearFilters(t *mesos_v1.TaskInfo)
-		Assign(task *mesos_v1.TaskInfo) (*mesos_v1.Offer, error)
+		Assign(task *manager.Task) (*mesos_v1.Offer, error)
 		Offers() []*mesos_v1.Offer
 	}
 
@@ -88,35 +89,6 @@ func (d *DefaultResourceManager) HasResources() bool {
 	return len(d.offers) > 0
 }
 
-// Tells our resource manager to apply filters to this task.
-func (d *DefaultResourceManager) AddFilter(t *mesos_v1.TaskInfo, filters []task.Filter) error {
-	for _, f := range filters {
-		switch strings.ToLower(f.Type) {
-		case "ranges", "set", "text", "scalar":
-			val := d.filterOn.Get(t.GetName())
-			// Initial set, append set
-			if val == nil {
-				d.filterOn.Set(t.GetName(), []task.Filter{{Type: f.Type, Value: f.Value}})
-			} else {
-				list := val.([]task.Filter)
-				list = append(list, task.Filter{Type: f.Type, Value: f.Value})
-				d.filterOn.Set(t.GetName(), list)
-			}
-		case "strategy":
-			d.strategy.Set(t.GetName(), f.Value[0])
-		default:
-			return errors.New("Invalid filter passed in: " + f.Type + ". Allowed filters are SCALAR, TEXT, SET, RANGES, and STRATEGY.")
-		}
-	}
-
-	return nil
-}
-
-func (d *DefaultResourceManager) ClearFilters(t *mesos_v1.TaskInfo) {
-	d.filterOn.Delete(t.GetName()) // Deletes all filters on a task.
-	d.strategy.Delete(t.GetName()) // Deletes the strategy.
-}
-
 // Swaps current element with last, then sets the entire slice to the slice without the last element.
 // Faster than taking two slices around the element and re-combining them since no resizing occurs
 // and we don't care about order.
@@ -156,12 +128,18 @@ func (d *DefaultResourceManager) filterOnAttrScalar(f []string, a *mesos_v1.Attr
 	return false
 }
 
+// filter with attributes, does ANY (i.e. OR's)
+// TODO (tim): Allow end user to set for "best effort" and "strict" requirements for filters?
 func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) bool {
+	fmt.Fprintf(os.Stdout, "FILTERS %v\n", f)
 	for _, filter := range f {
-		// Range over all of our attributes.
 		for _, attr := range offer.Attributes {
+			fmt.Fprintf(os.Stdout, "ON ATRR %v\n", attr)
 			switch attr.GetType() {
 			case SCALAR:
+				if d.filterOnAttrScalar(filter.Value, attr) {
+					return true
+				}
 			case TEXT:
 				if d.filterOnAttrText(filter.Value, attr) {
 					return true
@@ -203,22 +181,20 @@ func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resourc
 }
 
 // If a task has offer filters but the offer doesn't satisfy them, return false, otherwise true.
-func (d *DefaultResourceManager) filterOnOffer(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
-	// If this task has filters, make sure to filter on them.
-	if filter := d.filterOn.Get(mesosTask.GetName()); filter != nil {
-		validOffer := d.filter(filter.([]task.Filter), offer.Offer)
-		if !validOffer {
-			// We don't care about this offer since it does't match our params.
-			return false
-		}
+func (d *DefaultResourceManager) filterOnOffer(task *manager.Task, offer *MesosOfferResources) bool {
+	fmt.Fprintf(os.Stdout, "ON OFFER %v, checking task %v\n", offer, task)
+	validOffer := d.filter(task.Filters, offer.Offer)
+	if !validOffer {
+		// We don't care about this offer since it does't match our params.
+		return false
 	}
 	return true
 }
 
 // Check if an offer has enough resources for a task's request.
-func (d *DefaultResourceManager) hasSufficientResources(mesosTask *mesos_v1.TaskInfo, offer *MesosOfferResources) bool {
+func (d *DefaultResourceManager) hasSufficientResources(task *manager.Task, offer *MesosOfferResources) bool {
 	// Eat up this offer's resources with the task's needs.
-	for _, resource := range mesosTask.Resources {
+	for _, resource := range task.Info.Resources {
 		res := resource.GetScalar().GetValue()
 
 		switch resource.GetName() {
@@ -243,26 +219,18 @@ func (d *DefaultResourceManager) hasSufficientResources(mesosTask *mesos_v1.Task
 	return true
 }
 
-// Check if we have a deployment strategy, if so, return it, otherwise return the default.
-func (d *DefaultResourceManager) checkStrategy(mesosTask *mesos_v1.TaskInfo) string {
-
-	// Remove the offer if it has no resources for other tasks to eat.
-	exists := d.strategy.Get(mesosTask.GetName())
-	if exists == nil {
-		return "non-mux"
-	}
-
-	return exists.(string)
-}
-
 // Assign an offer to a task.
-func (d *DefaultResourceManager) Assign(mesosTask *mesos_v1.TaskInfo) (*mesos_v1.Offer, error) {
+func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, error) {
 	for i, offer := range d.offers {
-		if d.filterOnOffer(mesosTask, offer) && d.hasSufficientResources(mesosTask, offer) {
+		if len(task.Filters) == 0 {
+			d.popOffer(i)
+			return offer.Offer, nil
+		}
+		if d.filterOnOffer(task, offer) && d.hasSufficientResources(task, offer) {
 			// Mark this offer as accepted so that it's not returned as part of the remaining offers.
 			d.offers[i].Accepted = true
 
-			if !strings.EqualFold(d.checkStrategy(mesosTask), "mux") {
+			if !strings.EqualFold(task.Info.GetName(), "mux") {
 				d.popOffer(i)
 			} else if offer.Mem == 0 || offer.Cpu == 0 {
 				d.popOffer(i)
@@ -272,7 +240,7 @@ func (d *DefaultResourceManager) Assign(mesosTask *mesos_v1.TaskInfo) (*mesos_v1
 		}
 	}
 
-	return nil, errors.New("Cannot find a suitable offer for task " + mesosTask.GetName())
+	return nil, errors.New("Cannot find a suitable offer for task " + task.Info.GetName())
 }
 
 // Returns a list of offers that have not been altered and returned to the client for accept calls.
