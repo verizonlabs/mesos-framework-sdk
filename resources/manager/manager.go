@@ -8,8 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"mesos-framework-sdk/task/manager"
-	"fmt"
-	"os"
 )
 
 /*
@@ -131,10 +129,8 @@ func (d *DefaultResourceManager) filterOnAttrScalar(f []string, a *mesos_v1.Attr
 // filter with attributes, does ANY (i.e. OR's)
 // TODO (tim): Allow end user to set for "best effort" and "strict" requirements for filters?
 func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) bool {
-	fmt.Fprintf(os.Stdout, "FILTERS %v\n", f)
 	for _, filter := range f {
 		for _, attr := range offer.Attributes {
-			fmt.Fprintf(os.Stdout, "ON ATRR %v\n", attr)
 			switch attr.GetType() {
 			case SCALAR:
 				if d.filterOnAttrScalar(filter.Value, attr) {
@@ -182,7 +178,6 @@ func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resourc
 
 // If a task has offer filters but the offer doesn't satisfy them, return false, otherwise true.
 func (d *DefaultResourceManager) filterOnOffer(task *manager.Task, offer *MesosOfferResources) bool {
-	fmt.Fprintf(os.Stdout, "ON OFFER %v, checking task %v\n", offer, task)
 	validOffer := d.filter(task.Filters, offer.Offer)
 	if !validOffer {
 		// We don't care about this offer since it does't match our params.

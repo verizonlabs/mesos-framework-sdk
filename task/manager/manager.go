@@ -5,6 +5,7 @@ import (
 	"mesos-framework-sdk/task"
 	"time"
 	"mesos-framework-sdk/task/retry"
+	"sync"
 )
 
 // Consts for mesos states.
@@ -43,6 +44,7 @@ type TaskManager interface {
 // Used to hold information about task states in the task manager.
 // Task and its fields should be public so that we can encode/decode this.
 type Task struct {
+	lock      sync.Mutex
 	Info      *mesos_v1.TaskInfo
 	State     mesos_v1.TaskState
 	Filters   []task.Filter
@@ -60,6 +62,8 @@ type GroupInfo struct {
 // TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding?
 
 func (t *Task) Reschedule(revive chan *Task) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.State = mesos_v1.TaskState_TASK_STAGING
 
 	// Minimum is 1 seconds, max is 60.
