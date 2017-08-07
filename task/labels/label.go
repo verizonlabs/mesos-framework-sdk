@@ -2,26 +2,25 @@ package labels
 
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
+	"mesos-framework-sdk/utils"
 )
 
-func ParseLabels(lbs []map[string]string) (*mesos_v1.Labels, error) {
-	labels := make([]*mesos_v1.Label, 0)
-	if lbs != nil {
-		for _, labelList := range lbs {
-			for k, v := range labelList {
-				if k != "" || v != "" {
-					label := &mesos_v1.Label{
-						Key:   proto.String(k),
-						Value: proto.String(v),
-					}
-					labels = append(labels, label)
-				} else {
-					return nil, errors.New("Empty key or value passed in.")
-				}
-			}
-		}
+func ParseLabels(labels map[string]string) (*mesos_v1.Labels, error) {
+	if labels == nil {
+		return nil, nil
 	}
-	return &mesos_v1.Labels{Labels: labels}, nil
+
+	l := &mesos_v1.Labels{}
+	for name, value := range labels {
+		if name == "" || value == "" {
+			return nil, errors.New("Empty key or value passed in")
+		}
+		l.Labels = append(l.Labels, &mesos_v1.Label{
+			Key:   utils.ProtoString(name),
+			Value: utils.ProtoString(value),
+		})
+	}
+
+	return l, nil
 }
