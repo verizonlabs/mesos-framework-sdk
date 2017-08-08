@@ -1,11 +1,12 @@
 package manager
 
 import (
+	"encoding/json"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
-	"time"
 	"mesos-framework-sdk/task/retry"
 	"sync"
+	"time"
 )
 
 // Consts for mesos states.
@@ -59,17 +60,16 @@ type GroupInfo struct {
 	InGroup   bool
 }
 
-
-func NewTask(i *mesos_v1.TaskInfo, s mesos_v1.TaskState, f []task.Filter, r *retry.TaskRetry, n int, g GroupInfo) *Task{
+func NewTask(i *mesos_v1.TaskInfo, s mesos_v1.TaskState, f []task.Filter, r *retry.TaskRetry, n int, g GroupInfo) *Task {
 	return &Task{
-		Info: i,
-		State: s,
-		Filters: f,
-		Retry: r,
+		Info:      i,
+		State:     s,
+		Filters:   f,
+		Retry:     r,
 		Instances: n,
 		GroupInfo: g,
-		IsKill: false,
-		lock: sync.Mutex{},
+		IsKill:    false,
+		lock:      sync.Mutex{},
 	}
 }
 
@@ -104,8 +104,28 @@ func (t *Task) Reschedule(revive chan *Task) {
 			t.IsKill = true
 		}
 		t.State = mesos_v1.TaskState_TASK_UNKNOWN
-		revive <- t // Revive itself.
+		revive <- t               // Revive itself.
 		t.Retry.TotalRetries += 1 // Increment retry counter.
 	}()
 
+}
+
+// Encode encodes the task for transport.
+func (t *Task) Encode() ([]byte, error) {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, err
+}
+
+// Decode Decodes task data back into the task type.
+func (t *Task) Decode(data []byte) (*Task, error) {
+	err := json.Unmarshal(data, t)
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
 }

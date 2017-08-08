@@ -60,6 +60,7 @@ func CreateResource(name, role string, value float64) *mesos_v1.Resource {
 			Value: utils.ProtoFloat64(value),
 		},
 	}
+
 	if role != "" {
 		resource.Role = utils.ProtoString(role)
 	}
