@@ -59,6 +59,20 @@ type GroupInfo struct {
 	InGroup   bool
 }
 
+
+func NewTask(i *mesos_v1.TaskInfo, s mesos_v1.TaskState, f []task.Filter, r *retry.TaskRetry, n int, g GroupInfo) *Task{
+	return &Task{
+		Info: i,
+		State: s,
+		Filters: f,
+		Retry: r,
+		Instances: n,
+		GroupInfo: g,
+		IsKill: false,
+		lock: sync.Mutex{},
+	}
+}
+
 // TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding?
 
 func (t *Task) Reschedule(revive chan *Task) {
