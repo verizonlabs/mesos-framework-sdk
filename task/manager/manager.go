@@ -1,10 +1,12 @@
 package manager
 
 import (
+	"encoding/json"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
-	"time"
 	"mesos-framework-sdk/task/retry"
+	"sync"
+	"time"
 )
 
 // Consts for mesos states.
@@ -37,12 +39,13 @@ type TaskManager interface {
 	Update(...*Task) error
 	AllByState(state mesos_v1.TaskState) ([]*Task, error)
 	TotalTasks() int
-	All() ([]Task, error)
+	All() ([]*Task, error)
 }
 
 // Used to hold information about task states in the task manager.
 // Task and its fields should be public so that we can encode/decode this.
 type Task struct {
+	lock      sync.Mutex
 	Info      *mesos_v1.TaskInfo
 	State     mesos_v1.TaskState
 	Filters   []task.Filter
@@ -57,9 +60,24 @@ type GroupInfo struct {
 	InGroup   bool
 }
 
+func NewTask(i *mesos_v1.TaskInfo, s mesos_v1.TaskState, f []task.Filter, r *retry.TaskRetry, n int, g GroupInfo) *Task {
+	return &Task{
+		Info:      i,
+		State:     s,
+		Filters:   f,
+		Retry:     r,
+		Instances: n,
+		GroupInfo: g,
+		IsKill:    false,
+		lock:      sync.Mutex{},
+	}
+}
+
 // TODO (tim): Create a serialize/deserialize mechanism from string <-> struct to avoid costly encoding?
 
 func (t *Task) Reschedule(revive chan *Task) {
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	t.State = mesos_v1.TaskState_TASK_STAGING
 
 	// Minimum is 1 seconds, max is 60.
@@ -86,8 +104,28 @@ func (t *Task) Reschedule(revive chan *Task) {
 			t.IsKill = true
 		}
 		t.State = mesos_v1.TaskState_TASK_UNKNOWN
-		revive <- t // Revive itself.
+		revive <- t               // Revive itself.
 		t.Retry.TotalRetries += 1 // Increment retry counter.
 	}()
 
+}
+
+// Encode encodes the task for transport.
+func (t *Task) Encode() ([]byte, error) {
+	data, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, err
+}
+
+// Decode Decodes task data back into the task type.
+func (t *Task) Decode(data []byte) (*Task, error) {
+	err := json.Unmarshal(data, t)
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
 }
