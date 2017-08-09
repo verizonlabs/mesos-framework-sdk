@@ -39,7 +39,7 @@ type TaskManager interface {
 	Update(...*Task) error
 	AllByState(state mesos_v1.TaskState) ([]*Task, error)
 	TotalTasks() int
-	All() ([]Task, error)
+	All() ([]*Task, error)
 }
 
 // Used to hold information about task states in the task manager.
