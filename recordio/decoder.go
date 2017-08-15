@@ -3,12 +3,13 @@ package recordio
 import (
 	"bufio"
 	"errors"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"mesos-framework-sdk/include/mesos_v1_executor"
 	"mesos-framework-sdk/include/mesos_v1_scheduler"
 	"strconv"
 	"strings"
+
+	"github.com/golang/protobuf/proto"
 )
 
 // Decode continually reads and constructs events from the Mesos stream.
@@ -26,7 +27,7 @@ func Decode(data io.ReadCloser, events interface{}) error {
 			return errors.New("RecordIO message length is not a number: " + err.Error())
 		}
 
-		buffer := make([]byte, lengthInt)
+		buffer := make([]byte, 0, lengthInt)
 		n, err := io.ReadFull(reader, buffer)
 		if n != lengthInt {
 			return errors.New("Amount of bytes read does not match the RecordIO message length")
