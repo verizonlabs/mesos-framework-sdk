@@ -114,7 +114,7 @@ func (e *Etcd) ReadAll(key string) (map[string]string, error) {
 	}
 
 	if len(resp.Kvs) > 0 {
-		kvs := make(map[string]string)
+		kvs := make(map[string]string, len(resp.Kvs))
 		for _, value := range resp.Kvs {
 			kvs[string(value.Key)] = string(value.Value)
 		}
