@@ -53,3 +53,5 @@ The only custom logic one needs to write is the event controller.  This is a sor
 When a certain event  occurs, you define how you react to those events.  Please see the examples section to see an implementation of this.
 
 The interface is within the scheduler/events package.
+
+### [License](LICENSE) ###
