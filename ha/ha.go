@@ -26,10 +26,8 @@ const (
 
 // Interface for a single Node in an HA configuration.
 type Node interface {
-	Name() (string, error)   // How do we uniquely identify this node.
-	Status() (Status, error) // What is the status of this node?
-	Communicate()            // Our communication channel
-	Election()               // Kick off an election.
+	Communicate() // Our communication channel
+	Election()    // Kick off an election.
 	CreateLeader() error
 	GetLeader() (string, error)
 }
