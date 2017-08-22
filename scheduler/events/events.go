@@ -31,6 +31,5 @@ type SchedulerEvent interface {
 	Error(*mesos_v1_scheduler.Event_Error)
 	InverseOffer(*mesos_v1_scheduler.Event_InverseOffers)
 	RescindInverseOffer(*mesos_v1_scheduler.Event_RescindInverseOffer)
-	Run()
-	Listen()
+	Listen(chan *mesos_v1_scheduler.Event)
 }
