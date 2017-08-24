@@ -21,7 +21,7 @@ import (
 
 // Generates a UUID using random bytes from a secure source.
 func Uuid() []byte {
-	b := make([]byte, 0, 16)
+	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
 		panic("Failed to generate UUID")

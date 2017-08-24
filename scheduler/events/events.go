@@ -14,7 +14,10 @@
 
 package events
 
-import "mesos-framework-sdk/include/mesos_v1_scheduler"
+import (
+	"mesos-framework-sdk/include/mesos_v1_scheduler"
+	"mesos-framework-sdk/task/manager"
+)
 
 /*
 The events package will hook in how an end user wants to deal with events received by the scheduler.
@@ -31,6 +34,7 @@ type SchedulerEvent interface {
 	Error(*mesos_v1_scheduler.Event_Error)
 	InverseOffer(*mesos_v1_scheduler.Event_InverseOffers)
 	RescindInverseOffer(*mesos_v1_scheduler.Event_RescindInverseOffer)
-	Run()
-	Listen()
+	Reschedule(*manager.Task)
+	Signals()
+	Run(*mesos_v1_scheduler.Event)
 }

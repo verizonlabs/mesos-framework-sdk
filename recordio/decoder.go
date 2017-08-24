@@ -41,7 +41,7 @@ func Decode(data io.ReadCloser, events interface{}) error {
 			return errors.New("RecordIO message length is not a number: " + err.Error())
 		}
 
-		buffer := make([]byte, 0, lengthInt)
+		buffer := make([]byte, lengthInt)
 		n, err := io.ReadFull(reader, buffer)
 		if n != lengthInt {
 			return errors.New("Amount of bytes read does not match the RecordIO message length")
