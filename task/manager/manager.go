@@ -46,6 +46,7 @@ const (
 // is up to the end user.
 type TaskManager interface {
 	Add(...*Task) error
+	Restore(*Task)
 	Delete(...*Task) error
 	Get(*string) (*Task, error)
 	GetGroup(*Task) ([]*Task, error)
