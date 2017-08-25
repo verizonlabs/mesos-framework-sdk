@@ -46,6 +46,7 @@ const (
 // is up to the end user.
 type TaskManager interface {
 	Add(...*Task) error
+	Restore(*Task)
 	Delete(...*Task) error
 	Get(*string) (*Task, error)
 	GetById(id *mesos_v1.TaskID) (*Task, error)
