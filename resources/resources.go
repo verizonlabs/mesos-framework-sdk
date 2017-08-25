@@ -131,13 +131,11 @@ func CreateDisk(disk task.Disk, role string) (*mesos_v1.Resource, error) {
 		d.Source.Path.Root = disk.Source.Path
 	} else if strings.ToLower(*disk.Source.Type) == "mount" {
 		if disk.Source.Mount == nil {
-
 			// Mount path type given, must have Mount field set.
 			return nil, errors.New("Mount type given, but no mount path set.")
 		}
 
 		if disk.Source.Path != nil {
-
 			// Specified MOUNT but gave path.
 			return nil, errors.New("Mount type given, but path field set. Please set mount instead.")
 		}

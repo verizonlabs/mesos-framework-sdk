@@ -17,7 +17,6 @@ package manager
 import (
 	"errors"
 	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/structures"
 	"mesos-framework-sdk/task"
 	"mesos-framework-sdk/task/manager"
 	"strconv"
@@ -38,18 +37,15 @@ type (
 
 	// A resource manager implementation.
 	DefaultResourceManager struct {
-		offers   []*MesosOfferResources
-		filterOn structures.DistributedMap
-		strategy structures.DistributedMap
+		offers []*MesosOfferResources
 	}
 
 	// Holds offer data
 	MesosOfferResources struct {
-		Offer    *mesos_v1.Offer
-		Cpu      float64
-		Mem      float64
-		Disk     *mesos_v1.Resource_DiskInfo
-		Accepted bool
+		Offer *mesos_v1.Offer
+		Cpu   float64
+		Mem   float64
+		Disk  *mesos_v1.Resource_DiskInfo
 	}
 )
 
@@ -63,9 +59,7 @@ const (
 // Creates a default resource manager implementation.
 func NewDefaultResourceManager() *DefaultResourceManager {
 	return &DefaultResourceManager{
-		offers:   make([]*MesosOfferResources, 0),
-		filterOn: structures.NewConcurrentMap(0),
-		strategy: structures.NewConcurrentMap(0),
+		offers: make([]*MesosOfferResources, 0),
 	}
 }
 
@@ -74,6 +68,7 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 	// No matter what, we clear offers on this call to make sure
 	// we don't have stale offers that are already declined.
 	d.clearOffers()
+	// Organize each offer into a MesosOfferResource struct.
 	for _, offer := range offers {
 		mesosOffer := &MesosOfferResources{}
 		for _, resource := range offer.Resources {
@@ -87,6 +82,7 @@ func (d *DefaultResourceManager) AddOffers(offers []*mesos_v1.Offer) {
 			}
 		}
 		mesosOffer.Offer = offer
+		// Append to the slice of offers.
 		d.offers = append(d.offers, mesosOffer)
 	}
 }
@@ -121,7 +117,6 @@ func (d *DefaultResourceManager) filterOnAttrText(f []string, a *mesos_v1.Attrib
 		// Immediately return false if not all match.
 		return false
 	}
-
 	return false
 }
 
@@ -163,6 +158,7 @@ func (d *DefaultResourceManager) filter(f []task.Filter, offer *mesos_v1.Offer) 
 	return false
 }
 
+// allocateMemResources returns a boolean and tells us if we have enough memory resources on this offer.
 func (d *DefaultResourceManager) allocateMemResource(mem float64, offer *MesosOfferResources) bool {
 	if offer.Mem-mem >= 0 {
 		offer.Mem = offer.Mem - mem
@@ -172,6 +168,7 @@ func (d *DefaultResourceManager) allocateMemResource(mem float64, offer *MesosOf
 	return false
 }
 
+// allocateCpuResources returns a boolean and tells us if we have enough cpu resources on this offer.
 func (d *DefaultResourceManager) allocateCpuResource(cpu float64, offer *MesosOfferResources) bool {
 	if offer.Cpu-cpu >= 0 {
 		offer.Cpu = offer.Cpu - cpu
@@ -181,6 +178,7 @@ func (d *DefaultResourceManager) allocateCpuResource(cpu float64, offer *MesosOf
 	return false
 }
 
+// allocateDiskResource returns a boolean and tells us if we have enough disk resources on this offer.
 func (d *DefaultResourceManager) allocateDiskResource(resource *mesos_v1.Resource, offer *MesosOfferResources) bool {
 	if resource.Disk != nil {
 		offer.Disk = resource.Disk
@@ -231,20 +229,23 @@ func (d *DefaultResourceManager) hasSufficientResources(task *manager.Task, offe
 // Assign an offer to a task.
 func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, error) {
 	for i, offer := range d.offers {
+		// First check if we even have enough resources before even looking at filters.
+		if !d.hasSufficientResources(task, offer) {
+			continue
+		}
+
+		// If the task has no filters to apply, just return the offer.
 		if len(task.Filters) == 0 {
 			d.popOffer(i)
 			return offer.Offer, nil
-		}
-		if d.filterOnOffer(task, offer) && d.hasSufficientResources(task, offer) {
-			// Mark this offer as accepted so that it's not returned as part of the remaining offers.
-			d.offers[i].Accepted = true
+		} else if d.filterOnOffer(task, offer) {
 
-			if !strings.EqualFold(task.Info.GetName(), "mux") {
+			// Check here if we want to pack as many tasks onto the same offer as possible.
+			if !strings.EqualFold(task.Strategy.Type, "mux") {
 				d.popOffer(i)
 			} else if offer.Mem == 0 || offer.Cpu == 0 {
 				d.popOffer(i)
 			}
-
 			return offer.Offer, nil
 		}
 	}
@@ -255,9 +256,7 @@ func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, er
 // Returns a list of offers that have not been altered and returned to the client for accept calls.
 func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
 	for _, o := range d.offers {
-		if !o.Accepted {
-			offers = append(offers, o.Offer)
-		}
+		offers = append(offers, o.Offer)
 	}
 	return offers
 }
