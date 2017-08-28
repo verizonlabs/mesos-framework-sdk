@@ -49,6 +49,7 @@ type TaskManager interface {
 	Restore(*Task)
 	Delete(...*Task) error
 	Get(*string) (*Task, error)
+	GetGroup(*Task) ([]*Task, error)
 	GetById(id *mesos_v1.TaskID) (*Task, error)
 	HasTask(*mesos_v1.TaskInfo) bool
 	Update(...*Task) error
@@ -68,6 +69,7 @@ type Task struct {
 	Instances int
 	IsKill    bool
 	GroupInfo GroupInfo
+	Strategy  task.Strategy
 }
 
 type GroupInfo struct {

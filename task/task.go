@@ -24,6 +24,12 @@ type ApplicationJSON struct {
 	Labels      map[string]string `json:"labels"`
 	Filters     []Filter          `json:"filters"`
 	Retry       *TimeRetry        `json:"retry"`
+	Strategy    Strategy          `json:"strategy"`
+}
+
+type Strategy struct {
+	Effort string `json:"effort"`
+	Type   string `json:"type"`
 }
 
 type TimeRetry struct {
