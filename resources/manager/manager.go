@@ -46,6 +46,7 @@ type (
 		Cpu   float64
 		Mem   float64
 		Disk  *mesos_v1.Resource_DiskInfo
+		Accepted bool
 	}
 )
 
@@ -239,13 +240,7 @@ func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, er
 			d.popOffer(i)
 			return offer.Offer, nil
 		} else if d.filterOnOffer(task, offer) {
-
-			// Check here if we want to pack as many tasks onto the same offer as possible.
-			if !strings.EqualFold(task.Strategy.Type, "mux") {
-				d.popOffer(i)
-			} else if offer.Mem == 0 || offer.Cpu == 0 {
-				d.popOffer(i)
-			}
+			d.offers[i].Accepted = true
 			return offer.Offer, nil
 		}
 	}
@@ -256,7 +251,9 @@ func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, er
 // Returns a list of offers that have not been altered and returned to the client for accept calls.
 func (d *DefaultResourceManager) Offers() (offers []*mesos_v1.Offer) {
 	for _, o := range d.offers {
-		offers = append(offers, o.Offer)
+		if !o.Accepted {
+			offers = append(offers, o.Offer)
+		}
 	}
 	return offers
 }
