@@ -16,11 +16,10 @@ package network
 
 import (
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"mesos-framework-sdk/include/mesos_v1"
 	"mesos-framework-sdk/task"
 	"strings"
-
-	"github.com/golang/protobuf/proto"
 )
 
 // Parse NetworkJSON into a list of Networkwork Infos.

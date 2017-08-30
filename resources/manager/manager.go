@@ -42,10 +42,10 @@ type (
 
 	// Holds offer data
 	MesosOfferResources struct {
-		Offer *mesos_v1.Offer
-		Cpu   float64
-		Mem   float64
-		Disk  *mesos_v1.Resource_DiskInfo
+		Offer    *mesos_v1.Offer
+		Cpu      float64
+		Mem      float64
+		Disk     *mesos_v1.Resource_DiskInfo
 		Accepted bool
 	}
 )
