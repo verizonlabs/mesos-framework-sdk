@@ -28,12 +28,11 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		return nil, nil
 	}
 
-	networks, err := network.ParseNetworkJSON(c.Network)
-	if err != nil {
-		// "No explicit network info passed in, using default host networking."
-	}
+	// "No explicit network info passed in, using default host networking."
+	networks, _ := network.ParseNetworkJSON(c.Network)
 
 	var vol []*mesos_v1.Volume
+	var err error
 	if len(c.Volumes) > 0 {
 		vol, err = volume.ParseVolumeJSON(c.Volumes)
 		if err != nil {
