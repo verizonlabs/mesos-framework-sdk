@@ -21,7 +21,6 @@ import (
 	"mesos-framework-sdk/task"
 	"mesos-framework-sdk/task/network"
 	"mesos-framework-sdk/task/volume"
-	"strings"
 )
 
 func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
@@ -29,14 +28,11 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 		return nil, nil
 	}
 
-	networks, err := network.ParseNetworkJSON(c.Network)
-	if err != nil {
-		// NOTE (tim): We don't really need an error message here.
-		// Debug message:
-		// "No explicit network info passed in, using default host networking."
-	}
+	// "No explicit network info passed in, using default host networking."
+	networks, _ := network.ParseNetworkJSON(c.Network)
 
 	var vol []*mesos_v1.Volume
+	var err error
 	if len(c.Volumes) > 0 {
 		vol, err = volume.ParseVolumeJSON(c.Volumes)
 		if err != nil {
@@ -58,20 +54,6 @@ func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {
 	container.Mesos = resources.CreateMesosInfo(
 		resources.CreateImage(mesos_v1.Image_DOCKER.Enum(), *c.ImageName),
 	)
-	container.Docker = resources.CreateDockerInfo(
-		resources.CreateImage(
-			mesos_v1.Image_DOCKER.Enum(),
-			*c.ImageName,
-		),
-		mesos_v1.ContainerInfo_DockerInfo_BRIDGE.Enum(),
-		nil,
-		nil,
-		nil,
-	)
-
-	if c.ContainerType != nil && strings.ToLower(*c.ContainerType) == "docker" {
-		container.Type = mesos_v1.ContainerInfo_DOCKER.Enum()
-	}
 
 	return container, nil
 }
