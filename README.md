@@ -1,15 +1,15 @@
 ## Mesos Framework SDK ##
 This library aims to be a general purpose Golang library for writing
-mesos frameworks.
+Mesos frameworks.
 
 ### Getting started ###
-Mesos frameworks at a minimum require a scheduler to tell the framework
+Mesos frameworks, at a minimum, require a scheduler to tell the framework
 how to run tasks on the cluster when offers come in.
 
-If you are unfamilar with the Mesos architecture, please read here first:
-http://mesos.apache.org/documentation/latest/architecture/
+If you are unfamiliar with the Mesos architecture you can find more information [here](http://mesos.apache.org/documentation/latest/architecture/).
 
-The SDK has two levels of API's, a low-level API and a higher-level API.
+This SDK specifically targets the newer V1 streaming API of Mesos.
+V0 support is not provided. The API can be broken down into a lower-level API as well as a higher-level API which provides more abstractions at the cost of being more opinionated.
 
 ### Low-Level API ###
 The Low-level API gives maximum flexibility to the developer.
@@ -17,12 +17,11 @@ The Low-level API gives maximum flexibility to the developer.
 In this case, the low-level API is simply the protobufs that are generated
 by protoc, along with the defined interfaces per component.
 
-We use the standard protoc implementation and pull directly from the mesos git repos to keep versioning simple.
-
-In this way, we can pull a mesos tag from the apache git repository and run protoc to create the appropriate protobufs for a particular version of mesos.
+We use the standard protoc implementation and pull directly from the official Mesos codebase to keep versioning simple.
+This allows us to pull protobufs for a specific version of Mesos and run protoc to generate the appropriate bindings.
 
 ### High-Level API ###
-The high-level api takes an opinionated stance on the architecture of a mesos framework.
+The high-level API takes an opinionated stance on the architecture of a mesos framework.
 
 - Scheduler: This component implements all calls a scheduler would make towards the master.
 - Client: A generic HTTP client for handling HTTP connections and calls.
@@ -38,20 +37,24 @@ The high-level api takes an opinionated stance on the architecture of a mesos fr
 
 ### Creating a Basic Framework ###
 A basic framework will handle, at minimum:
-- Taking offers from the mesos master and declining or accepting them as necessary.
-- Handing out Task's to be run on the resources offered by the mesos-master, if any.
-- Ensuring state is synced with the master via Reconciliation.
+- Taking offers from the Mesos master and declining or accepting them as necessary.
+- Handing out Task's to be run on the resources offered by the Mesos master, if any.
+- Ensuring state is synced with the master via reconciliation.
 
-A basic framework can then be minimally made with a scheduler, a scheduler event controller, a task manager and a resource manager.
+A basic framework can then be minimally made with a scheduler, event controller, event handler, task manager, and resource manager.
 
-These four components will be enough to handle the previous mentioned responsiblities of a basic mesos framework.
+These four components will be enough to handle the previous mentioned responsibilities of a basic Mesos framework.
 
-Using the default implementations from the high level SDK will make this easy.
+Using the default implementation of the high level SDK will make this easy.
 
-The only custom logic one needs to write is the event controller.  This is a sort of "router" that routes events coming from the mesos master and cluster.
+The only custom logic one needs to write is the event controller.  This is a sort of "router" that routes events coming from the Mesos master and passes them off to your event handlers.
 
-When a certain event  occurs, you define how you react to those events.  Please see the examples section to see an implementation of this.
+### Building ###
 
-The interface is within the scheduler/events package.
+The SDK is link-only and not built on its own.
+
+#### Testing ####
+
+Tests can be run with `make test`. Similarly, you can run benchmarks with `make bench`.
 
 ### [License](LICENSE) ###
