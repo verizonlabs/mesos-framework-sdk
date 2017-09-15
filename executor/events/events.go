@@ -37,5 +37,5 @@ type ExecutorEvents interface {
 	Message(*mesos_v1_executor.Event_Message)
 	Shutdown()
 	Error(*mesos_v1_executor.Event_Error)
-	Run()
+	Run(*mesos_v1_executor.Event)
 }
