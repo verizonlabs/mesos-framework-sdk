@@ -113,8 +113,11 @@ func (t *Task) Reschedule(revive chan *Task) {
 	t.Retry.RetryTime = delay // update with new time.
 
 	reschedule := time.NewTimer(t.Retry.RetryTime)
+	t.lock.Unlock()
 	go func() {
 		<-reschedule.C
+		t.lock.Lock()
+		defer t.lock.Unlock()
 		if t.Retry.TotalRetries >= t.Retry.MaxRetries {
 			// kill itself.
 			t.IsKill = true
@@ -122,7 +125,6 @@ func (t *Task) Reschedule(revive chan *Task) {
 		t.State = mesos_v1.TaskState_TASK_UNKNOWN
 		revive <- t               // Revive itself.
 		t.Retry.TotalRetries += 1 // Increment retry counter.
-		t.lock.Unlock()
 	}()
 }
 
