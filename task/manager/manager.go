@@ -94,7 +94,6 @@ func NewTask(i *mesos_v1.TaskInfo, s mesos_v1.TaskState, f []task.Filter, r *ret
 
 func (t *Task) Reschedule(revive chan *Task) {
 	t.lock.Lock()
-	defer t.lock.Unlock()
 	t.State = mesos_v1.TaskState_TASK_STAGING
 
 	// Minimum is 1 seconds, max is 60.
@@ -114,8 +113,11 @@ func (t *Task) Reschedule(revive chan *Task) {
 	t.Retry.RetryTime = delay // update with new time.
 
 	reschedule := time.NewTimer(t.Retry.RetryTime)
+	t.lock.Unlock()
 	go func() {
 		<-reschedule.C
+		t.lock.Lock()
+		defer t.lock.Unlock()
 		if t.Retry.TotalRetries >= t.Retry.MaxRetries {
 			// kill itself.
 			t.IsKill = true
@@ -124,7 +126,6 @@ func (t *Task) Reschedule(revive chan *Task) {
 		revive <- t               // Revive itself.
 		t.Retry.TotalRetries += 1 // Increment retry counter.
 	}()
-
 }
 
 // Encode encodes the task for transport.
