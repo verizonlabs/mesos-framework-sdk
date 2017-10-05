@@ -11,7 +11,7 @@ type Item struct {
 	Index    int
 }
 
-//pq will shrink to save mem when meeting with two conditions when poping, see Pop below.
+//pq will shrink to save mem if meeting two conditions when poping, see Pop below.
 // 1. len(pq) < capacity(pq)/2
 // 2. capacity(pq) > shrinksize
 const shrinkSize = 32
