@@ -3,29 +3,36 @@ package pqueue
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 
-	"mesos-framework-sdk/test"
+	"code.byted.org/videoarch/mercury/test"
 )
 
 func TestPushAndPop(t *testing.T) {
 	c := 100
 	pq := New(c)
 
+	var wg sync.WaitGroup
+	wg.Add(c + 1)
 	for i := 0; i < c+1; i++ {
-		pq.Push(&Item{
-			Value:    i,
-			Priority: int64(i),
-		})
+		go func(p int) {
+			pq.Push(&Item{
+				Value:    p,
+				Priority: int64(p),
+			})
+			wg.Done()
+		}(i)
 	}
-	test.Equal(t, c+1, len(pq))
-	test.Equal(t, c*2, cap(pq))
+	wg.Wait()
+	test.Equal(t, c+1, pq.Len())
+	test.Equal(t, c*2, pq.Cap())
 
 	for i := 0; i < c+1; i++ {
 		item := pq.Pop().(*Item)
 		test.Equal(t, int64(i), item.Priority)
 	}
-	test.Equal(t, c/4, cap(pq))
+	test.Equal(t, c/4, pq.Cap())
 }
 
 func TestRemove(t *testing.T) {
