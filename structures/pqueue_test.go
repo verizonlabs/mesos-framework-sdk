@@ -1,4 +1,4 @@
-package pqueue
+package structures
 
 import (
 	"fmt"

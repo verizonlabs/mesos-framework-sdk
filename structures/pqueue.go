@@ -1,4 +1,4 @@
-package pqueue
+package structures
 
 import (
 	"sync"
@@ -21,7 +21,7 @@ type Items []*Item
 
 //PriorityQueue implements pqueue with an array. The top item has the smallest priority.
 type PriorityQueue struct {
-	lock sync.Mutex
+	lock sync.RWMutex
 	Items
 }
 
@@ -32,25 +32,27 @@ func New(capacity int) PriorityQueue {
 	}
 }
 
-func (pq PriorityQueue) Len() int {
+// Len returns size of items in pq
+func (pq *PriorityQueue) Len() int {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
 	return len(pq.Items)
 }
 
-func (pq PriorityQueue) Less(i, j int) bool {
-	return pq.Items[i].Priority < pq.Items[j].Priority
-}
-
-func (pq PriorityQueue) Swap(i, j int) {
+func (pq *PriorityQueue) swap(i, j int) {
 	pq.Items[i], pq.Items[j] = pq.Items[j], pq.Items[i]
 	pq.Items[i].Index = i
 	pq.Items[j].Index = j
 }
 
-func (pq PriorityQueue) Cap() int {
+// Cap returns capacity of pq
+func (pq *PriorityQueue) Cap() int {
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
 	return cap(pq.Items)
 }
 
-//Push pushes item into the pqueue
+//Push pushes item into pq
 func (pq *PriorityQueue) Push(x interface{}) {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
@@ -68,13 +70,13 @@ func (pq *PriorityQueue) Push(x interface{}) {
 	pq.up(n)
 }
 
-//Pop pops the top item from the pqueue
+//Pop pops the top item from pq
 func (pq *PriorityQueue) Pop() interface{} {
 	pq.lock.Lock()
 	defer pq.lock.Unlock()
 	n := len(pq.Items)
 	c := cap(pq.Items)
-	pq.Swap(0, n-1)
+	pq.swap(0, n-1)
 	pq.down(0, n-1)
 	if n < (c/2) && c > shrinkSize {
 		newItems := make(Items, n, c/2)
@@ -89,8 +91,8 @@ func (pq *PriorityQueue) Pop() interface{} {
 
 //Peek peeks the top item
 func (pq *PriorityQueue) Peek() interface{} {
-	pq.lock.Lock()
-	defer pq.lock.Unlock()
+	pq.lock.RLock()
+	defer pq.lock.RUnlock()
 	if len(pq.Items) == 0 {
 		return nil
 	}
@@ -99,9 +101,11 @@ func (pq *PriorityQueue) Peek() interface{} {
 
 //Remove remove the item on position i
 func (pq *PriorityQueue) Remove(i int) interface{} {
+	pq.lock.Lock()
+	defer pq.lock.Unlock()
 	n := len(pq.Items)
 	if n-1 != i {
-		pq.Swap(i, n-1)
+		pq.swap(i, n-1)
 		pq.down(i, n-1)
 		pq.up(i)
 	}
@@ -117,7 +121,7 @@ func (pq *PriorityQueue) up(j int) {
 		if i == j || pq.Items[j].Priority >= pq.Items[i].Priority {
 			break
 		}
-		pq.Swap(i, j)
+		pq.swap(i, j)
 		j = i
 	}
 }
@@ -135,7 +139,7 @@ func (pq *PriorityQueue) down(i, n int) {
 		if pq.Items[j].Priority >= pq.Items[i].Priority {
 			break
 		}
-		pq.Swap(i, j)
+		pq.swap(i, j)
 		i = j
 	}
 }
