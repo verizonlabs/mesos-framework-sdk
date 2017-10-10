@@ -15,8 +15,8 @@
 package file
 
 import (
-	"mesos-framework-sdk/logging"
-	"mesos-framework-sdk/server"
+	"github.com/verizonlabs/mesos-framework-sdk/logging"
+	"github.com/verizonlabs/mesos-framework-sdk/server"
 	"net/http"
 	"os"
 	"strconv"

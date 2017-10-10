@@ -16,7 +16,7 @@
 
 syntax = "proto2";
 
-import "mesos-framework-sdk/include/mesos_v1/mesos.proto";
+import "github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1/mesos.proto";
 
 package mesos.v1.scheduler;
 

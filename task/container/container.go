@@ -16,11 +16,11 @@ package container
 
 import (
 	"errors"
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/resources"
-	"mesos-framework-sdk/task"
-	"mesos-framework-sdk/task/network"
-	"mesos-framework-sdk/task/volume"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/resources"
+	"github.com/verizonlabs/mesos-framework-sdk/task"
+	"github.com/verizonlabs/mesos-framework-sdk/task/network"
+	"github.com/verizonlabs/mesos-framework-sdk/task/volume"
 )
 
 func ParseContainer(c *task.ContainerJSON) (*mesos_v1.ContainerInfo, error) {

@@ -18,8 +18,8 @@ import (
 	"bufio"
 	"errors"
 	"io"
-	"mesos-framework-sdk/include/mesos_v1_executor"
-	"mesos-framework-sdk/include/mesos_v1_scheduler"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_executor"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
 	"strconv"
 	"strings"
 

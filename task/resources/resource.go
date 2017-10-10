@@ -16,9 +16,9 @@ package resources
 
 import (
 	"errors"
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/resources"
-	"mesos-framework-sdk/task"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/resources"
+	"github.com/verizonlabs/mesos-framework-sdk/task"
 )
 
 func ParseResources(res *task.ResourceJSON) ([]*mesos_v1.Resource, error) {
