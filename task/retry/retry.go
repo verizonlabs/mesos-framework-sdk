@@ -15,8 +15,8 @@
 package retry
 
 import (
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/task"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/task"
 	"time"
 )
 

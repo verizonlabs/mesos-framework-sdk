@@ -15,8 +15,8 @@
 package test
 
 import (
-	"mesos-framework-sdk/structures"
-	"mesos-framework-sdk/task/manager"
+	"github.com/verizonlabs/mesos-framework-sdk/structures"
+	"github.com/verizonlabs/mesos-framework-sdk/task/manager"
 )
 
 type MockDistributedMap struct{}

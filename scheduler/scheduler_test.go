@@ -16,9 +16,9 @@ package scheduler
 
 import (
 	"io"
-	"mesos-framework-sdk/client"
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/include/mesos_v1_scheduler"
+	"github.com/verizonlabs/mesos-framework-sdk/client"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
 	"net/http"
 	"net/http/httptest"
 	"testing"
