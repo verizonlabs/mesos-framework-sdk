@@ -3,48 +3,41 @@ package structures
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"testing"
 
-	"github.com/verizonlabs/mesos-framework-sdk/test"
+	"code.byted.org/videoarch/mercury/test"
 )
 
 func TestPushAndPop(t *testing.T) {
 	c := 100
 	pq := New(c)
 
-	var wg sync.WaitGroup
-	wg.Add(c + 1)
 	for i := 0; i < c+1; i++ {
-		go func(p int) {
-			pq.Push(&Item{
-				Value:    p,
-				Priority: int64(p),
-			})
-			wg.Done()
-		}(i)
+		pq.Push(&PQItem{
+			Value:    i,
+			Priority: float64(i),
+		})
 	}
-	wg.Wait()
-	test.Equal(t, c+1, pq.Len())
-	test.Equal(t, c*2, pq.Cap())
+	test.Equal(t, c+1, len(pq))
+	test.Equal(t, c*2, cap(pq))
 
 	for i := 0; i < c+1; i++ {
-		item := pq.Pop().(*Item)
-		test.Equal(t, int64(i), item.Priority)
+		item := pq.Pop().(*PQItem)
+		test.Equal(t, float64(i), item.Priority)
 	}
-	test.Equal(t, c/4, pq.Cap())
+	test.Equal(t, c/4, cap(pq))
 }
 
 func TestRemove(t *testing.T) {
 	c := 100
 	pq := New(c)
 
-	items := make(map[string]*Item)
+	items := make(map[string]*PQItem)
 	for i := 0; i < c; i++ {
 		p := int64(rand.Intn(100000000))
 		v := fmt.Sprintf("v%d", p)
-		item := &Item{
-			Priority: p,
+		item := &PQItem{
+			Priority: float64(p),
 			Value:    v,
 		}
 		items[v] = item
@@ -53,7 +46,7 @@ func TestRemove(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		idx := rand.Intn((c - 1) - i)
-		var f *Item
+		var f *PQItem
 		for _, item := range items {
 			if item.Index == idx {
 				f = item
@@ -61,12 +54,12 @@ func TestRemove(t *testing.T) {
 			}
 		}
 		rm := pq.Remove(idx)
-		test.Equal(t, fmt.Sprintf("%s", f.Value.(string)), fmt.Sprintf("%s", rm.(*Item).Value.(string)))
+		test.Equal(t, fmt.Sprintf("%s", f.Value.(string)), fmt.Sprintf("%s", rm.(*PQItem).Value.(string)))
 	}
 
-	lastPriority := pq.Pop().(*Item).Priority
+	lastPriority := pq.Pop().(*PQItem).Priority
 	for i := 0; i < (c - 10 - 1); i++ {
-		item := pq.Pop().(*Item)
+		item := pq.Pop().(*PQItem)
 		test.Equal(t, true, lastPriority <= item.Priority)
 		lastPriority = item.Priority
 	}
