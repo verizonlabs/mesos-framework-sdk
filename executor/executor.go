@@ -15,11 +15,11 @@
 package executor
 
 import (
-	"mesos-framework-sdk/client"
-	"mesos-framework-sdk/include/mesos_v1"
-	exec "mesos-framework-sdk/include/mesos_v1_executor"
-	"mesos-framework-sdk/logging"
-	"mesos-framework-sdk/recordio"
+	"github.com/verizonlabs/mesos-framework-sdk/client"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	exec "github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_executor"
+	"github.com/verizonlabs/mesos-framework-sdk/logging"
+	"github.com/verizonlabs/mesos-framework-sdk/recordio"
 )
 
 type Executor interface {

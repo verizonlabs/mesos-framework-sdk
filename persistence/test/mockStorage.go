@@ -16,7 +16,7 @@ package test
 
 import (
 	"errors"
-	"mesos-framework-sdk/persistence/drivers/etcd/test"
+	"github.com/verizonlabs/mesos-framework-sdk/persistence/drivers/etcd/test"
 )
 
 var BrokenStorageErr = errors.New("Broken Storage.")

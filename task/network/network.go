@@ -17,8 +17,8 @@ package network
 import (
 	"errors"
 	"github.com/golang/protobuf/proto"
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/task"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/task"
 	"strings"
 )
 

@@ -16,9 +16,9 @@ package manager
 
 import (
 	"errors"
-	"mesos-framework-sdk/include/mesos_v1"
-	"mesos-framework-sdk/task"
-	"mesos-framework-sdk/task/manager"
+	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
+	"github.com/verizonlabs/mesos-framework-sdk/task"
+	"github.com/verizonlabs/mesos-framework-sdk/task/manager"
 	"strconv"
 	"strings"
 )
