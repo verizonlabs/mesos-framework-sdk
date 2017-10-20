@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"code.byted.org/videoarch/mercury/test"
+	"github.com/verizonlabs/mesos-framework-sdk/test"
 )
 
 func TestPushAndPop(t *testing.T) {
