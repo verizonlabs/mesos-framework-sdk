@@ -10,7 +10,7 @@ import (
 
 func TestPushAndPop(t *testing.T) {
 	c := 100
-	pq := New(c)
+	pq := NewPQ(c)
 
 	for i := 0; i < c+1; i++ {
 		pq.Push(&PQItem{
@@ -30,7 +30,7 @@ func TestPushAndPop(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	c := 100
-	pq := New(c)
+	pq := NewPQ(c)
 
 	items := make(map[string]*PQItem)
 	for i := 0; i < c; i++ {

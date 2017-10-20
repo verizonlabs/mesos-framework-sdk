@@ -1,3 +1,5 @@
+package structures
+
 /*
 This pqueue is not thread-safe.
 In my case, pq is always used together with map, so lock should be put outside.
@@ -11,8 +13,6 @@ func Add(item) {
 }
 
 */
-
-package structures
 
 //PQItem stands for element stored in the pqueue
 type PQItem struct {
@@ -29,8 +29,8 @@ const shrinkSize = 32
 //PriorityQueue implements pqueue with an array. The top item has the smallest priority.
 type PriorityQueue []*PQItem
 
-//New returns a new pqueue
-func New(capacity int) PriorityQueue {
+//NewPQ returns a new pqueue
+func NewPQ(capacity int) PriorityQueue {
 	return make(PriorityQueue, 0, capacity)
 }
 
