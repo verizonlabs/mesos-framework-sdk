@@ -51,7 +51,8 @@ The only custom logic one needs to write is the event controller.  This is a sor
 
 ### Building ###
 
-The SDK is link-only and not built on its own.
+You will need Go 1.7 at the minimum.
+Note that the SDK is link-only and not built on its own.
 
 #### Testing ####
 
