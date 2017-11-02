@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/verizonlabs/mesos-framework-sdk.svg?branch=development)](https://travis-ci.org/verizonlabs/mesos-framework-sdk)
+[![Build Status](https://travis-ci.org/verizonlabs/mesos-framework-sdk.svg?branch=master)](https://travis-ci.org/verizonlabs/mesos-framework-sdk)
 
 ## Mesos Framework SDK ##
 This library aims to be a general purpose Golang library for writing
