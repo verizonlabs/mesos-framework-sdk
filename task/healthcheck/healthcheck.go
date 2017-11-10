@@ -29,6 +29,9 @@ var (
 	InvalidPortRange       error = errors.New(fmt.Sprintf("Invalid port range given, %v - %v accepted", MIN_PORT, MAX_PORT))
 	UnsupportedScheme      error = errors.New("Unsupported scheme, supported schemes are http, https")
 	NoHTTPPath             error = errors.New("No http path given, must give at a minimum a path to hit for http.")
+	NoTCPHealthCheck       error = errors.New("No TCP health check was defined")
+	NoHTTPHealthCheck      error = errors.New("No HTTP health check was defined")
+	NoCommandHealthCheck   error = errors.New("No error health check was defined")
 )
 
 const (
@@ -52,18 +55,28 @@ func ParseHealthCheck(json *task.HealthCheckJSON, c *mesos_v1.CommandInfo) (*mes
 	hc := &mesos_v1.HealthCheck{}
 	switch strings.ToLower(*json.Type) {
 	case "tcp":
+		if json.Tcp == nil {
+			return nil, NoTCPHealthCheck
+		}
 		hc.Type = mesos_v1.HealthCheck_TCP.Enum()
+
 		tcp, err := parseTcpHealthCheck(json.Tcp)
 		if err != nil {
 			return nil, err
 		}
+
 		hc.Tcp = tcp
 	case "http":
+		if json.Http == nil {
+			return nil, NoHTTPHealthCheck
+		}
+
 		hc.Type = mesos_v1.HealthCheck_HTTP.Enum()
 		http, err := parseHTTPHealthCheck(json.Http)
 		if err != nil {
 			return nil, err
 		}
+
 		hc.Http = http
 	case "command":
 		hc.Type = mesos_v1.HealthCheck_COMMAND.Enum()
