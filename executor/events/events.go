@@ -15,7 +15,7 @@
 package events
 
 import (
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_executor"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/executor"
 )
 
 /*

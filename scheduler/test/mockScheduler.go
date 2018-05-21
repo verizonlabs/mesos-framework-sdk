@@ -16,8 +16,8 @@ package test
 
 import (
 	"errors"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
 	"net/http"
 )
 

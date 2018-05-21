@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/verizonlabs/mesos-framework-sdk/test"
+	"github.com/carlonelong/mesos-framework-sdk/test"
 )
 
 func TestPushAndPop(t *testing.T) {

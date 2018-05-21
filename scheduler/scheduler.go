@@ -27,11 +27,11 @@ End users should only create their own scheduler if they wish to change the beha
 */
 import (
 	"errors"
-	"github.com/verizonlabs/mesos-framework-sdk/client"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	sched "github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
-	"github.com/verizonlabs/mesos-framework-sdk/logging"
-	"github.com/verizonlabs/mesos-framework-sdk/recordio"
+	"github.com/carlonelong/mesos-framework-sdk/client"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	sched "github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
+	"github.com/carlonelong/mesos-framework-sdk/logging"
+	"github.com/carlonelong/mesos-framework-sdk/recordio"
 	"net/http"
 	"sync"
 )

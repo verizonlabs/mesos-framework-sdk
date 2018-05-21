@@ -16,9 +16,9 @@ package test
 
 import (
 	"errors"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	"github.com/verizonlabs/mesos-framework-sdk/task"
-	"github.com/verizonlabs/mesos-framework-sdk/task/manager"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	"github.com/carlonelong/mesos-framework-sdk/task"
+	"github.com/carlonelong/mesos-framework-sdk/task/manager"
 )
 
 type MockResourceManager struct{}

@@ -15,9 +15,9 @@
 package client
 
 import (
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_executor"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/executor"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
 	"net/http"
 	"net/http/httptest"
 	"testing"

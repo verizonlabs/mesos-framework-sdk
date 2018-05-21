@@ -17,9 +17,9 @@ package healthcheck
 import (
 	"errors"
 	"fmt"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	"github.com/verizonlabs/mesos-framework-sdk/task"
-	"github.com/verizonlabs/mesos-framework-sdk/utils"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	"github.com/carlonelong/mesos-framework-sdk/task"
+	"github.com/carlonelong/mesos-framework-sdk/utils"
 	"strings"
 )
 
