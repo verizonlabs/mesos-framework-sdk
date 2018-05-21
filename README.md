@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/verizonlabs/mesos-framework-sdk.svg?branch=master)](https://travis-ci.org/verizonlabs/mesos-framework-sdk)
+
 ## Mesos Framework SDK ##
 This library aims to be a general purpose Golang library for writing
 Mesos frameworks.
@@ -51,7 +53,8 @@ The only custom logic one needs to write is the event controller.  This is a sor
 
 ### Building ###
 
-The SDK is link-only and not built on its own.
+You will need Go 1.7 at the minimum.
+Note that the SDK is link-only and not built on its own.
 
 #### Testing ####
 

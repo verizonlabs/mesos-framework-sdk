@@ -42,10 +42,10 @@ type (
 
 	// Holds offer data
 	MesosOfferResources struct {
-		Offer *mesos_v1.Offer
-		Cpu   float64
-		Mem   float64
-		Disk  *mesos_v1.Resource_DiskInfo
+		Offer    *mesos_v1.Offer
+		Cpu      float64
+		Mem      float64
+		Disk     *mesos_v1.Resource_DiskInfo
 		Accepted bool
 	}
 )
@@ -235,11 +235,13 @@ func (d *DefaultResourceManager) Assign(task *manager.Task) (*mesos_v1.Offer, er
 			continue
 		}
 
-		// If the task has no filters to apply, just return the offer.
-		if len(task.Filters) == 0 {
+		// If the task has no filters to apply or no filters match then return the offer.
+		if len(task.Filters) == 0 || !d.filterOnOffer(task, offer) {
 			d.popOffer(i)
 			return offer.Offer, nil
-		} else if d.filterOnOffer(task, offer) {
+		}
+
+		if d.filterOnOffer(task, offer) {
 			d.offers[i].Accepted = true
 			return offer.Offer, nil
 		}
