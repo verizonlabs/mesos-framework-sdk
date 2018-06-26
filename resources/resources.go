@@ -17,10 +17,11 @@ package resources
 // This package contains helper methods for creating mesos types.
 import (
 	"errors"
+	"strings"
+
 	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
 	"github.com/carlonelong/mesos-framework-sdk/task"
 	"github.com/carlonelong/mesos-framework-sdk/utils"
-	"strings"
 )
 
 func CreateTaskInfo(
@@ -200,6 +201,7 @@ func CreateCommandInfo(
 		Value:       cmd,
 		Arguments:   args,
 		User:        user,
+		Uris:        uris,
 		Environment: env,
 		Shell:       isShell,
 	}
