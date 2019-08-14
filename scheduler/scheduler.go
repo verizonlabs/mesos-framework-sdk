@@ -27,13 +27,14 @@ End users should only create their own scheduler if they wish to change the beha
 */
 import (
 	"errors"
+	"net/http"
+	"sync"
+
 	"github.com/carlonelong/mesos-framework-sdk/client"
-	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	mesos_v1 "github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
 	sched "github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
 	"github.com/carlonelong/mesos-framework-sdk/logging"
 	"github.com/carlonelong/mesos-framework-sdk/recordio"
-	"net/http"
-	"sync"
 )
 
 type Scheduler interface {
@@ -93,11 +94,9 @@ func (c *DefaultScheduler) Subscribe(eventChan chan *sched.Event) (*http.Respons
 
 	resp, err := c.Client.Request(call)
 	if err != nil {
-		return resp, err
-	} else {
-		// recordio.Decode() returns an err struct
-		return resp, recordio.Decode(resp.Body, eventChan)
+		return nil, err
 	}
+	return resp, recordio.Decode(resp.Body, eventChan)
 }
 
 // Send a teardown request to mesos master.
@@ -109,6 +108,7 @@ func (c *DefaultScheduler) Teardown() (*http.Response, error) {
 	resp, err := c.Client.Request(teardown)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 
 	c.logger.Emit(logging.INFO, "Tearing down framework")
@@ -144,6 +144,7 @@ func (c *DefaultScheduler) Decline(offerIds []*mesos_v1.OfferID, filters *mesos_
 	resp, err := c.Client.Request(decline)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 
 	l := len(offerIds)
@@ -171,14 +172,13 @@ func (c *DefaultScheduler) Revive() (*http.Response, error) {
 	resp, err := c.Client.Request(revive)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
-	} else {
-		c.Lock()
-		c.IsSuppressed = false
-		c.Unlock()
-
-		c.logger.Emit(logging.INFO, "Reviving offers")
+		return nil, err
 	}
+	c.Lock()
+	c.IsSuppressed = false
+	c.Unlock()
 
+	c.logger.Emit(logging.INFO, "Reviving offers")
 	return resp, err
 }
 
@@ -192,6 +192,7 @@ func (c *DefaultScheduler) Kill(taskId *mesos_v1.TaskID, agentid *mesos_v1.Agent
 	resp, err := c.Client.Request(kill)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 	// Kill returns a 202 accepted.
 	if resp.StatusCode == 202 {
@@ -212,6 +213,7 @@ func (c *DefaultScheduler) Shutdown(execId *mesos_v1.ExecutorID, agentId *mesos_
 	resp, err := c.Client.Request(shutdown)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 	c.logger.Emit(logging.INFO, "Shutting down")
 	return resp, err
@@ -240,6 +242,7 @@ func (c *DefaultScheduler) Acknowledge(agentId *mesos_v1.AgentID, taskId *mesos_
 	resp, err := c.Client.Request(acknowledge)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 	return resp, err
 }
@@ -263,6 +266,7 @@ func (c *DefaultScheduler) Reconcile(tasks []*mesos_v1.TaskInfo) (*http.Response
 	resp, err := c.Client.Request(reconcile)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 
 	c.logger.Emit(logging.INFO, "Reconciling %d tasks", len(tasks))
@@ -282,6 +286,7 @@ func (c *DefaultScheduler) Message(agentId *mesos_v1.AgentID, executorId *mesos_
 	resp, err := c.Client.Request(message)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 	c.logger.Emit(logging.INFO, "Message received from agent %s and executor %s", agentId.GetValue(), executorId.GetValue())
 	return resp, err
@@ -299,6 +304,7 @@ func (c *DefaultScheduler) SchedRequest(resources []*mesos_v1.Request) (*http.Re
 	resp, err := c.Client.Request(request)
 	if err != nil {
 		c.logger.Emit(logging.ERROR, err.Error())
+		return nil, err
 	}
 	c.logger.Emit(logging.INFO, "Requesting resources")
 	return resp, err
