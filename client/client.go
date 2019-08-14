@@ -18,13 +18,14 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_executor"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
-	"github.com/verizonlabs/mesos-framework-sdk/logging"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/executor"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
+	"github.com/carlonelong/mesos-framework-sdk/logging"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -58,6 +59,7 @@ func NewClient(data ClientData, logger logging.Logger) Client {
 					Timeout:   10 * time.Second,
 					KeepAlive: 30 * time.Second,
 				}).Dial,
+				MaxIdleConnsPerHost: 1000,
 			},
 		},
 		logger: logger,

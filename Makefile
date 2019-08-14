@@ -26,6 +26,6 @@ bench:
 	@go test -timeout 5m -bench . $(shell go list ./... | grep -v /vendor/)
 
 protos:
-	@protoc --go_out=. --proto_path=.:${PROTO_PATH} ./include/mesos_v1_scheduler/scheduler.proto
-	@protoc --go_out=. --proto_path=.:${PROTO_PATH} ./include/mesos_v1_executor/executor.proto
-	@protoc --go_out=. --proto_path=.:${PROTO_PATH} ./include/mesos_v1/mesos.proto
+	@cd include/mesos/v1/scheduler && protoc --go_out=Mmesos/v1/mesos.proto=github.com/carlonelong/mesos-framework-sdk/include/mesos/v1:. --proto_path=.:../../.. scheduler.proto
+	@cd include/mesos/v1/executor && protoc --go_out=Mmesos/v1/mesos.proto=github.com/carlonelong/mesos-framework-sdk/include/mesos/v1:. --proto_path=.:../../.. executor.proto
+	@cd include/mesos/v1 && protoc --go_out=. --proto_path=.:../../.. mesos.proto

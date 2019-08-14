@@ -15,8 +15,8 @@
 package events
 
 import (
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1_scheduler"
-	"github.com/verizonlabs/mesos-framework-sdk/task/manager"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1/scheduler"
+	"github.com/carlonelong/mesos-framework-sdk/task/manager"
 )
 
 /*

@@ -16,8 +16,8 @@ package labels
 
 import (
 	"errors"
-	"github.com/verizonlabs/mesos-framework-sdk/include/mesos_v1"
-	"github.com/verizonlabs/mesos-framework-sdk/utils"
+	"github.com/carlonelong/mesos-framework-sdk/include/mesos/v1"
+	"github.com/carlonelong/mesos-framework-sdk/utils"
 )
 
 func ParseLabels(labels map[string]string) (*mesos_v1.Labels, error) {
